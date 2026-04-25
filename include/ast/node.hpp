@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 class SymbolTable {
@@ -73,7 +74,10 @@ class StructDefExpr : public Expr {
 public:
   std::string Name;
   std::vector<std::string> FieldNames;
-  StructDefExpr(std::string n) : Name(n) {}
+  std::vector<std::unique_ptr<Type>> FieldTypes;
+  StructDefExpr(std::string n, std::vector<std::string> fnames,
+                std::vector<std::unique_ptr<Type>> ftypes)
+      : Name(n), FieldTypes(std::move(ftypes)), FieldNames(fnames) {}
 
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {

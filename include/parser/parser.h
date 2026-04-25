@@ -1,5 +1,8 @@
 #include <ast/node.hpp>
 #include <lexer/lexer.hpp>
+#include <memory>
+#include <utility>
+#include <vector>
 
 class Parser {
   std::vector<Token> tokens;
@@ -57,11 +60,16 @@ private:
     expect(TokenType::STRUCT);
     auto tok = expect(TokenType::IDENTIFIER);
     std::string name = tok.value;
+    auto args = std::vector<std::string>();
+    auto argstypes = std::vector<std::unique_ptr<Type>>();
 
     expect(TokenType::OPEN_CURLY);
     while (current().type != TokenType::CLOSE_CURLY) {
       auto idtok = expect(TokenType::IDENTIFIER);
-      auto tytok = expect(TokenType::INT);
+      args.push_back(idtok.value);
+
+      auto typ = parseType();
+      argstypes.push_back(std::move(typ));
 
       if (current().type == TokenType::COMMA) {
         expect(TokenType::COMMA);
@@ -69,7 +77,8 @@ private:
     }
     expect(TokenType::CLOSE_CURLY);
 
-    return std::make_unique<StructDefExpr>(name);
+    return std::make_unique<StructDefExpr>(name, std::move(args),
+                                           std::move(argstypes));
   }
 
   std::unique_ptr<Type> parseType() {
@@ -78,6 +87,11 @@ private:
     if (tok.type == TokenType::INT) {
       expect(TokenType::INT);
       return std::make_unique<TypeInt>();
+    }
+
+    if (tok.type == TokenType::FLOAT) {
+      expect(TokenType::FLOAT);
+      return std::make_unique<TypeFloat>();
     }
 
     throw std::runtime_error("Unexpected type: ```" + current().value + "```");
