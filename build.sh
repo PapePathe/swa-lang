@@ -15,5 +15,3 @@ set -euxo pipefail
  ./parser_tests
 
 ./swa
-
-lli out.ll
