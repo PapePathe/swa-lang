@@ -3,6 +3,7 @@
 
 int main() {
   std::string program = R"(
+    dialect:english;
     main() int { 
       print("Nangadef Pathe");
     }
