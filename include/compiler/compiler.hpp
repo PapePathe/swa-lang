@@ -1,9 +1,11 @@
 #include "../lexer/keywords.hpp"
 #include "../parser/parser.h"
+#include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <string>
+#include <vector>
 
 class SwaCompiler {
 public:
@@ -16,7 +18,9 @@ public:
     auto st = SymbolTable();
     program->Codegen(context, m, builder, st);
 
-    saveModule("./out.ll");
+    llvm::ExecutionEngine *engine = llvm::EngineBuilder(std::move(m)).create();
+    auto Fn = engine->FindFunctionNamed("main");
+    engine->runFunctionAsMain(Fn, std::vector<std::string>(), nullptr);
   }
 
   void Build(std::string program) {}
@@ -31,11 +35,5 @@ private:
     context = std::make_unique<llvm::LLVMContext>();
     m = std::make_unique<llvm::Module>("swac", *context);
     builder = std::make_unique<llvm::IRBuilder<>>(*context);
-  }
-
-  void saveModule(const std::string &name) {
-    std::error_code code;
-    llvm::raw_fd_ostream outF(name, code);
-    m->print(outF, nullptr);
   }
 };
