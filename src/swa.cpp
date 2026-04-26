@@ -1,10 +1,11 @@
-#include <iostream>
-#include <string>
 #include "../include/compiler/compiler.hpp"
+#include <string>
 
 int main() {
   std::string program = R"(
-        retourner 0;
+    main() int { 
+      print("Nangadef"); 
+    }
   )";
 
   SwaCompiler swa = SwaCompiler();

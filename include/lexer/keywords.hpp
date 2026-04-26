@@ -26,6 +26,7 @@ const std::unordered_map<std::string, TokenType> KEYWORDS_ENGLISH = {
     {"true", TokenType::TRUE},
     {"false", TokenType::FALSE},
     {"variadic", TokenType::VARIADIC},
+    {"main", TokenType::MAIN},
     {"zero", TokenType::ZERO}};
 
 const std::unordered_map<std::string, TokenType> KEYWORDS_FRENCH = {
@@ -52,4 +53,5 @@ const std::unordered_map<std::string, TokenType> KEYWORDS_FRENCH = {
     {"vrai", TokenType::TRUE},
     {"faux", TokenType::FALSE},
     {"variadique", TokenType::VARIADIC},
+    {"demarrer", TokenType::MAIN},
     {"zero", TokenType::ZERO}};

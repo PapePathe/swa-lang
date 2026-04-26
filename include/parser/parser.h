@@ -38,12 +38,16 @@ public:
   }
 
 private:
-  void trace(std::string msg) { std::cout << "PARSER TRACE " << msg; }
+  void trace(std::string msg) {
+    return;
+    std::cout << "PARSER TRACE " << msg;
+  }
   void debug(std::string msg) {}
   std::unique_ptr<Expr> parseStatement() {
     trace("begin parse statement\n");
 
-    if (current().type == TokenType::FUNCTION)
+    if (current().type == TokenType::FUNCTION ||
+        current().type == TokenType::MAIN)
       return parseFunction();
     if (current().type == TokenType::STRUCT)
       return parseStruct();
@@ -51,6 +55,8 @@ private:
       return parsePrint();
     if (current().type == TokenType::LET)
       return parseDeclaration();
+    if (current().type == TokenType::DIALECT)
+      return parseIf();
     if (current().type == TokenType::IF)
       return parseIf();
 
@@ -58,6 +64,8 @@ private:
 
     return parseExpression();
   }
+
+  void parseDialect() { expect(TokenType::DIALECT); }
 
   std::unique_ptr<Expr> parseIf() {
     trace("begin parse if\n");
@@ -158,8 +166,17 @@ private:
   }
 
   std::unique_ptr<Expr> parseFunction() {
-    expect(TokenType::FUNCTION); // 'func'
-    std::string name = expect(TokenType::IDENTIFIER).value;
+    trace("begin parse function, current token: " + current().value + "\n");
+
+    std::string name;
+
+    if (current().type == TokenType::MAIN) {
+      expect(TokenType::MAIN);
+      name = "main";
+    } else {
+      expect(TokenType::FUNCTION);
+      name = expect(TokenType::IDENTIFIER).value;
+    }
 
     expect(TokenType::OPEN_PAREN);
     std::vector<std::string> args;
@@ -178,7 +195,9 @@ private:
     }
     expect(TokenType::CLOSE_PAREN);
 
-    auto proto = std::make_unique<ProtoExpr>(name, args, argsTypes);
+    auto ret = parseType();
+
+    auto proto = std::make_unique<ProtoExpr>(name, args, argsTypes, *ret);
     auto body = parseBlock();
     return std::make_unique<FuncExpr>(std::move(proto), std::move(body));
   }

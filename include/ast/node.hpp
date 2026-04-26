@@ -185,10 +185,14 @@ public:
   std::string Name;
   std::vector<std::string> Args;
   std::vector<Type> ArgsTypes;
+  Type Ret;
 
   ProtoExpr(const std::string &name, std::vector<std::string> args,
             std::vector<Type> argsTypes)
       : Name(name), Args(args), ArgsTypes(argsTypes) {}
+  ProtoExpr(const std::string &name, std::vector<std::string> args,
+            std::vector<Type> argsTypes, Type ret)
+      : Name(name), Args(args), ArgsTypes(argsTypes), Ret(ret) {}
 
   const std::string &getName() const { return Name; }
 
