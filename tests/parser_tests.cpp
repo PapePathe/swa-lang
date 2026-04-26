@@ -22,6 +22,36 @@ TEST(ParserTest, ParseMinimalProgram) {
   auto tokens = getTokens(input);
   Parser parser(tokens);
   auto program = parser.parseProgram();
+
+  ASSERT_NE(program, nullptr);
+
+  auto &stmts = program->Exprs;
+  ASSERT_EQ(stmts.size(), 1);
+
+  auto node = dynamic_cast<FuncExpr *>(stmts[0].get());
+  ASSERT_NE(node, nullptr);
+  ASSERT_EQ(node->Proto->Name, "main");
+}
+
+TEST(ParserTest, ParseMinimalProgramWithDialect) {
+  std::string input = R"(
+    dialect:english;
+    main() int {
+      print("Salam");
+    }
+  )";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+
+  ASSERT_NE(program, nullptr);
+
+  auto &stmts = program->Exprs;
+  ASSERT_EQ(stmts.size(), 1);
+
+  auto node = dynamic_cast<FuncExpr *>(stmts[0].get());
+  ASSERT_NE(node, nullptr);
+  ASSERT_EQ(node->Proto->Name, "main");
 }
 
 TEST(ParserTest, ParsePrintStatement) {

@@ -55,8 +55,10 @@ private:
       return parsePrint();
     if (current().type == TokenType::LET)
       return parseDeclaration();
-    if (current().type == TokenType::DIALECT)
-      return parseIf();
+    if (current().type == TokenType::DIALECT) {
+      parseDialect();
+      return parseStatement();
+    }
     if (current().type == TokenType::IF)
       return parseIf();
 
@@ -65,7 +67,12 @@ private:
     return parseExpression();
   }
 
-  void parseDialect() { expect(TokenType::DIALECT); }
+  void parseDialect() {
+    expect(TokenType::DIALECT);
+    expect(TokenType::COLON);
+    expect(TokenType::IDENTIFIER);
+    expect(TokenType::SEMICOLON);
+  }
 
   std::unique_ptr<Expr> parseIf() {
     trace("begin parse if\n");
