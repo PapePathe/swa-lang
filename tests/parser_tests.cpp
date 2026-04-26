@@ -17,6 +17,13 @@ void debugTokens(std::vector<Token> tokens) {
   }
 }
 
+TEST(ParserTest, ParseMinimalProgram) {
+  std::string input = "main()int { print(\"Salam\"); }";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+}
+
 TEST(ParserTest, ParsePrintStatement) {
   std::string input = "print(\"Hello\");";
   auto tokens = getTokens(input);
@@ -146,8 +153,9 @@ TEST(ParserTest, ParseVariableDeclaration) {
 }
 
 TEST(ParserTest, ParseFunctionDefinition) {
-  std::string input = "func my_func(a int, b float, c bool, d string, e byte)"
-                      "{ print(\"hi\"); }";
+  std::string input =
+      "func my_func(a int, b float, c bool, d string, e byte) int "
+      "{ print(\"hi\"); }";
   auto tokens = getTokens(input);
   Parser parser(tokens);
 

@@ -204,8 +204,19 @@ TEST_F(LexerTest, BlankString) {
   AssertToken(tokens[0], TokenType::END_OF_FILE, "");
 }
 
+TEST_F(LexerTest, Dialect) {
+  auto tokens = getTokens("dialect:english;", KEYWORDS_ENGLISH);
+
+  ASSERT_EQ(tokens.size(), 5);
+  AssertToken(tokens[0], TokenType::DIALECT, "dialect");
+  AssertToken(tokens[1], TokenType::COLON, ":");
+  AssertToken(tokens[2], TokenType::IDENTIFIER, "english");
+  AssertToken(tokens[3], TokenType::SEMICOLON, ";");
+  AssertToken(tokens[4], TokenType::END_OF_FILE, "");
+}
+
 TEST_F(LexerTest, AllDialectKeywordsAreEqual) {
-  ASSERT_EQ(KEYWORDS_ENGLISH.size(), 24);
+  ASSERT_EQ(KEYWORDS_ENGLISH.size(), 25);
   ASSERT_EQ(KEYWORDS_FRENCH.size(), 24);
 }
 
