@@ -4,12 +4,10 @@
 int main() {
   std::string program = R"(
     main() int { 
-      print("Nangadef"); 
+      print("Nangadef Pathe");
     }
   )";
-
   SwaCompiler swa = SwaCompiler();
-
   swa.Run(program);
 
   return 0;
