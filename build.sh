@@ -13,3 +13,7 @@ set -euxo pipefail
  
  ./lexer_tests
  ./parser_tests
+
+./swa
+
+lli out.ll
