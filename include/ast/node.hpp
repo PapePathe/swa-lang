@@ -44,10 +44,16 @@ public:
 
 class TypeInt : public Type {};
 class TypeFloat : public Type {};
+class TypeBool : public Type {};
+class TypeByte : public Type {};
 class TypeString : public Type {};
 class TypeVoid : public Type {};
 class TypeStruct : public Type {};
-class TypeArray : public Type {};
+class TypeArray : public Type {
+public:
+  Type T;
+  TypeArray(Type t) : T(t) {}
+};
 
 class Expr {
 public:
@@ -59,9 +65,8 @@ public:
 };
 
 class NumberExpr : public Expr {
-  int Value;
-
 public:
+  int Value;
   NumberExpr(int value) : Value(value) {}
 
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
@@ -83,6 +88,13 @@ public:
                                SymbolTable &s) override {
     return 0;
   }
+};
+
+class IdExpr : public Expr {
+  std::string Name;
+
+public:
+  IdExpr(std::string n) : Name(n) {}
 };
 
 class PrintExpr : public Expr {
@@ -115,13 +127,68 @@ public:
   }
 };
 
+class EqExpr : public Expr {
+public:
+  std::unique_ptr<Expr> Left;
+  std::unique_ptr<Expr> Right;
+  EqExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
+      : Left(std::move(left)), Right(std::move(right)) {}
+};
+
+class GTExpr : public Expr {
+public:
+  std::unique_ptr<Expr> Left;
+  std::unique_ptr<Expr> Right;
+  GTExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
+      : Left(std::move(left)), Right(std::move(right)) {}
+};
+
+class GTEExpr : public Expr {
+public:
+  std::unique_ptr<Expr> Left;
+  std::unique_ptr<Expr> Right;
+  GTEExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
+      : Left(std::move(left)), Right(std::move(right)) {}
+};
+
+class LTExpr : public Expr {
+public:
+  std::unique_ptr<Expr> Left;
+  std::unique_ptr<Expr> Right;
+  LTExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
+      : Left(std::move(left)), Right(std::move(right)) {}
+};
+
+class LTEExpr : public Expr {
+public:
+  std::unique_ptr<Expr> Left;
+  std::unique_ptr<Expr> Right;
+  LTEExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
+      : Left(std::move(left)), Right(std::move(right)) {}
+};
+
+class IfExpr : public Expr {
+public:
+  std::unique_ptr<Expr> Cond;
+  std::unique_ptr<BlockExpr> Success;
+  std::unique_ptr<BlockExpr> Failure;
+  IfExpr(
+
+      std::unique_ptr<Expr> cond, std::unique_ptr<BlockExpr> success,
+      std::unique_ptr<BlockExpr> failure)
+      : Cond(std::move(cond)), Success(std::move(success)),
+        Failure(std::move(failure)) {}
+};
+
 class ProtoExpr : public Expr {
+public:
   std::string Name;
   std::vector<std::string> Args;
+  std::vector<Type> ArgsTypes;
 
-public:
-  ProtoExpr(const std::string &name, std::vector<std::string> args)
-      : Name(name), Args(args) {}
+  ProtoExpr(const std::string &name, std::vector<std::string> args,
+            std::vector<Type> argsTypes)
+      : Name(name), Args(args), ArgsTypes(argsTypes) {}
 
   const std::string &getName() const { return Name; }
 
@@ -147,10 +214,9 @@ public:
 };
 
 class FuncExpr : public Expr {
+public:
   std::unique_ptr<ProtoExpr> Proto;
   std::unique_ptr<BlockExpr> Body;
-
-public:
   FuncExpr(std::unique_ptr<ProtoExpr> p, std::unique_ptr<BlockExpr> b)
       : Proto(std::move(p)), Body(std::move(b)) {}
 
@@ -189,8 +255,8 @@ public:
   MainExpr(std::unique_ptr<BlockExpr> b) : Body(std::move(b)) {}
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
-    auto proto =
-        std::make_unique<ProtoExpr>("main", std::vector<std::string>());
+    auto proto = std::make_unique<ProtoExpr>("main", std::vector<std::string>(),
+                                             std::vector<Type>());
     auto fn = std::make_unique<FuncExpr>(std::move(proto), std::move(Body));
     fn->Codegen(c, m, b, s);
 
@@ -201,9 +267,10 @@ public:
 class DeclarationExpr : public Expr {
 public:
   std::string Name;
+  Type T;
   std::unique_ptr<Expr> Value;
-  DeclarationExpr(std::string name, std::unique_ptr<Expr> value)
-      : Name(name), Value(std::move(value)) {}
+  DeclarationExpr(std::string name, std::unique_ptr<Expr> value, Type typ)
+      : Name(name), Value(std::move(value)), T(typ) {}
 
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
