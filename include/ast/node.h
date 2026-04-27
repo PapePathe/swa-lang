@@ -41,9 +41,8 @@ public:
 };
 
 class IdExpr : public Expr {
-  std::string Name;
-
 public:
+  std::string Name;
   IdExpr(std::string n) : Name(n) {}
 };
 
