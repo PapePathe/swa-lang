@@ -68,6 +68,62 @@ TEST(ParserTest, ParsePrintStatement) {
   ASSERT_NE(printNode, nullptr);
 }
 
+TEST(ParserTest, AddExpr) {
+  std::string input = "x + 0 ";
+  auto tokens = getTokens(input);
+
+  Parser parser(tokens);
+
+  auto program = parser.parseProgram();
+  auto &stmts = program->Exprs;
+  ASSERT_EQ(stmts.size(), 1);
+
+  auto node = dynamic_cast<AddExpr *>(stmts[0].get());
+  ASSERT_NE(node, nullptr);
+}
+
+TEST(ParserTest, SubExpr) {
+  std::string input = "x - 0 ";
+  auto tokens = getTokens(input);
+
+  Parser parser(tokens);
+
+  auto program = parser.parseProgram();
+  auto &stmts = program->Exprs;
+  ASSERT_EQ(stmts.size(), 1);
+
+  auto node = dynamic_cast<SubExpr *>(stmts[0].get());
+  ASSERT_NE(node, nullptr);
+}
+
+TEST(ParserTest, MulExpr) {
+  std::string input = "x * 0 ";
+  auto tokens = getTokens(input);
+
+  Parser parser(tokens);
+
+  auto program = parser.parseProgram();
+  auto &stmts = program->Exprs;
+  ASSERT_EQ(stmts.size(), 1);
+
+  auto node = dynamic_cast<MulExpr *>(stmts[0].get());
+  ASSERT_NE(node, nullptr);
+}
+
+TEST(ParserTest, DivExpr) {
+  std::string input = "x / 0 ";
+  auto tokens = getTokens(input);
+
+  Parser parser(tokens);
+
+  auto program = parser.parseProgram();
+  auto &stmts = program->Exprs;
+  ASSERT_EQ(stmts.size(), 1);
+
+  auto node = dynamic_cast<DivExpr *>(stmts[0].get());
+  ASSERT_NE(node, nullptr);
+}
+
 TEST(ParserTest, Conditional) {
   std::string input = "x = 0 ";
   auto tokens = getTokens(input);

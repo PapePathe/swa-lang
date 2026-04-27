@@ -119,6 +119,9 @@ std::vector<Token> Lexer::tokenize() {
           tokens.push_back({TokenType::MINUS, "-"});
         }
         break;
+      case '/':
+        tokens.push_back({TokenType::DIVIDE, "/"});
+        break;
       case '*':
         if (peek() == '*') {
           get();

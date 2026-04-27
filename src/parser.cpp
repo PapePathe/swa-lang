@@ -1,10 +1,24 @@
 #include <parser/parser.h>
 
-Token Parser::current() { return tokens[pos]; }
+Token Parser::current() {
+  if (pos >= tokens.size()) {
+    // Return a dummy EOF token instead of crashing
+    return Token{TokenType::END_OF_FILE, ""};
+  }
+
+  return tokens[pos];
+}
 
 Token Parser::expect(TokenType type) {
-  if (current().type == type)
+  if (isAtEnd()) {
+    throw std::runtime_error("Unexpected end of file. Expected: " +
+                             std::to_string((int)type) + " " + current().value);
+  }
+
+  if (current().type == type) {
     return tokens[pos++];
+  }
+
   throw std::runtime_error("Unexpected token: ```" + current().value + "```");
 }
 
@@ -48,6 +62,48 @@ std::unique_ptr<Expr> Parser::parseStatement() {
 
   return parseExpression();
 }
+
+int Parser::getPrecedence(TokenType type) {
+  switch (type) {
+  case TokenType::EQUALS:
+  case TokenType::LESS_THAN:
+  case TokenType::LESS_THAN_EQUALS:
+  case TokenType::GREATER_THAN:
+  case TokenType::GREATER_THAN_EQUALS:
+    return 10; // Comparison
+  case TokenType::PLUS:
+  case TokenType::MINUS:
+    return 20; // Addition/Subtraction
+  case TokenType::MULTIPLY:
+  case TokenType::DIVIDE:
+    return 30; // Multiplication/Division
+  default:
+    return -1; // Not an operator
+  }
+}
+
+std::unique_ptr<Expr> Parser::parsePrimary() {
+  if (current().type == TokenType::NUMBER) {
+    int val = std::stoi(expect(TokenType::NUMBER).value);
+    return std::make_unique<NumberExpr>(val);
+  }
+  if (current().type == TokenType::IDENTIFIER) {
+    std::string name = expect(TokenType::IDENTIFIER).value;
+    return std::make_unique<IdExpr>(name);
+  }
+  if (current().type == TokenType::OPEN_PAREN) {
+    expect(TokenType::OPEN_PAREN);
+    auto expr = parseExpression(0); // Recursively parse inner expr
+    expect(TokenType::CLOSE_PAREN);
+    return expr;
+  }
+
+  if (isAtEnd())
+    return nullptr;
+
+  throw std::runtime_error("Expected expression but got " + current().value);
+}
+
 void Parser::parseDialect() {
   expect(TokenType::DIALECT);
   expect(TokenType::COLON);
@@ -210,113 +266,57 @@ std::unique_ptr<Expr> Parser::parseDeclaration() {
   return std::make_unique<DeclarationExpr>(name, std::move(value), *typ);
 }
 
-std::unique_ptr<Expr> Parser::parseEquals(std::unique_ptr<Expr> left) {
-  expect(TokenType::EQUALS);
-
-  auto right = parseExpression();
-
-  return std::make_unique<EqExpr>(std::move(left), std::move(right));
+std::unique_ptr<Expr> Parser::createBinaryNode(TokenType op,
+                                               std::unique_ptr<Expr> left,
+                                               std::unique_ptr<Expr> right) {
+  switch (op) {
+  case TokenType::PLUS:
+    return std::make_unique<AddExpr>(std::move(left), std::move(right));
+  case TokenType::MINUS:
+    return std::make_unique<SubExpr>(std::move(left), std::move(right));
+  case TokenType::MULTIPLY:
+    return std::make_unique<MulExpr>(std::move(left), std::move(right));
+  case TokenType::DIVIDE:
+    return std::make_unique<DivExpr>(std::move(left), std::move(right));
+  case TokenType::EQUALS:
+    return std::make_unique<EqExpr>(std::move(left), std::move(right));
+  case TokenType::LESS_THAN:
+    return std::make_unique<LTExpr>(std::move(left), std::move(right));
+  case TokenType::LESS_THAN_EQUALS:
+    return std::make_unique<LTEExpr>(std::move(left), std::move(right));
+  case TokenType::GREATER_THAN:
+    return std::make_unique<GTExpr>(std::move(left), std::move(right));
+  case TokenType::GREATER_THAN_EQUALS:
+    return std::make_unique<GTEExpr>(std::move(left), std::move(right));
+  default:
+    throw std::runtime_error("Unknown operator in expression `" +
+                             current().value + "`");
+  }
 }
 
-std::unique_ptr<Expr> Parser::parseLessThan(std::unique_ptr<Expr> left) {
-  expect(TokenType::LESS_THAN);
+std::unique_ptr<Expr> Parser::parseExpression(int minPrecedence) {
+  // Get the left-hand side (e.g., the '3' in '3 + 4')
+  auto left = parsePrimary();
 
-  auto right = parseExpression();
+  while (true) {
+    TokenType opType = current().type;
+    int precedence = getPrecedence(opType);
 
-  return std::make_unique<LTExpr>(std::move(left), std::move(right));
-}
+    // If the next operator's precedence is lower than where we are, stop.
+    if (precedence < minPrecedence)
+      break;
 
-std::unique_ptr<Expr> Parser::parseLessThanEquals(std::unique_ptr<Expr> left) {
-  expect(TokenType::LESS_THAN_EQUALS);
+    // Consume the operator
+    expect(opType);
 
-  auto right = parseExpression();
+    // Parse the right-hand side.
+    // For Left-Associative (+, -, *, /), we use precedence + 1
+    auto right = parseExpression(precedence + 1);
 
-  return std::make_unique<LTEExpr>(std::move(left), std::move(right));
-}
-
-std::unique_ptr<Expr>
-Parser::parseGreaterThanEquals(std::unique_ptr<Expr> left) {
-  expect(TokenType::GREATER_THAN_EQUALS);
-
-  auto right = parseExpression();
-
-  return std::make_unique<GTEExpr>(std::move(left), std::move(right));
-}
-
-std::unique_ptr<Expr> Parser::parseGreaterThan(std::unique_ptr<Expr> left) {
-  expect(TokenType::GREATER_THAN);
-
-  auto right = parseExpression();
-
-  return std::make_unique<GTExpr>(std::move(left), std::move(right));
-}
-
-std::unique_ptr<Expr> Parser::parseExpression(std::unique_ptr<Expr> left) {
-  trace("begin parse expression, current token: " + current().value + "\n");
-  if (current().type == TokenType::EQUALS) {
-    trace("redirect to parse =\n");
-    return parseEquals(std::move(left));
+    // Bundle them into a Binary expression node
+    // (Note: You'll likely need a 'BinaryExpr' class or specific nodes)
+    left = createBinaryNode(opType, std::move(left), std::move(right));
   }
 
-  if (current().type == TokenType::LESS_THAN) {
-    trace("redirect to parse <\n");
-    return parseLessThan(std::move(left));
-  }
-
-  if (current().type == TokenType::LESS_THAN_EQUALS) {
-    trace("redirect to parse <=\n");
-    return parseLessThanEquals(std::move(left));
-  }
-
-  if (current().type == TokenType::GREATER_THAN) {
-    trace("redirect to parse >\n");
-    return parseGreaterThan(std::move(left));
-  }
-
-  if (current().type == TokenType::GREATER_THAN_EQUALS) {
-    trace("redirect to parse >=\n");
-    return parseGreaterThanEquals(std::move(left));
-  }
-
-  if (current().type == TokenType::NUMBER) {
-    trace("parsing number \n");
-    auto expr = NumberExpr(std::stoi(expect(TokenType::NUMBER).value));
-    auto num = std::make_unique<Expr>(expr);
-
-    if (isCompareOp(current().type)) {
-      return parseExpression(std::move(num));
-    }
-
-    return num;
-  }
-
-  if (current().type == TokenType::IDENTIFIER) {
-    trace("parsing identifier \n");
-    auto id = IdExpr(expect(TokenType::IDENTIFIER).value);
-    auto exp = std::make_unique<IdExpr>(id);
-
-    if (isCompareOp(current().type)) {
-      return parseExpression(std::move(exp));
-    }
-
-    return exp;
-  }
-
-  if (current().type == TokenType::END_OF_FILE) {
-    return nullptr;
-  }
-
-  throw std::runtime_error("Unexpected token `" + current().value + "`");
-
-  return nullptr;
-}
-
-bool Parser::isCompareOp(TokenType t) {
-  if (t == TokenType::EQUALS || t == TokenType::GREATER_THAN_EQUALS ||
-      t == TokenType::GREATER_THAN || t == TokenType::LESS_THAN_EQUALS ||
-      t == TokenType::LESS_THAN) {
-    return true;
-  }
-
-  return false;
+  return left;
 }

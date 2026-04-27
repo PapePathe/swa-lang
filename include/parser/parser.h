@@ -23,8 +23,9 @@ public:
 private:
   void trace(std::string msg);
   void debug(std::string msg);
-  std::unique_ptr<Expr> parseStatement();
   void parseDialect();
+  std::unique_ptr<Expr> parseStatement();
+  std::unique_ptr<Expr> parsePrimary();
   std::unique_ptr<Expr> parseIf();
   std::unique_ptr<Expr> parsePrint();
   std::unique_ptr<Expr> parseStruct();
@@ -32,12 +33,16 @@ private:
   std::unique_ptr<Expr> parseFunction();
   std::unique_ptr<BlockExpr> parseBlock();
   std::unique_ptr<Expr> parseDeclaration();
+  std::unique_ptr<Expr> createBinaryNode(TokenType op,
+                                         std::unique_ptr<Expr> left,
+                                         std::unique_ptr<Expr> right);
   std::unique_ptr<Expr> parseEquals(std::unique_ptr<Expr> left);
   std::unique_ptr<Expr> parseLessThan(std::unique_ptr<Expr> left);
   std::unique_ptr<Expr> parseLessThanEquals(std::unique_ptr<Expr> left);
   std::unique_ptr<Expr> parseGreaterThanEquals(std::unique_ptr<Expr> left);
   std::unique_ptr<Expr> parseGreaterThan(std::unique_ptr<Expr> left);
   bool isCompareOp(TokenType t);
-  std::unique_ptr<Expr> parseExpression(std::unique_ptr<Expr> left = nullptr);
+  int getPrecedence(TokenType type);
+  std::unique_ptr<Expr> parseExpression(int = 0);
 };
 #endif // !SWA_PARSER
