@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <iostream>
-#include <lexer/keywords.hpp>
+#include <lexer/keywords.h>
 #include <memory>
 #include <parser/parser.h>
 #include <vector>

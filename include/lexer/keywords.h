@@ -1,4 +1,4 @@
-#include "tokentype.hpp"
+#include "tokentype.h"
 #include <string>
 #include <unordered_map>
 

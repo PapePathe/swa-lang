@@ -1,5 +1,5 @@
-#include "lexer/keywords.hpp"
-#include "lexer/lexer.hpp"
+#include "lexer/keywords.h"
+#include "lexer/lexer.h"
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>

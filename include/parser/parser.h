@@ -1,6 +1,6 @@
-#include "lexer/tokentype.hpp"
+#include "lexer/tokentype.h"
 #include <ast/node.h>
-#include <lexer/lexer.hpp>
+#include <lexer/lexer.h>
 #include <memory>
 #include <string>
 #include <vector>
