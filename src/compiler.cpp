@@ -1,5 +1,6 @@
 #include <compiler/compiler.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm/Support/TargetSelect.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
@@ -7,6 +8,10 @@
 #include <vector>
 
 void SwaCompiler::Run(const std::string &_source) {
+  llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmPrinter();
+  llvm::InitializeNativeTargetAsmParser();
+
   Lexer l(_source, KEYWORDS_ENGLISH);
   Parser parser(l.tokenize());
   auto program = parser.parseProgram();
