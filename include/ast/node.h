@@ -77,11 +77,42 @@ public:
   }
 };
 
+class DivExpr : public Expr {
+public:
+  std::unique_ptr<Expr> Left;
+  std::unique_ptr<Expr> Right;
+  DivExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
+      : Left(std::move(left)), Right(std::move(right)) {}
+};
 class EqExpr : public Expr {
 public:
   std::unique_ptr<Expr> Left;
   std::unique_ptr<Expr> Right;
   EqExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
+      : Left(std::move(left)), Right(std::move(right)) {}
+};
+
+class MulExpr : public Expr {
+public:
+  std::unique_ptr<Expr> Left;
+  std::unique_ptr<Expr> Right;
+  MulExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
+      : Left(std::move(left)), Right(std::move(right)) {}
+};
+
+class SubExpr : public Expr {
+public:
+  std::unique_ptr<Expr> Left;
+  std::unique_ptr<Expr> Right;
+  SubExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
+      : Left(std::move(left)), Right(std::move(right)) {}
+};
+
+class AddExpr : public Expr {
+public:
+  std::unique_ptr<Expr> Left;
+  std::unique_ptr<Expr> Right;
+  AddExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
 };
 
