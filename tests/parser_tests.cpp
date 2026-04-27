@@ -5,7 +5,6 @@
 #include <parser/parser.h>
 #include <vector>
 
-// Helper to get tokens from string for the parser
 std::vector<Token> getTokens(const std::string &source) {
   Lexer lexer(source, KEYWORDS_ENGLISH);
   return lexer.tokenize();
