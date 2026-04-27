@@ -80,6 +80,12 @@ TEST(ParserTest, AddExpr) {
 
   auto node = dynamic_cast<AddExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
+
+  auto left = dynamic_cast<IdExpr *>(node->Left.get());
+  ASSERT_EQ(left->Name, "x");
+
+  auto right = dynamic_cast<NumberExpr *>(node->Right.get());
+  ASSERT_EQ(right->Value, 0);
 }
 
 TEST(ParserTest, SubExpr) {
@@ -94,6 +100,12 @@ TEST(ParserTest, SubExpr) {
 
   auto node = dynamic_cast<SubExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
+
+  auto left = dynamic_cast<IdExpr *>(node->Left.get());
+  ASSERT_EQ(left->Name, "x");
+
+  auto right = dynamic_cast<NumberExpr *>(node->Right.get());
+  ASSERT_EQ(right->Value, 0);
 }
 
 TEST(ParserTest, MulExpr) {
@@ -108,6 +120,12 @@ TEST(ParserTest, MulExpr) {
 
   auto node = dynamic_cast<MulExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
+
+  auto left = dynamic_cast<IdExpr *>(node->Left.get());
+  ASSERT_EQ(left->Name, "x");
+
+  auto right = dynamic_cast<NumberExpr *>(node->Right.get());
+  ASSERT_EQ(right->Value, 0);
 }
 
 TEST(ParserTest, DivExpr) {
