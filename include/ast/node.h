@@ -1,68 +1,18 @@
+#include "expr.h"
+#include "symboltable.h"
+#include "type.h"
 #include <iostream>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
-#include <map>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-class SymbolTable {
-  SymbolTable *Parent; // Pointer to the enclosing scope
-  std::map<std::string, llvm::Value *> Symbols;
-
-public:
-  SymbolTable(SymbolTable *parent = nullptr) : Parent(parent) {}
-
-  void define(const std::string &name, llvm::Value *val) {
-    Symbols[name] = val;
-  }
-
-  llvm::Value *lookup(const std::string &name) {
-    if (Symbols.count(name)) {
-      return Symbols[name];
-    }
-    if (Parent) {
-      return Parent->lookup(name);
-    }
-    return nullptr;
-  }
-
-  SymbolTable *getParent() const { return Parent; }
-};
-
 using SwaContext = std::unique_ptr<llvm::LLVMContext>;
 using SwaModule = std::unique_ptr<llvm::Module>;
 using SwaBuilder = std::unique_ptr<llvm::IRBuilder<>>;
-
-class Type {
-public:
-  virtual ~Type() {}
-  virtual llvm::Type *Codegen(SwaContext &c, SymbolTable &s) { return nullptr; }
-};
-
-class TypeInt : public Type {};
-class TypeFloat : public Type {};
-class TypeBool : public Type {};
-class TypeByte : public Type {};
-class TypeString : public Type {};
-class TypeVoid : public Type {};
-class TypeStruct : public Type {};
-class TypeArray : public Type {
-public:
-  Type T;
-  TypeArray(Type t) : T(t) {}
-};
-
-class Expr {
-public:
-  virtual ~Expr() {}
-  virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
-                               SymbolTable &s) {
-    return nullptr;
-  }
-};
 
 class NumberExpr : public Expr {
 public:

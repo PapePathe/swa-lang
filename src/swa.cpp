@@ -1,4 +1,4 @@
-#include "../include/compiler/compiler.hpp"
+#include <compiler/compiler.h>
 #include <string>
 
 int main() {
