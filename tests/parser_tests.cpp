@@ -30,6 +30,9 @@ TEST(ParserTest, ParseMinimalProgram) {
   auto node = dynamic_cast<FuncExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
   ASSERT_EQ(node->Proto->Name, "main");
+  ASSERT_EQ(node->Proto->Args.size(), 0);
+  ASSERT_EQ(node->Proto->ArgsTypes.size(), 0);
+  ASSERT_EQ(node->Body.get()->Exprs.size(), 1);
 }
 
 TEST(ParserTest, ParseMinimalProgramWithDialect) {
@@ -51,6 +54,9 @@ TEST(ParserTest, ParseMinimalProgramWithDialect) {
   auto node = dynamic_cast<FuncExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
   ASSERT_EQ(node->Proto->Name, "main");
+  ASSERT_EQ(node->Proto->Args.size(), 0);
+  ASSERT_EQ(node->Proto->ArgsTypes.size(), 0);
+  ASSERT_EQ(node->Body.get()->Exprs.size(), 1);
 }
 
 TEST(ParserTest, ParsePrintStatement) {
@@ -66,6 +72,7 @@ TEST(ParserTest, ParsePrintStatement) {
 
   auto printNode = dynamic_cast<PrintExpr *>(stmts[0].get());
   ASSERT_NE(printNode, nullptr);
+  ASSERT_EQ(printNode->Name, "Hello");
 }
 
 TEST(ParserTest, AddExpr) {
@@ -154,6 +161,12 @@ TEST(ParserTest, Conditional) {
 
   auto node = dynamic_cast<EqExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
+
+  auto left = dynamic_cast<IdExpr *>(node->Left.get());
+  ASSERT_EQ(left->Name, "x");
+
+  auto right = dynamic_cast<NumberExpr *>(node->Right.get());
+  ASSERT_EQ(right->Value, 0);
 }
 
 TEST(ParserTest, ConditionalGt) {
@@ -168,6 +181,12 @@ TEST(ParserTest, ConditionalGt) {
 
   auto node = dynamic_cast<GTExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
+
+  auto left = dynamic_cast<IdExpr *>(node->Left.get());
+  ASSERT_EQ(left->Name, "x");
+
+  auto right = dynamic_cast<NumberExpr *>(node->Right.get());
+  ASSERT_EQ(right->Value, 0);
 }
 
 TEST(ParserTest, ConditionalGte) {
@@ -181,6 +200,12 @@ TEST(ParserTest, ConditionalGte) {
 
   auto node = dynamic_cast<GTEExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
+
+  auto left = dynamic_cast<IdExpr *>(node->Left.get());
+  ASSERT_EQ(left->Name, "x");
+
+  auto right = dynamic_cast<NumberExpr *>(node->Right.get());
+  ASSERT_EQ(right->Value, 0);
 }
 
 TEST(ParserTest, ConditionalLt) {
@@ -194,6 +219,12 @@ TEST(ParserTest, ConditionalLt) {
 
   auto node = dynamic_cast<LTExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
+
+  auto left = dynamic_cast<IdExpr *>(node->Left.get());
+  ASSERT_EQ(left->Name, "x");
+
+  auto right = dynamic_cast<NumberExpr *>(node->Right.get());
+  ASSERT_EQ(right->Value, 0);
 }
 
 TEST(ParserTest, ConditionalLte) {
@@ -207,6 +238,12 @@ TEST(ParserTest, ConditionalLte) {
 
   auto node = dynamic_cast<LTEExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
+
+  auto left = dynamic_cast<IdExpr *>(node->Left.get());
+  ASSERT_EQ(left->Name, "x");
+
+  auto right = dynamic_cast<NumberExpr *>(node->Right.get());
+  ASSERT_EQ(right->Value, 0);
 }
 
 TEST(ParserTest, ParseIf) {
@@ -219,9 +256,16 @@ TEST(ParserTest, ParseIf) {
   ASSERT_EQ(stmts.size(), 1);
 
   auto ifnode = dynamic_cast<IfExpr *>(stmts[0].get());
-  ASSERT_NE(ifnode->Cond, nullptr);
   ASSERT_NE(ifnode->Success, nullptr);
   ASSERT_EQ(ifnode->Failure, nullptr);
+  ASSERT_NE(ifnode->Cond, nullptr);
+
+  auto cond = dynamic_cast<EqExpr *>(ifnode->Cond.get());
+  auto left = dynamic_cast<IdExpr *>(cond->Left.get());
+  auto right = dynamic_cast<NumberExpr *>(cond->Right.get());
+
+  ASSERT_EQ(left->Name, "x");
+  ASSERT_EQ(right->Value, 0);
 }
 
 TEST(ParserTest, ParseElse) {
@@ -238,6 +282,13 @@ TEST(ParserTest, ParseElse) {
   ASSERT_NE(ifnode->Cond, nullptr);
   ASSERT_NE(ifnode->Success, nullptr);
   ASSERT_NE(ifnode->Failure, nullptr);
+
+  auto cond = dynamic_cast<EqExpr *>(ifnode->Cond.get());
+  auto left = dynamic_cast<IdExpr *>(cond->Left.get());
+  auto right = dynamic_cast<NumberExpr *>(cond->Right.get());
+
+  ASSERT_EQ(left->Name, "x");
+  ASSERT_EQ(right->Value, 0);
 }
 
 TEST(ParserTest, ParseVariableDeclaration) {
@@ -252,7 +303,11 @@ TEST(ParserTest, ParseVariableDeclaration) {
   auto declNode = dynamic_cast<DeclarationExpr *>(stmts[0].get());
   ASSERT_NE(declNode, nullptr);
   EXPECT_EQ(declNode->Name, "x");
-  // FIXME add expects for the value and type
+
+  auto val = dynamic_cast<NumberExpr *>(declNode->Value.get());
+  EXPECT_EQ(val->Value, 42);
+
+  // FIXME assert declNode->T == TypeInt
 }
 
 TEST(ParserTest, ParseFunctionDefinition) {
@@ -271,6 +326,11 @@ TEST(ParserTest, ParseFunctionDefinition) {
   ASSERT_NE(funcNode->Proto, nullptr);
   ASSERT_EQ(funcNode->Proto->Name, "my_func");
   ASSERT_EQ(funcNode->Proto->Args.size(), 5);
+  ASSERT_EQ(funcNode->Proto->Args[0], "a");
+  ASSERT_EQ(funcNode->Proto->Args[1], "b");
+  ASSERT_EQ(funcNode->Proto->Args[2], "c");
+  ASSERT_EQ(funcNode->Proto->Args[3], "d");
+  ASSERT_EQ(funcNode->Proto->Args[4], "e");
   ASSERT_EQ(funcNode->Proto->ArgsTypes.size(), 5);
 }
 
@@ -286,6 +346,8 @@ TEST(ParserTest, ParseStructDefinition) {
   auto structNode = dynamic_cast<StructDefExpr *>(stmts[0].get());
   ASSERT_NE(structNode, nullptr);
   ASSERT_EQ(structNode->Name, "Point");
+  ASSERT_EQ(structNode->FieldNames.size(), 1);
+  ASSERT_EQ(structNode->FieldNames[0], "x");
 }
 
 TEST(ParserTest, ParseStructDefinitionAllTypes) {
