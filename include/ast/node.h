@@ -83,6 +83,7 @@ public:
   DivExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
 };
+
 class EqExpr : public Expr {
 public:
   std::unique_ptr<Expr> Left;
