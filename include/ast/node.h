@@ -47,9 +47,8 @@ public:
 };
 
 class PrintExpr : public Expr {
-  std::string Name;
-
 public:
+  std::string Name;
   PrintExpr(std::string n) : Name(n) {}
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
