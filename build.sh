@@ -13,5 +13,6 @@ set -euxo pipefail
  
  ./lexer_tests
  ./parser_tests
+ ./compiler_tests
 
 ./swa
