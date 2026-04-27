@@ -15,13 +15,13 @@ add_definitions(${LLVM_DEFINITIONS})
 include_directories(include)
 
 add_executable(swa
-    src/lexer.cpp 
-    src/parser.cpp 
-    src/compiler.cpp 
+    src/lexer.cpp
+    src/parser.cpp
+    src/compiler.cpp
     src/swa.cpp 
 )
 
-llvm_map_components_to_libnames(llvm_libs 
+llvm_map_components_to_libnames(llvm_libs
     core 
     support 
     native
@@ -34,10 +34,10 @@ add_executable(lexer_tests
   src/lexer.cpp
   tests/lexer_tests.cpp
 )
-target_link_libraries(lexer_tests 
-    GTest::gtest 
-    GTest::gtest_main 
-    pthread 
+target_link_libraries(lexer_tests
+    GTest::gtest
+    GTest::gtest_main
+    pthread
     LLVM
 )
 
@@ -46,9 +46,23 @@ add_executable(parser_tests
   src/parser.cpp
   tests/parser_tests.cpp
 )
-target_link_libraries(parser_tests 
-    GTest::gtest 
-    GTest::gtest_main 
-    pthread 
+target_link_libraries(parser_tests
+    GTest::gtest
+    GTest::gtest_main
+    pthread
+    LLVM
+)
+
+
+add_executable(compiler_tests
+  src/lexer.cpp
+  src/parser.cpp
+  src/compiler.cpp
+  tests/compiler_tests.cpp
+)
+target_link_libraries(compiler_tests
+    GTest::gtest
+    GTest::gtest_main
+    pthread
     LLVM
 )
