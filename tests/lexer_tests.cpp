@@ -57,6 +57,38 @@ void AssertToken(const Token &t, TokenType expectedType,
   EXPECT_EQ(t.value, expectedValue);
 }
 
+TEST_F(LexerTest, UnicodeIdentifiers) {
+  auto tokens = getTokens("total_é π_var", KEYWORDS_ENGLISH);
+
+  ASSERT_EQ(tokens.size(), 3);
+  AssertToken(tokens[0], TokenType::IDENTIFIER, "total_é");
+  AssertToken(tokens[1], TokenType::IDENTIFIER, "π_var");
+  AssertToken(tokens[2], TokenType::END_OF_FILE, "");
+}
+
+TEST_F(LexerTest, KeywordsVsIdentifiers) {
+  auto tokens =
+      getTokens("let letter let123 return returning", KEYWORDS_ENGLISH);
+
+  ASSERT_EQ(tokens.size(), 6);
+  AssertToken(tokens[0], TokenType::LET, "let");
+  AssertToken(tokens[1], TokenType::IDENTIFIER, "letter");
+  AssertToken(tokens[2], TokenType::IDENTIFIER, "let123");
+  AssertToken(tokens[3], TokenType::RETURN, "return");
+  AssertToken(tokens[4], TokenType::IDENTIFIER, "returning");
+  AssertToken(tokens[5], TokenType::END_OF_FILE, "");
+}
+
+TEST_F(LexerTest, NumberLiterals) {
+  auto tokens = getTokens("123 45.67 0.001", KEYWORDS_ENGLISH);
+
+  ASSERT_EQ(tokens.size(), 4);
+  AssertToken(tokens[0], TokenType::NUMBER, "123");
+  AssertToken(tokens[1], TokenType::FLOAT, "45.67");
+  AssertToken(tokens[2], TokenType::FLOAT, "0.001");
+  AssertToken(tokens[3], TokenType::END_OF_FILE, "");
+}
+
 TEST_F(LexerTest, HandlesBasicArithmetic) {
   auto tokens = getTokens("123 + 456", KEYWORDS_ENGLISH);
 
