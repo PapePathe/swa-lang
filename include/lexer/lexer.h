@@ -1,8 +1,5 @@
 #include "tokentype.h"
 #include <assert.h>
-#include <cctype>
-#include <iomanip>
-#include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
