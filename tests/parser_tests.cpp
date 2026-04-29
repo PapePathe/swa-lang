@@ -95,6 +95,59 @@ TEST(ParserTest, AddExpr) {
   ASSERT_EQ(right->Value, 0);
 }
 
+TEST(ParserTest, CompositeBinaryExpr1) {
+  std::string input = "2 + 3 * 4";
+  auto tokens = getTokens(input);
+
+  Parser parser(tokens);
+
+  auto program = parser.parseProgram();
+  auto &stmts = program->Exprs;
+  ASSERT_EQ(stmts.size(), 1);
+
+  auto node = dynamic_cast<AddExpr *>(stmts[0].get());
+  ASSERT_NE(node, nullptr);
+
+  auto left = dynamic_cast<NumberExpr *>(node->Left.get());
+  ASSERT_EQ(left->Value, 2);
+
+  auto mul = dynamic_cast<MulExpr *>(node->Right.get());
+  ASSERT_NE(mul, nullptr);
+
+  auto mulleft = dynamic_cast<NumberExpr *>(mul->Left.get());
+  ASSERT_EQ(mulleft->Value, 3);
+
+  auto mulright = dynamic_cast<NumberExpr *>(mul->Right.get());
+  ASSERT_EQ(mulright->Value, 4);
+}
+
+TEST(ParserTest, CompositeBinaryExpr2) {
+  std::string input = "(2 + 3) * 4";
+  auto tokens = getTokens(input);
+
+  Parser parser(tokens);
+
+  auto program = parser.parseProgram();
+  auto &stmts = program->Exprs;
+  ASSERT_EQ(stmts.size(), 1);
+
+  auto node = dynamic_cast<MulExpr *>(stmts[0].get());
+  ASSERT_NE(node, nullptr);
+
+  auto add = dynamic_cast<AddExpr *>(node->Left.get());
+  ASSERT_NE(add, nullptr);
+
+  auto left = dynamic_cast<NumberExpr *>(add->Left.get());
+  ASSERT_EQ(left->Value, 2);
+
+  auto right = dynamic_cast<NumberExpr *>(add->Right.get());
+  ASSERT_EQ(right->Value, 3);
+
+  auto num = dynamic_cast<NumberExpr *>(node->Right.get());
+  ASSERT_NE(num, nullptr);
+  ASSERT_EQ(num->Value, 4);
+}
+
 TEST(ParserTest, SubExpr) {
   std::string input = "x - 0 ";
   auto tokens = getTokens(input);
