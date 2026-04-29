@@ -48,16 +48,23 @@ public:
 
 class PrintExpr : public Expr {
 public:
-  std::string Name;
-  PrintExpr(std::string n) : Name(n) {}
+  std::vector<std::unique_ptr<Expr>> Values;
+  PrintExpr(std::vector<std::unique_ptr<Expr>> values)
+      : Values(std::move(values)) {}
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     auto printfTy =
         llvm::FunctionType::get(b->getInt32Ty(), b->getPtrTy(), true);
     auto printfn = m->getOrInsertFunction("printf", printfTy);
 
-    auto str = b->CreateGlobalString(Name);
-    return b->CreateCall(printfn, {str});
+    std::vector<llvm::Value *> vals;
+
+    for (auto &v : Values) {
+      auto r = v->Codegen(c, m, b, s);
+      vals.push_back(std::move(r));
+    }
+
+    return b->CreateCall(printfn, vals);
   }
 };
 
@@ -280,5 +287,16 @@ public:
     }
 
     return glob;
+  }
+};
+
+class StrExpr : public Expr {
+public:
+  std::string Name;
+  StrExpr(std::string n) : Name(n) {}
+
+  virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
+                               SymbolTable &s) override {
+    return b->CreateGlobalString(Name);
   }
 };

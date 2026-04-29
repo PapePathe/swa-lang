@@ -1,4 +1,9 @@
+#include "lexer/tokentype.h"
+#include <algorithm>
+#include <memory>
 #include <parser/parser.h>
+#include <utility>
+#include <vector>
 
 Token Parser::current() {
   if (pos >= tokens.size()) {
@@ -91,6 +96,10 @@ std::unique_ptr<Expr> Parser::parsePrimary() {
     std::string name = expect(TokenType::IDENTIFIER).value;
     return std::make_unique<IdExpr>(name);
   }
+  if (current().type == TokenType::STRING) {
+    std::string name = expect(TokenType::STRING).value;
+    return std::make_unique<StrExpr>(name);
+  }
   if (current().type == TokenType::OPEN_PAREN) {
     expect(TokenType::OPEN_PAREN);
     auto expr = parseExpression(0); // Recursively parse inner expr
@@ -137,10 +146,21 @@ std::unique_ptr<Expr> Parser::parseIf() {
 std::unique_ptr<Expr> Parser::parsePrint() {
   expect(TokenType::PRINT); // 'print'
   expect(TokenType::OPEN_PAREN);
-  std::string content = expect(TokenType::STRING).value;
+  std::vector<std::unique_ptr<Expr>> values;
+
+  while (current().type != TokenType::CLOSE_PAREN) {
+    auto v = parseExpression();
+    values.push_back(std::move(v));
+
+    if (current().type == TokenType::COMMA) {
+      expect(TokenType::COMMA);
+    }
+  }
+
   expect(TokenType::CLOSE_PAREN);
   expect(TokenType::SEMICOLON);
-  return std::make_unique<PrintExpr>(content);
+
+  return std::make_unique<PrintExpr>(std::move(values));
 }
 
 std::unique_ptr<Expr> Parser::parseStruct() {

@@ -72,7 +72,25 @@ TEST(ParserTest, ParsePrintStatement) {
 
   auto printNode = dynamic_cast<PrintExpr *>(stmts[0].get());
   ASSERT_NE(printNode, nullptr);
-  ASSERT_EQ(printNode->Name, "Hello");
+  ASSERT_EQ(printNode->Values.size(), 1);
+}
+
+TEST(ParserTest, ParsePrintStatement2) {
+  std::string input = R"(
+      print("10 - 3 - 2 = %d", a);
+  )";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+
+  ASSERT_NE(program, nullptr);
+
+  auto &stmts = program->Exprs;
+  ASSERT_EQ(stmts.size(), 1);
+
+  auto printNode = dynamic_cast<PrintExpr *>(stmts[0].get());
+  ASSERT_NE(printNode, nullptr);
+  ASSERT_EQ(printNode->Values.size(), 2);
 }
 
 TEST(ParserTest, AddExpr) {
