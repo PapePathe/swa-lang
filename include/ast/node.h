@@ -88,6 +88,13 @@ public:
   std::unique_ptr<Expr> Right;
   DivExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
+                               SymbolTable &s) override {
+    auto l = Left->Codegen(c, m, b, s);
+    auto r = Right->Codegen(c, m, b, s);
+
+    return b->CreateSDiv(l, r);
+  }
 };
 
 class EqExpr : public Expr {
@@ -96,6 +103,10 @@ public:
   std::unique_ptr<Expr> Right;
   EqExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
+                               SymbolTable &s) override {
+    return nullptr;
+  }
 };
 
 class MulExpr : public Expr {
@@ -104,6 +115,13 @@ public:
   std::unique_ptr<Expr> Right;
   MulExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
+                               SymbolTable &s) override {
+    auto l = Left->Codegen(c, m, b, s);
+    auto r = Right->Codegen(c, m, b, s);
+
+    return b->CreateMul(l, r);
+  }
 };
 
 class SubExpr : public Expr {
@@ -112,6 +130,13 @@ public:
   std::unique_ptr<Expr> Right;
   SubExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
+                               SymbolTable &s) override {
+    auto l = Left->Codegen(c, m, b, s);
+    auto r = Right->Codegen(c, m, b, s);
+
+    return b->CreateSub(l, r);
+  }
 };
 
 class AddExpr : public Expr {
@@ -120,6 +145,13 @@ public:
   std::unique_ptr<Expr> Right;
   AddExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
+                               SymbolTable &s) override {
+    auto l = Left->Codegen(c, m, b, s);
+    auto r = Right->Codegen(c, m, b, s);
+
+    return b->CreateAdd(l, r);
+  }
 };
 
 class GTExpr : public Expr {
@@ -128,6 +160,10 @@ public:
   std::unique_ptr<Expr> Right;
   GTExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
+                               SymbolTable &s) override {
+    return nullptr;
+  }
 };
 
 class GTEExpr : public Expr {
@@ -136,6 +172,10 @@ public:
   std::unique_ptr<Expr> Right;
   GTEExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
+                               SymbolTable &s) override {
+    return nullptr;
+  }
 };
 
 class LTExpr : public Expr {
@@ -144,6 +184,10 @@ public:
   std::unique_ptr<Expr> Right;
   LTExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
+                               SymbolTable &s) override {
+    return nullptr;
+  }
 };
 
 class LTEExpr : public Expr {
@@ -152,6 +196,10 @@ public:
   std::unique_ptr<Expr> Right;
   LTEExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
+                               SymbolTable &s) override {
+    return nullptr;
+  }
 };
 
 class IfExpr : public Expr {
