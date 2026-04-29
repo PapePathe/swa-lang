@@ -73,6 +73,10 @@ TEST(ParserTest, ParsePrintStatement) {
   auto printNode = dynamic_cast<PrintExpr *>(stmts[0].get());
   ASSERT_NE(printNode, nullptr);
   ASSERT_EQ(printNode->Values.size(), 1);
+
+  auto str = dynamic_cast<StrExpr *>(printNode->Values[0].get());
+  ASSERT_NE(str, nullptr);
+  ASSERT_EQ(str->Name, "Hello");
 }
 
 TEST(ParserTest, ParsePrintStatement2) {
@@ -91,6 +95,14 @@ TEST(ParserTest, ParsePrintStatement2) {
   auto printNode = dynamic_cast<PrintExpr *>(stmts[0].get());
   ASSERT_NE(printNode, nullptr);
   ASSERT_EQ(printNode->Values.size(), 2);
+
+  auto str = dynamic_cast<StrExpr *>(printNode->Values[0].get());
+  ASSERT_NE(str, nullptr);
+  ASSERT_EQ(str->Name, "10 - 3 - 2 = %d");
+
+  auto id = dynamic_cast<IdExpr *>(printNode->Values[1].get());
+  ASSERT_NE(id, nullptr);
+  ASSERT_EQ(id->Name, "a");
 }
 
 TEST(ParserTest, AddExpr) {
