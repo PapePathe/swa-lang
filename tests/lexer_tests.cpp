@@ -287,9 +287,3 @@ TEST_F(LexerTest, FrencDialect) {
   AssertToken(tokens[23], TokenType::ZERO, "zero");
   AssertToken(tokens[24], TokenType::END_OF_FILE, "");
 }
-
-int main(int argc, char *argv[]) {
-  testing::InitGoogleTest();
-  int _ = RUN_ALL_TESTS();
-  return 0;
-}

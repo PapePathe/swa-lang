@@ -11,8 +11,6 @@ set -euxo pipefail
  cd build
  cmake --build .
  
- ./lexer_tests
- ./parser_tests
  ./compiler_tests
 
 ./swa

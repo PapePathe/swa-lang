@@ -458,9 +458,3 @@ TEST(ParserTest, ParseStructDefinitionAllTypes) {
   ASSERT_EQ(structNode->FieldNames[5], "d");
   ASSERT_EQ(structNode->Name, "Point");
 }
-
-int main(int argc, char *argv[]) {
-  testing::InitGoogleTest();
-  int _ = RUN_ALL_TESTS();
-  return 0;
-}

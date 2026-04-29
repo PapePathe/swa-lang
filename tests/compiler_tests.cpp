@@ -154,9 +154,3 @@ TEST_F(JITOutputTest, Print7) {
 
   ASSERT_EQ(output, "((2+3)*(4-1))/(5-2) = 5");
 }
-
-int main(int argc, char *argv[]) {
-  testing::InitGoogleTest();
-  int _ = RUN_ALL_TESTS();
-  return 0;
-}
