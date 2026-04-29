@@ -55,6 +55,8 @@ void AssertToken(const Token &t, TokenType expectedType,
       << tokenTypeToString(expectedType) << " do not match "
       << tokenTypeToString(t.type);
   EXPECT_EQ(t.value, expectedValue);
+  EXPECT_EQ(t.line, 0);
+  EXPECT_EQ(t.column, 0);
 }
 
 TEST_F(LexerTest, UnicodeIdentifiers) {

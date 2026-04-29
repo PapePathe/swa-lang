@@ -5,12 +5,29 @@
 
 char Lexer::peek() { return pos < src.length() ? src[pos] : '\0'; }
 
-char Lexer::get() { return pos < src.length() ? src[pos++] : '\0'; }
+char Lexer::get() {
+  if (pos >= src.length()) {
+    return '\0';
+  }
+
+  char c = src[pos++];
+
+  if (c == '\n') {
+    currentLine++;
+    currentColumn = 1;
+  } else {
+    currentColumn++;
+  }
+
+  return c;
+}
 
 std::vector<Token> Lexer::tokenize() {
   std::vector<Token> tokens;
 
   while (pos < src.length()) {
+    int startLine = currentLine;
+    int startCol = currentColumn;
     char c = peek();
 
     if (isspace(static_cast<unsigned char>(c))) {

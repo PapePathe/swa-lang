@@ -7,12 +7,16 @@
 struct Token {
   TokenType type;
   std::string value;
+  int line;
+  int column;
 };
 
 class Lexer {
   std::string src;
   std::unordered_map<std::string, TokenType> keywords;
   size_t pos = 0;
+  int currentLine;
+  int currentColumn;
 
   char peek();
   char get();
