@@ -304,3 +304,33 @@ TEST_F(JITOutputTest, Print17) {
 
   ASSERT_EQ(output, "- -5 = 5");
 }
+
+TEST_F(JITOutputTest, Print18) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        print("(-3) * (-4) = %d", (-3) * (-4));
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "(-3) * (-4) = 12");
+}
+
+TEST_F(JITOutputTest, Print19) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        print("-(2 + 3 * 4 - 5) = %d", -(2 + 3 * 4 - 5));
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "-(2 + 3 * 4 - 5) = -9");
+}
