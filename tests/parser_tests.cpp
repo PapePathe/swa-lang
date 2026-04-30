@@ -257,7 +257,26 @@ TEST(ParserTest, DivExpr) {
   ASSERT_NE(node, nullptr);
 }
 
-TEST(ParserTest, Conditional) {
+// FIXME
+// TEST(ParserTest, ConditionalNotEq) {
+//   std::string input = "!true";
+//   auto tokens = getTokens(input);
+//   debugTokens(tokens);
+//
+//   Parser parser(tokens);
+//
+//   auto program = parser.parseProgram();
+//   auto &stmts = program->Exprs;
+//   ASSERT_EQ(stmts.size(), 1);
+//
+//    auto node = dynamic_cast<UnaryNotExpr *>(stmts[0].get());
+//    ASSERT_NE(node, nullptr);
+//
+//    auto right = dynamic_cast<NumberExpr *>(node->Right.get());
+//    ASSERT_EQ(right->Value, 0);
+// }
+
+TEST(ParserTest, ConditionalEq) {
   std::string input = "x = 0 ";
   auto tokens = getTokens(input);
 
@@ -482,4 +501,21 @@ TEST(ParserTest, ParseStructDefinitionAllTypes) {
   ASSERT_EQ(structNode->FieldNames[4], "c");
   ASSERT_EQ(structNode->FieldNames[5], "d");
   ASSERT_EQ(structNode->Name, "Point");
+}
+
+TEST(ParserTest, Return) {
+  std::string input = "return 0;";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+
+  auto program = parser.parseProgram();
+  auto &stmts = program->Exprs;
+  ASSERT_EQ(stmts.size(), 1);
+
+  auto returnexpr = dynamic_cast<ReturnExpr *>(stmts[0].get());
+  ASSERT_NE(returnexpr, nullptr);
+
+  auto v = dynamic_cast<NumberExpr *>(returnexpr->Value.get());
+  ASSERT_NE(v, nullptr);
+  ASSERT_EQ(v->Value, 0);
 }

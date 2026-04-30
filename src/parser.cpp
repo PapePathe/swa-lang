@@ -54,6 +54,8 @@ std::unique_ptr<Expr> Parser::parseStatement() {
     return parsePrint();
   if (current().type == TokenType::LET)
     return parseDeclaration();
+  if (current().type == TokenType::RETURN)
+    return parseReturn();
   if (current().type == TokenType::DIALECT) {
     parseDialect();
     return parseStatement();
@@ -86,6 +88,14 @@ int Parser::getPrecedence(TokenType type) {
 }
 
 std::unique_ptr<Expr> Parser::parsePrimary() {
+  if (current().type == TokenType::TRUE) {
+    std::string name = expect(TokenType::TRUE).value;
+    return std::make_unique<BoolExpr>(true);
+  }
+  if (current().type == TokenType::FALSE) {
+    std::string name = expect(TokenType::FALSE).value;
+    return std::make_unique<BoolExpr>(false);
+  }
   if (current().type == TokenType::NUMBER) {
     int val = std::stoi(expect(TokenType::NUMBER).value);
     return std::make_unique<NumberExpr>(val);
@@ -139,6 +149,16 @@ std::unique_ptr<Expr> Parser::parseIf() {
   }
 
   return std::make_unique<IfExpr>(std::move(cond), std::move(b), std::move(e));
+}
+
+std::unique_ptr<Expr> Parser::parseReturn() {
+  expect(TokenType::RETURN); // 'print'
+
+  auto expr = parseExpression();
+
+  expect(TokenType::SEMICOLON);
+
+  return std::make_unique<ReturnExpr>(std::move(expr));
 }
 
 std::unique_ptr<Expr> Parser::parsePrint() {
@@ -326,7 +346,7 @@ std::unique_ptr<Expr> Parser::parseExpression(int minPrecedence) {
     break;
   case TokenType::NOT:
     right = parseExpression(40);
-    left = std::make_unique<NotEqExpr>(std::move(right));
+    left = std::make_unique<UnaryNotExpr>(std::move(right));
     break;
   default:
     left = parsePrimary();

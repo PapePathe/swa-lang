@@ -5,6 +5,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
+#include <llvm/IR/Value.h>
 #include <memory>
 #include <string>
 #include <utility>
@@ -361,14 +362,36 @@ public:
   }
 };
 
-class NotEqExpr : public Expr {
+class UnaryNotExpr : public Expr {
 public:
   std::unique_ptr<Expr> Right;
-  NotEqExpr(std::unique_ptr<Expr> right) : Right(std::move(right)) {}
+  UnaryNotExpr(std::unique_ptr<Expr> right) : Right(std::move(right)) {}
 
   llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                        SymbolTable &s) override {
-    // FIXME
+    auto val = Right->Codegen(c, m, b, s);
+    //     return b->CreateNot(val);
+    return 0;
+  }
+};
+
+class ReturnExpr : public Expr {
+public:
+  std::unique_ptr<Expr> Value;
+  ReturnExpr(std::unique_ptr<Expr> value) : Value(std::move(value)) {}
+  virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
+                               SymbolTable &s) override {
     return nullptr;
+  }
+};
+
+class BoolExpr : public Expr {
+public:
+  bool Value;
+  BoolExpr(bool value) : Value(value) {}
+  virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
+                               SymbolTable &s) override {
+    return 0;
+    // return b->getInt1(Value);
   }
 };
