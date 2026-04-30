@@ -348,3 +348,27 @@ public:
     return b->CreateGlobalString(Name);
   }
 };
+
+class UnaryMinusExpr : public Expr {
+public:
+  std::unique_ptr<Expr> Right;
+  UnaryMinusExpr(std::unique_ptr<Expr> right) : Right(std::move(right)) {}
+
+  llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
+                       SymbolTable &s) override {
+    auto val = Right->Codegen(c, m, b, s);
+    return b->CreateNeg(val);
+  }
+};
+
+class NotEqExpr : public Expr {
+public:
+  std::unique_ptr<Expr> Right;
+  NotEqExpr(std::unique_ptr<Expr> right) : Right(std::move(right)) {}
+
+  llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
+                       SymbolTable &s) override {
+    // FIXME
+    return nullptr;
+  }
+};

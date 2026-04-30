@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <iostream>
 #include <lexer/keywords.h>
+#include <lexer/tokentypestring.h>
 #include <memory>
 #include <parser/parser.h>
 #include <vector>
@@ -12,7 +13,8 @@ std::vector<Token> getTokens(const std::string &source) {
 
 void debugTokens(std::vector<Token> tokens) {
   for (auto tok : tokens) {
-    std::cout << "TOKEN " << tok.value << "\n";
+    std::cout << "TOKEN " << tok.value << " " << tokenTypeString(tok.type)
+              << "\n";
   }
 }
 
@@ -103,6 +105,29 @@ TEST(ParserTest, ParsePrintStatement2) {
   auto id = dynamic_cast<IdExpr *>(printNode->Values[1].get());
   ASSERT_NE(id, nullptr);
   ASSERT_EQ(id->Name, "a");
+}
+
+TEST(ParserTest, ParsePrintStatement3) {
+  std::string input = R"(
+  -5
+  )";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+
+  debugTokens(tokens);
+  auto program = parser.parseProgram();
+
+  ASSERT_NE(program, nullptr);
+
+  auto &stmts = program->Exprs;
+  ASSERT_EQ(stmts.size(), 1);
+
+  auto node = dynamic_cast<UnaryMinusExpr *>(stmts[0].get());
+  ASSERT_NE(node, nullptr);
+
+  auto val = dynamic_cast<NumberExpr *>(node->Right.get());
+  ASSERT_NE(val, nullptr);
+  ASSERT_EQ(val->Value, 5);
 }
 
 TEST(ParserTest, AddExpr) {

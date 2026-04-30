@@ -1,12 +1,11 @@
-#include "lexer/tokentype.h"
+#ifndef SWA_PARSER
+#define SWA_PARSER
 #include <ast/node.h>
 #include <lexer/lexer.h>
 #include <memory>
 #include <string>
 #include <vector>
 
-#ifndef SWA_PARSER
-#define SWA_PARSER
 class Parser {
   std::vector<Token> tokens;
   size_t pos = 0;

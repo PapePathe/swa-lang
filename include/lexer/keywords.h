@@ -1,3 +1,5 @@
+#ifndef SWA_KEYWORDS
+#define SWA_KEYWORDS
 #include "tokentype.h"
 #include <string>
 #include <unordered_map>
@@ -55,3 +57,5 @@ const std::unordered_map<std::string, TokenType> KEYWORDS_FRENCH = {
     {"variadique", TokenType::VARIADIC},
     {"demarrer", TokenType::MAIN},
     {"zero", TokenType::ZERO}};
+
+#endif // !SWA_KEYWORDS

@@ -1,6 +1,6 @@
-#include "lexer/keywords.h"
-#include "lexer/lexer.h"
 #include <gtest/gtest.h>
+#include <lexer/keywords.h>
+#include <lexer/lexer.h>
 #include <string>
 #include <vector>
 
@@ -65,6 +65,24 @@ TEST_F(LexerTest, UnicodeIdentifiers) {
   ASSERT_EQ(tokens.size(), 3);
   AssertToken(tokens[0], TokenType::IDENTIFIER, "total_é");
   AssertToken(tokens[1], TokenType::IDENTIFIER, "π_var");
+  AssertToken(tokens[2], TokenType::END_OF_FILE, "");
+}
+
+TEST_F(LexerTest, UnaryMinus) {
+  auto tokens = getTokens("- 5", KEYWORDS_ENGLISH);
+
+  ASSERT_EQ(tokens.size(), 3);
+  AssertToken(tokens[0], TokenType::MINUS, "-");
+  AssertToken(tokens[1], TokenType::NUMBER, "5");
+  AssertToken(tokens[2], TokenType::END_OF_FILE, "");
+}
+
+TEST_F(LexerTest, Not) {
+  auto tokens = getTokens("!5", KEYWORDS_ENGLISH);
+
+  ASSERT_EQ(tokens.size(), 3);
+  AssertToken(tokens[0], TokenType::NOT, "!");
+  AssertToken(tokens[1], TokenType::NUMBER, "5");
   AssertToken(tokens[2], TokenType::END_OF_FILE, "");
 }
 

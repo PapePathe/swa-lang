@@ -145,12 +145,162 @@ TEST_F(JITOutputTest, Print7) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("((2+3)*(4-1))/(5-2) = %d", ((2 + 3) * (4 - 1)) / (5 - 2));
+        print("- 5 = %d", - 5);
       }
     )";
     SwaCompiler swa;
     swa.Run(program);
   });
 
-  ASSERT_EQ(output, "((2+3)*(4-1))/(5-2) = 5");
+  ASSERT_EQ(output, "- 5 = -5");
+}
+
+TEST_F(JITOutputTest, Print8) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        print("-(3 + 4) = %d", -(3 + 4));
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "-(3 + 4) = -7");
+}
+
+TEST_F(JITOutputTest, Print9) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        print("5 - (-3) = %d", 5 - (-3));
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "5 - (-3) = 8");
+}
+
+TEST_F(JITOutputTest, Print10) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        print("-4 * 6 = %d", -4 * 6);
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "-4 * 6 = -24");
+}
+
+TEST_F(JITOutputTest, Print11) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        print("-15 / 4 = %d", -15 / 4);
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "-15 / 4 = -3");
+}
+
+TEST_F(JITOutputTest, Print12) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        print("-(-5) = %d", -(-5));
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "-(-5) = 5");
+}
+
+TEST_F(JITOutputTest, Print13) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        print("-7 / 2 = %d", -7 / 2);
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "-7 / 2 = -3");
+}
+
+TEST_F(JITOutputTest, Print14) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        print("7 / -2 = %d", 7 / -2);
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "7 / -2 = -3");
+}
+
+TEST_F(JITOutputTest, Print15) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        print("-7 / -2 = %d", -7 / -2);
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "-7 / -2 = 3");
+}
+
+TEST_F(JITOutputTest, Print16) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        print("-(3 * 4) = %d", -(3 * 4));
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "-(3 * 4) = -12");
+}
+
+TEST_F(JITOutputTest, Print17) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        print("- -5 = %d", - -5);
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "- -5 = 5");
 }

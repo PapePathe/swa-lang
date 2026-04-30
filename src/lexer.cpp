@@ -104,6 +104,14 @@ std::vector<Token> Lexer::tokenize() {
     else {
       char current = get();
       switch (current) {
+      case '!':
+        if (peek() == '=') {
+          get();
+          tokens.push_back({TokenType::NOT_EQUALS, "!="});
+        } else {
+          tokens.push_back({TokenType::NOT, "!"});
+        }
+        break;
       case '<':
         if (peek() == '=') {
           get();

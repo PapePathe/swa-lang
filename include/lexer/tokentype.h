@@ -1,17 +1,19 @@
-#pragma once
+#ifndef SWA_TOKENTYPE
+#define SWA_TOKENTYPE
 
+#include <string>
 enum class TokenType {
-  LET, 
-  CONST, 
-  OR, 
-  AND, 
-  IF, 
-  ELSE, 
+  LET,
+  CONST,
+  OR,
+  AND,
+  IF,
+  ELSE,
   WHILE,
-  INT, 
-  INT64, 
-  FLOAT, 
-  STRING, 
+  INT,
+  INT64,
+  FLOAT,
+  STRING,
   BOOL,
   BYTE,
   STRUCT,
@@ -58,8 +60,10 @@ enum class TokenType {
   ZERO,
   WHITESPACE,
   COMMENT,
-  NEWLINE, 
+  NEWLINE,
   ERROR,
   END_OF_FILE,
   UNKNOWN,
+  NOT
 };
+#endif // !SWA_TOKENTYPE

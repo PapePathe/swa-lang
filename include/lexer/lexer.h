@@ -1,4 +1,7 @@
-#include "tokentype.h"
+#ifndef SWA_LEXER
+#define SWA_LEXER
+
+#include "lexer/tokentype.h"
 #include <assert.h>
 #include <string>
 #include <unordered_map>
@@ -26,3 +29,4 @@ public:
       : src(s), pos(0), keywords(k) {}
   std::vector<Token> tokenize();
 };
+#endif // !SWA_LEXER

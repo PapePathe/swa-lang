@@ -1,4 +1,3 @@
-#include "lexer/tokentype.h"
 #include <algorithm>
 #include <memory>
 #include <parser/parser.h>
@@ -7,7 +6,6 @@
 
 Token Parser::current() {
   if (pos >= tokens.size()) {
-    // Return a dummy EOF token instead of crashing
     return Token{TokenType::END_OF_FILE, ""};
   }
 
@@ -315,26 +313,37 @@ std::unique_ptr<Expr> Parser::createBinaryNode(TokenType op,
 }
 
 std::unique_ptr<Expr> Parser::parseExpression(int minPrecedence) {
-  // Get the left-hand side (e.g., the '3' in '3 + 4')
-  auto left = parsePrimary();
+  trace("begin parse expression, current token: " + current().value + "\n");
+  std::unique_ptr<Expr> left;
+  std::unique_ptr<Expr> right;
+
+  switch (current().type) {
+  case TokenType::MINUS:
+    expect(TokenType::MINUS);
+
+    right = parseExpression(40);
+    left = std::make_unique<UnaryMinusExpr>(std::move(right));
+    break;
+  case TokenType::NOT:
+    right = parseExpression(40);
+    left = std::make_unique<NotEqExpr>(std::move(right));
+    break;
+  default:
+    left = parsePrimary();
+  }
 
   while (true) {
     TokenType opType = current().type;
     int precedence = getPrecedence(opType);
 
-    // If the next operator's precedence is lower than where we are, stop.
-    if (precedence < minPrecedence)
+    if (precedence < minPrecedence) {
       break;
+    }
 
-    // Consume the operator
     expect(opType);
 
-    // Parse the right-hand side.
-    // For Left-Associative (+, -, *, /), we use precedence + 1
     auto right = parseExpression(precedence + 1);
 
-    // Bundle them into a Binary expression node
-    // (Note: You'll likely need a 'BinaryExpr' class or specific nodes)
     left = createBinaryNode(opType, std::move(left), std::move(right));
   }
 
