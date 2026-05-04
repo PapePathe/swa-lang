@@ -334,3 +334,51 @@ TEST_F(JITOutputTest, Print19) {
 
   ASSERT_EQ(output, "-(2 + 3 * 4 - 5) = -9");
 }
+
+TEST_F(JITOutputTest, MainReturnZero) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        return 0;
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  // FIXME assert exit code is success
+  ASSERT_EQ(output, "");
+}
+
+TEST_F(JITOutputTest, MainReturnNonZero) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        return 1;
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  // FIXME assert exit code is error
+  ASSERT_EQ(output, "");
+}
+
+TEST_F(JITOutputTest, MainReturnInvalidStatus) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        return 404;
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  // FIXME assert exit code is error
+  ASSERT_EQ(output, "");
+}

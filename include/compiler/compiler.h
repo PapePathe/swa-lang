@@ -9,10 +9,8 @@
 class SwaCompiler {
 public:
   SwaCompiler() { moduleInit(); }
-
   void Run(const std::string &_source);
-
-  void Build(std::string program) {}
+  void Build(const std::string &_source);
 
 private:
   std::unique_ptr<llvm::LLVMContext> context;
