@@ -6,7 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(LLVM_DIR "/usr/lib/llvm-21/lib/cmake/llvm")
 set(Clang_DIR "/usr/lib/llvm-21/lib/cmake/clang")
 
-find_package(LLVM 21.1.6 REQUIRED CONFIG)
+find_package(LLVM 21 REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
