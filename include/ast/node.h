@@ -3,10 +3,13 @@
 #include "type.h"
 #include <iostream>
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Instructions.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Value.h>
+#include <llvm/Support/Casting.h>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -45,6 +48,15 @@ class IdExpr : public Expr {
 public:
   std::string Name;
   IdExpr(std::string n) : Name(n) {}
+  virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
+                               SymbolTable &s) override {
+    auto v = s.lookup(Name);
+    if (!v) {
+      throw std::runtime_error("Undefined variable: " + Name + "\n");
+    }
+
+    return v;
+  }
 };
 
 class PrintExpr : public Expr {
@@ -62,6 +74,16 @@ public:
 
     for (auto &v : Values) {
       auto r = v->Codegen(c, m, b, s);
+
+      if (!r) {
+
+        throw std::runtime_error("Codegen failed\n");
+      }
+
+      if (auto alloca = llvm::dyn_cast<llvm::AllocaInst>(r)) {
+        r = b->CreateLoad(alloca->getAllocatedType(), alloca, "load_val");
+      }
+
       vals.push_back(std::move(r));
     }
 
@@ -76,8 +98,9 @@ public:
       : Exprs(std::move(exprs)) {}
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
+    auto blockSym = SymbolTable(s);
     for (const auto &expr : Exprs) {
-      expr->Codegen(c, m, b, s);
+      expr->Codegen(c, m, b, blockSym);
     }
     return nullptr;
   }
@@ -314,11 +337,19 @@ public:
 
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
-    std::cerr << "processing decl stmt: " << Name << "\n";
 
     llvm::Value *val = Value->Codegen(c, m, b, s);
-    if (!val)
+    if (!val) {
       return nullptr;
+    }
+
+    if (s.getParent() != nullptr) {
+      auto alloc = b->CreateAlloca(val->getType(), nullptr, "alloc-" + Name);
+      s.define(Name, alloc);
+      b->CreateStore(val, alloc);
+
+      return alloc;
+    }
 
     m->getOrInsertGlobal(Name, val->getType());
     llvm::GlobalVariable *glob = m->getNamedGlobal(Name);
@@ -334,6 +365,8 @@ public:
       glob->setInitializer(llvm::Constant::getNullValue(val->getType()));
       b->CreateStore(val, glob);
     }
+
+    s.define(Name, val);
 
     return glob;
   }
