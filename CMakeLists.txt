@@ -18,6 +18,7 @@ add_executable(swa
     src/lexer.cpp
     src/parser.cpp
     src/ast/symboltable.cpp
+    src/codegen_visitor.cpp
     src/compiler.cpp
     src/swa.cpp 
 )
@@ -35,6 +36,7 @@ add_executable(compiler_tests
   src/ast/symboltable.cpp
   src/lexer.cpp
   src/parser.cpp
+  src/codegen_visitor.cpp
   src/compiler.cpp
   tests/lexer_tests.cpp
   tests/parser_tests.cpp

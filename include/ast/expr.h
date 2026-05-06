@@ -1,13 +1,11 @@
 #include "symboltable.h"
 #include "type.h"
-#include <iostream>
+#include "visitor.h"
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
+#include <llvm/IR/Value.h>
 #include <memory>
-#include <string>
-#include <utility>
-#include <vector>
 
 #ifndef AST_EXPR
 #define AST_EXPR
@@ -19,6 +17,7 @@ using SwaBuilder = std::unique_ptr<llvm::IRBuilder<>>;
 class Expr {
 public:
   virtual ~Expr() {}
+  virtual void Accept(ASTVisitor &visitor) {}
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) {
     return nullptr;

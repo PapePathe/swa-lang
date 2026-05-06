@@ -1,5 +1,7 @@
+#include <compiler/codegen.h>
 #include <compiler/compiler.h>
 #include <cstdlib>
+#include <iostream>
 #include <llvm/Bitcode/BitcodeWriter.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/IR/IRBuilder.h>
@@ -88,11 +90,20 @@ void SwaCompiler::Run(const std::string &_source) {
   Lexer l(_source, KEYWORDS_ENGLISH);
   Parser parser(l.tokenize());
   auto program = parser.parseProgram();
-  auto st = SymbolTable();
-  program->Codegen(context, m, builder, st);
-  // m->print(llvm::errs(), nullptr);
+  //  auto st = SymbolTable();
+  //  program->Codegen(context, m, builder, st);
 
-  llvm::ExecutionEngine *engine = llvm::EngineBuilder(std::move(m)).create();
+  auto driver = std::make_unique<SwaCompilerDriver>("swa_module");
+  CodeGenVisitor gen = CodeGenVisitor(std::move(driver));
+
+  program->Accept(gen);
+
+  driver = gen.finalize();
+  // m->print(llvm::errs(), nullptr);
+  // driver->Module->print(llvm::errs(), nullptr);
+
+  llvm::ExecutionEngine *engine =
+      llvm::EngineBuilder(std::move(driver->Module)).create();
   auto Fn = engine->FindFunctionNamed("main");
   engine->runFunctionAsMain(Fn, std::vector<std::string>(), nullptr);
 }
@@ -118,11 +129,18 @@ void SwaCompiler::Build(const std::string &_source) {
   Lexer l(_source, KEYWORDS_ENGLISH);
   Parser parser(l.tokenize());
   auto program = parser.parseProgram();
-  auto st = SymbolTable();
-  program->Codegen(context, m, builder, st);
+  // auto st = SymbolTable();
+  // program->Codegen(context, m, builder, st);
   // m->print(llvm::errs(), nullptr);
 
-  emitObjectFile(m.get(), TargetMachine);
+  auto driver = std::make_unique<SwaCompilerDriver>("swa_module");
+  CodeGenVisitor gen = CodeGenVisitor(std::move(driver));
+  program->Accept(gen);
+
+  driver = gen.finalize();
+  // driver->Module->print(llvm::errs(), nullptr);
+
+  emitObjectFile(driver->Module.get(), TargetMachine);
   link("output.o", "output");
 }
 

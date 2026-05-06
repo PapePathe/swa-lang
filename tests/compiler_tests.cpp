@@ -1,3 +1,4 @@
+#include <compiler/codegen.h>
 #include <compiler/compiler.h>
 #include <fcntl.h>
 #include <gtest/gtest.h>
@@ -10,9 +11,15 @@ protected:
   std::string runAndCapture(std::function<void()> func) {
     testing::internal::CaptureStdout();
 
-    func();
+    try {
+      func();
 
-    return testing::internal::GetCapturedStdout();
+      return testing::internal::GetCapturedStdout();
+    } catch (std::runtime_error e) {
+      std::cout << e.what();
+
+      return testing::internal::GetCapturedStdout();
+    }
   }
 };
 

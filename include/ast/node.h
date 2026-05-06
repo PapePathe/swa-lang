@@ -23,6 +23,8 @@ public:
   int Value;
   NumberExpr(int value) : Value(value) {}
 
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     return b->getInt32(Value);
@@ -38,6 +40,7 @@ public:
                 std::vector<std::unique_ptr<Type>> ftypes)
       : Name(n), FieldTypes(std::move(ftypes)), FieldNames(fnames) {}
 
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     return 0;
@@ -48,6 +51,7 @@ class IdExpr : public Expr {
 public:
   std::string Name;
   IdExpr(std::string n) : Name(n) {}
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     auto v = s.lookup(Name);
@@ -64,6 +68,7 @@ public:
   std::vector<std::unique_ptr<Expr>> Values;
   PrintExpr(std::vector<std::unique_ptr<Expr>> values)
       : Values(std::move(values)) {}
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     auto printfTy =
@@ -96,6 +101,7 @@ public:
   std::vector<std::unique_ptr<Expr>> Exprs;
   BlockExpr(std::vector<std::unique_ptr<Expr>> exprs)
       : Exprs(std::move(exprs)) {}
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     auto blockSym = SymbolTable(s);
@@ -112,6 +118,7 @@ public:
   std::unique_ptr<Expr> Right;
   DivExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     auto l = Left->Codegen(c, m, b, s);
@@ -127,6 +134,7 @@ public:
   std::unique_ptr<Expr> Right;
   EqExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     return nullptr;
@@ -139,6 +147,7 @@ public:
   std::unique_ptr<Expr> Right;
   MulExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     auto l = Left->Codegen(c, m, b, s);
@@ -154,6 +163,7 @@ public:
   std::unique_ptr<Expr> Right;
   SubExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     auto l = Left->Codegen(c, m, b, s);
@@ -169,6 +179,7 @@ public:
   std::unique_ptr<Expr> Right;
   AddExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     auto l = Left->Codegen(c, m, b, s);
@@ -184,6 +195,7 @@ public:
   std::unique_ptr<Expr> Right;
   GTExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     return nullptr;
@@ -196,6 +208,7 @@ public:
   std::unique_ptr<Expr> Right;
   GTEExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     return nullptr;
@@ -208,6 +221,7 @@ public:
   std::unique_ptr<Expr> Right;
   LTExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     return nullptr;
@@ -220,6 +234,7 @@ public:
   std::unique_ptr<Expr> Right;
   LTEExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     return nullptr;
@@ -255,6 +270,7 @@ public:
 
   const std::string &getName() const { return Name; }
 
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
   virtual llvm::Function *Codegen(std::unique_ptr<llvm::LLVMContext> &c,
                                   std::unique_ptr<llvm::Module> &m,
                                   std::unique_ptr<llvm::IRBuilder<>> &b,
@@ -282,6 +298,8 @@ public:
   std::unique_ptr<BlockExpr> Body;
   FuncExpr(std::unique_ptr<ProtoExpr> p, std::unique_ptr<BlockExpr> b)
       : Proto(std::move(p)), Body(std::move(b)) {}
+
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
@@ -311,11 +329,14 @@ public:
   }
 };
 
-class MainExpr : public Expr { // Added 'public'
-  std::unique_ptr<BlockExpr> Body;
+class MainExpr : public Expr {
 
 public:
+  std::unique_ptr<BlockExpr> Body;
   MainExpr(std::unique_ptr<BlockExpr> b) : Body(std::move(b)) {}
+
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     auto proto = std::make_unique<ProtoExpr>("main", std::vector<std::string>(),
@@ -334,6 +355,8 @@ public:
   std::unique_ptr<Expr> Value;
   DeclarationExpr(std::string name, std::unique_ptr<Expr> value, Type typ)
       : Name(name), Value(std::move(value)), T(typ) {}
+
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
@@ -377,6 +400,8 @@ public:
   std::string Name;
   StrExpr(std::string n) : Name(n) {}
 
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     return b->CreateGlobalString(Name);
@@ -387,6 +412,8 @@ class UnaryMinusExpr : public Expr {
 public:
   std::unique_ptr<Expr> Right;
   UnaryMinusExpr(std::unique_ptr<Expr> right) : Right(std::move(right)) {}
+
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 
   llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                        SymbolTable &s) override {
@@ -400,6 +427,8 @@ public:
   std::unique_ptr<Expr> Right;
   UnaryNotExpr(std::unique_ptr<Expr> right) : Right(std::move(right)) {}
 
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+
   llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                        SymbolTable &s) override {
     auto val = Right->Codegen(c, m, b, s);
@@ -412,6 +441,9 @@ class ReturnExpr : public Expr {
 public:
   std::unique_ptr<Expr> Value;
   ReturnExpr(std::unique_ptr<Expr> value) : Value(std::move(value)) {}
+
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     return nullptr;
@@ -422,6 +454,9 @@ class BoolExpr : public Expr {
 public:
   bool Value;
   BoolExpr(bool value) : Value(value) {}
+
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+
   virtual llvm::Value *Codegen(SwaContext &c, SwaModule &m, SwaBuilder &b,
                                SymbolTable &s) override {
     return 0;
