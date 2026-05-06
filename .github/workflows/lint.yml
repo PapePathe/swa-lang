@@ -39,13 +39,23 @@ jobs:
 
       - name: Configure CMake
         run: |
-          cmake -S . -B build -G "Ninja" \
-            -DCMAKE_C_COMPILER=clang-21 \
-            -DCMAKE_CXX_COMPILER=clang++ \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DLLVM_DIR=${{ runner.os == 'Linux' && '/usr/lib/llvm-21/lib/cmake/llvm' || (runner.os == 'macOS' && '/opt/homebrew/opt/llvm@21/lib/cmake/llvm' || 'C:/Program Files/LLVM/lib/cmake/llvm') }}
-
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            export LLVM_PATH=$(brew --prefix llvm@21)
+            cmake -S . -B build -G "Ninja" \
+              -DCMAKE_C_COMPILER=$LLVM_PATH/bin/clang \
+              -DCMAKE_CXX_COMPILER=$LLVM_PATH/bin/clang++ \
+              -DLLVM_DIR=$LLVM_PATH/lib/cmake/llvm \
+              -DCMAKE_BUILD_TYPE=Release
+          elif [ "${{ runner.os }}" = "Linux" ]; then
+            cmake -S . -B build -G "Ninja" \
+              -DCMAKE_C_COMPILER=clang-21 \
+              -DCMAKE_CXX_COMPILER=clang++-21 \
+              -DLLVM_DIR=/usr/lib/llvm-21/lib/cmake/llvm \
+              -DCMAKE_BUILD_TYPE=Release
+          else
+            # Windows default
+            cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release
+          fi
       - name: Run Clang-Tidy & Format
         uses: cpp-linter/cpp-linter-action@v2
         id: linter
