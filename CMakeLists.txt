@@ -3,6 +3,8 @@ project(SwaCompiler)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(LLVM_DIR "/usr/lib/llvm-21/lib/cmake/llvm")
+set(Clang_DIR "/usr/lib/llvm-21/lib/cmake/clang")
 
 find_package(LLVM 21 REQUIRED CONFIG)
 
