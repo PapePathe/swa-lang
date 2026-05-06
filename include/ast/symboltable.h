@@ -1,17 +1,19 @@
+#ifndef SYMBOL_TABLE
+#define SYMBOL_TABLE
+
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <map>
 #include <string>
 
-#ifndef SYMBOL_TABLE
-#define SYMBOL_TABLE
 class SymbolTable {
-  SymbolTable *Parent; // Pointer to the enclosing scope
+  SymbolTable *Parent;
   std::map<std::string, llvm::Value *> Symbols;
 
 public:
-  SymbolTable(SymbolTable *parent = nullptr) : Parent(parent) {}
+  SymbolTable() : Parent(nullptr) {}
+  SymbolTable(SymbolTable *parent) : Parent(parent) {}
 
   void define(const std::string &name, llvm::Value *val);
 
