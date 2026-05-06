@@ -1,0 +1,99 @@
+name: Multi-OS C++ CI (LLVM 21)
+on: [pull_request, push]
+
+jobs:
+  cpp-linter-and-package:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- 1. Install Dependencies ---
+      
+      - name: Dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          wget https://llvm.org
+          chmod +x llvm.sh
+          sudo ./llvm.sh 21 all
+          sudo apt-get install -y libgtest-dev llvm-21-dev ninja-build
+
+      - name: Dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install llvm@21 gtest ninja
+
+      - name: Dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install llvm --version=21.0.0 -y
+          choco install ninja
+          vcpkg install gtest:x64-windows
+
+      # --- 2. Build & Lint ---
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build -G "Ninja" \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Run Clang-Tidy & Format
+        uses: cpp-linter/cpp-linter-action@v2
+        id: linter
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          style: 'file'
+          database: 'build'
+          clang-tidy-version: '21'
+          clang-format-version: '21'
+
+      - name: Build Project
+        run: cmake --build build --config Release
+
+      # --- 3. Packaging ---
+
+      - name: Package CLI AppImage (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          wget https://github.com
+          chmod +x linuxdeploy-x86_64.AppImage
+
+          # Use internal DESTDIR to staging area
+          DESTDIR=appdir cmake --install build
+
+          # Create AppImage without desktop/icon requirements
+          export LD_LIBRARY_PATH=/usr/lib/llvm-21/lib:$LD_LIBRARY_PATH
+          ./linuxdeploy-x86_64.AppImage --appdir appdir --output appimage
+
+      - name: Package DMG (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cd build
+          cpack -G DragNDrop
+
+      # --- 4. Upload Results ---
+
+      - name: Upload Linux AppImage
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwaCompiler-Linux
+          path: "*.AppImage"
+
+      - name: Upload macOS DMG
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwaCompiler-macOS
+          path: build/*.dmg
+
+      - name: Upload Windows Binary
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwaCompiler-Windows
+          path: build/*.exe
