@@ -6,13 +6,18 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(LLVM_DIR "/usr/lib/llvm-21/lib/cmake/llvm")
 set(Clang_DIR "/usr/lib/llvm-21/lib/cmake/clang")
 
-find_package(LLVM 21 REQUIRED CONFIG)
+find_package(LLVM 21.1.6 REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
+
+# find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
+# if(CLANG_TIDY_EXE)
+#     set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_EXE})
+# endif()
 
 include_directories(include)
 
