@@ -16,14 +16,16 @@ jobs:
       - name: Dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
-          wget https://llvm.org
+          wget -O llvm.sh https://llvm.org
           chmod +x llvm.sh
-          sudo ./llvm.sh 21 all
+          sudo ./llvm.sh 21
           sudo apt-get install -y libgtest-dev llvm-21-dev ninja-build
 
       - name: Dependencies (macOS)
         if: runner.os == 'macOS'
-        run: brew install llvm@21 googletest ninja
+        run: |
+          brew install llvm@21 googletest ninja
+          echo "LLVM_DIR=$(brew --prefix llvm@21)/lib/cmake/llvm" >> $GITHUB_ENV
 
       - name: Dependencies (Windows)
         if: runner.os == 'Windows'
