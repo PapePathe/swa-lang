@@ -407,6 +407,79 @@ TEST_F(JITOutputTest, PrintLocalSymbol) {
 
   ASSERT_EQ(output, "x = 3");
 }
+
+TEST_F(JITOutputTest, PrintLocalSymbolCompositeAdd) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        let x int := 3;
+        let y int := x + 3;
+        print("x = %d, y = %d", x, y);
+        return 0;
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "x = 3, y = 6");
+}
+
+TEST_F(JITOutputTest, PrintLocalSymbolCompositeSub) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        let x int := 3;
+        let y int := x - 3;
+        print("x = %d, y = %d", x, y);
+        return 0;
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "x = 3, y = 0");
+}
+
+TEST_F(JITOutputTest, PrintLocalSymbolCompositeMul) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        let x int := 3;
+        let y int := x * 3;
+        print("x = %d, y = %d", x, y);
+        return 0;
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "x = 3, y = 9");
+}
+
+TEST_F(JITOutputTest, PrintLocalSymbolCompositeDiv) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        let x int := 3;
+        let y int := x / 3;
+        print("x = %d, y = %d", x, y);
+        return 0;
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "x = 3, y = 1");
+}
+
 TEST_F(JITOutputTest, PrintGlocalSymbol) {
   std::string output = runAndCapture([&]() {
     std::string program = R"(

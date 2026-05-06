@@ -1,6 +1,7 @@
 #ifndef SWA_CODEGEN
 #define SWA_CODEGEN
 
+#include <ast/expr.h>
 #include <ast/symboltable.h>
 #include <ast/visitor.h>
 #include <llvm/IR/DIBuilder.h>
@@ -58,6 +59,9 @@ public:
   CodeGenVisitor(std::unique_ptr<SwaCompilerDriver> d) : driver(std::move(d)) {}
 
   std::unique_ptr<SwaCompilerDriver> finalize() { return std::move(driver); }
+
+  llvm::Value *evaluate(Expr *expr);
+
   void Visit(AddExpr *expr);
   void Visit(BoolExpr *expr);
   void Visit(BlockExpr *expr);

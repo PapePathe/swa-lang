@@ -27,13 +27,16 @@ llvm::Function *CodeGenVisitor::getLastFunc() {
   lastFunc = nullptr;
   return old;
 }
+llvm::Value *CodeGenVisitor::evaluate(Expr *expr) {
+  if (!expr)
+    return nullptr;
+  expr->Accept(*this);
+  return getLastValue();
+}
 
 void CodeGenVisitor::Visit(AddExpr *expr) {
-  expr->Left->Accept(*this);
-  auto l = getLastValue();
-
-  expr->Right->Accept(*this);
-  auto r = getLastValue();
+  auto l = evaluate(expr->Left.get());
+  auto r = evaluate(expr->Right.get());
   auto res = driver->Builder.CreateAdd(l, r);
 
   setLastValue(res);
@@ -55,8 +58,7 @@ void CodeGenVisitor::Visit(BlockExpr *expr) {
 }
 
 void CodeGenVisitor::Visit(DeclarationExpr *expr) {
-  expr->Value->Accept(*this);
-  auto val = getLastValue();
+  auto val = evaluate(expr->Value.get());
 
   if (!val) {
     throw std::runtime_error("Value is nil");
@@ -92,22 +94,16 @@ void CodeGenVisitor::Visit(DeclarationExpr *expr) {
 }
 
 void CodeGenVisitor::Visit(DivExpr *expr) {
-  expr->Left->Accept(*this);
-  auto l = getLastValue();
-
-  expr->Right->Accept(*this);
-  auto r = getLastValue();
+  auto l = evaluate(expr->Left.get());
+  auto r = evaluate(expr->Right.get());
 
   auto res = driver->Builder.CreateSDiv(l, r);
   setLastValue(res);
 }
 
 void CodeGenVisitor::Visit(EqExpr *expr) {
-  expr->Left->Accept(*this);
-  auto l = getLastValue();
-
-  expr->Right->Accept(*this);
-  auto r = getLastValue();
+  auto l = evaluate(expr->Left.get());
+  auto r = evaluate(expr->Right.get());
 
   auto res = driver->Builder.CreateICmpEQ(l, r);
   setLastValue(res);
@@ -163,11 +159,8 @@ void CodeGenVisitor::Visit(MainExpr *expr) {
 }
 
 void CodeGenVisitor::Visit(MulExpr *expr) {
-  expr->Left->Accept(*this);
-  auto l = getLastValue();
-
-  expr->Right->Accept(*this);
-  auto r = getLastValue();
+  auto l = evaluate(expr->Left.get());
+  auto r = evaluate(expr->Right.get());
 
   auto res = driver->Builder.CreateMul(l, r);
   setLastValue(res);
@@ -185,8 +178,7 @@ void CodeGenVisitor::Visit(PrintExpr *expr) {
   std::vector<llvm::Value *> vals;
 
   for (auto &v : expr->Values) {
-    v->Accept(*this);
-    auto r = getLastValue();
+    auto r = evaluate(v.get());
 
     if (!r) {
       throw std::runtime_error("CodeGen failed\n");
@@ -231,27 +223,22 @@ void CodeGenVisitor::Visit(StrExpr *expr) {
 }
 void CodeGenVisitor::Visit(StructDefExpr *expr) {}
 void CodeGenVisitor::Visit(SubExpr *expr) {
-  expr->Left->Accept(*this);
-  auto l = getLastValue();
-
-  expr->Right->Accept(*this);
-  auto r = getLastValue();
+  auto l = evaluate(expr->Left.get());
+  auto r = evaluate(expr->Right.get());
 
   auto res = driver->Builder.CreateSub(l, r);
   setLastValue(res);
 }
 
 void CodeGenVisitor::Visit(UnaryMinusExpr *expr) {
-  expr->Right->Accept(*this);
-  auto val = getLastValue();
+  auto val = evaluate(expr->Right.get());
   auto res = driver->Builder.CreateNeg(val);
 
   setLastValue(res);
 }
 
 void CodeGenVisitor::Visit(UnaryNotExpr *expr) {
-  expr->Right->Accept(*this);
-  auto val = getLastValue();
+  auto val = evaluate(expr->Right.get());
   auto res = driver->Builder.CreateNot(val);
 
   setLastValue(res);
