@@ -12,5 +12,3 @@ set -euxo pipefail
  cmake --build .
  
  ./compiler_tests
-
-./swa
