@@ -23,7 +23,7 @@ jobs:
 
       - name: Dependencies (macOS)
         if: runner.os == 'macOS'
-        run: brew install llvm@21 gtest ninja
+        run: brew install llvm@21 googletest ninja
 
       - name: Dependencies (Windows)
         if: runner.os == 'Windows'
