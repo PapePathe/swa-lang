@@ -17,6 +17,7 @@ include_directories(include)
 add_executable(swa
     src/lexer.cpp
     src/parser.cpp
+    src/ast/symboltable.cpp
     src/compiler.cpp
     src/swa.cpp 
 )
@@ -31,6 +32,7 @@ target_link_libraries(swa LLVM)
 find_package(GTest REQUIRED)
 
 add_executable(compiler_tests
+  src/ast/symboltable.cpp
   src/lexer.cpp
   src/parser.cpp
   src/compiler.cpp
