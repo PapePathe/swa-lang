@@ -145,9 +145,3 @@ void SwaCompiler::Build(const std::string &_source) {
 }
 
 // void SwaCompiler::Test(const std::string &_source) {}
-
-void SwaCompiler::moduleInit() {
-  context = std::make_unique<llvm::LLVMContext>();
-  m = std::make_unique<llvm::Module>("swac", *context);
-  builder = std::make_unique<llvm::IRBuilder<>>(*context);
-}

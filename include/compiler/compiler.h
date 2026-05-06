@@ -14,12 +14,4 @@ public:
   SwaCompiler() {}
   void Run(const std::string &_source);
   void Build(const std::string &_source);
-
-private:
-  std::unique_ptr<llvm::LLVMContext> context;
-  std::unique_ptr<llvm::Module> m;
-  std::unique_ptr<llvm::IRBuilder<>> builder;
-  llvm::Function *fn;
-
-  void moduleInit();
 };
