@@ -41,7 +41,7 @@ jobs:
         run: |
           cmake -S . -B build -G "Ninja" \
             -DCMAKE_C_COMPILER=clang-21 \
-            -DCMAKE_CXX_COMPILER=clang++-21 \
+            -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
             -DCMAKE_BUILD_TYPE=Release \
             -DLLVM_DIR=${{ runner.os == 'Linux' && '/usr/lib/llvm-21/lib/cmake/llvm' || (runner.os == 'macOS' && '/opt/homebrew/opt/llvm@21/lib/cmake/llvm' || 'C:/Program Files/LLVM/lib/cmake/llvm') }}
