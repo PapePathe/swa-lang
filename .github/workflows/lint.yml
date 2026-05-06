@@ -1,5 +1,5 @@
 name: Multi-OS C++ CI (LLVM 21)
-on: [pull_request, push]
+on: [pull_request]
 
 jobs:
   cpp-linter-and-package:
