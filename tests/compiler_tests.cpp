@@ -1,6 +1,7 @@
 #include <compiler/compiler.h>
 #include <fcntl.h>
 #include <gtest/gtest.h>
+#include <stdexcept>
 #include <string>
 #include <unistd.h>
 
@@ -381,4 +382,37 @@ TEST_F(JITOutputTest, MainReturnInvalidStatus) {
 
   // FIXME assert exit code is error
   ASSERT_EQ(output, "");
+}
+
+TEST_F(JITOutputTest, PrintLocalSymbol) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      start() int {
+        let x int := 3;
+        print("x = %d", x);
+        return 0;
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "x = 3");
+}
+TEST_F(JITOutputTest, PrintGlocalSymbol) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      let x int := 3;
+      start() int {
+        print("x = %d", x);
+        return 0;
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "x = 3");
 }
