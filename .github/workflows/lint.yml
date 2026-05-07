@@ -12,8 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # --- 1. Install Dependencies ---
-      
       - name: Dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -34,8 +32,6 @@ jobs:
           choco install llvm --version=21.0.0 -y
           choco install ninja
           vcpkg install gtest:x64-windows
-
-      # --- 2. Build & Lint ---
 
       - name: Configure CMake
         run: |
@@ -76,6 +72,18 @@ jobs:
           wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
           chmod +x linuxdeploy-x86_64.AppImage
           DESTDIR=appdir cmake --install build
+          mkdir -p appdir/usr/share/applications
+          mkdir -p appdir/usr/share/icons/hicolor/256x256/apps
+          cat <<EOF > appdir/usr/share/applications/swa.desktop
+[Desktop Entry]
+Type=Application
+Name=Swa
+Exec=swa
+Icon=swa
+Categories=Development;
+Terminal=true
+EOF
+          touch appdir/usr/share/icons/hicolor/256x256/apps/swa.png
           export LD_LIBRARY_PATH=/usr/lib/llvm-21/lib:$LD_LIBRARY_PATH
           ./linuxdeploy-x86_64.AppImage --appdir appdir \
             --executable appdir/usr/local/bin/swa \
