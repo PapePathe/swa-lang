@@ -75,7 +75,7 @@ jobs:
       - name: Package CLI AppImage (Linux)
         if: runner.os == 'Linux'
         run: |
-          wget https://github.com
+          wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
           chmod +x linuxdeploy-x86_64.AppImage
 
           # Use internal DESTDIR to staging area
