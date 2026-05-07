@@ -20,6 +20,7 @@ jobs:
           chmod +x llvm.sh
           sudo ./llvm.sh 21
           sudo apt-get install -y rpm ruby ruby-dev build-essential libgtest-dev llvm-21-dev ninja-build
+          sudo gem install fpm
 
       - name: Dependencies (macOS)
         if: runner.os == 'macOS'
