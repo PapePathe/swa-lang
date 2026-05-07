@@ -188,16 +188,16 @@ jobs:
         include:
           - distro: ubuntu
             image: ubuntu:latest
-            cmd: "apt-get update && apt-get install -y ./swa*.deb && swa --version"
+            cmd: "apt-get update && apt install -y ./swa*.deb && swa run"
           - distro: fedora
             image: fedora:latest
             cmd: "dnf install -y ./swa*.rpm && swa --version"
           - distro: archlinux
             image: archlinux:latest
-            cmd: "pacman -U --noconfirm ./swa*.pkg.tar.zst && swa --version"
+            cmd: "pacman -U --noconfirm ./swa*.pkg.tar.zst && swa run"
           - distro: alpine
             image: alpine:latest
-            cmd: "apk add --allow-untrusted ./swa*.apk && swa --version"
+            cmd: "apk add --allow-untrusted ./swa*.apk && swa run"
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
@@ -209,5 +209,6 @@ jobs:
         with:
           image: ${{ matrix.image }}
           run: |
+            find . -name "swa-*" -exec cp {} . \;
             ${{ matrix.cmd }}
 
