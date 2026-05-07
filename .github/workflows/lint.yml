@@ -19,7 +19,7 @@ jobs:
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 21
-          sudo apt-get install -y rpm ruby ruby-dev build-essential libgtest-dev llvm-21-dev ninja-build
+          sudo apt-get install -y rpm ruby ruby-dev build-essential libgtest-dev llvm-21-dev ninja-build  libarchive-tools
           sudo gem install fpm
 
       - name: Dependencies (macOS)
@@ -85,6 +85,7 @@ jobs:
                 -s dir \
                 -n swacompiler \
                 -v 0.0.1 \
+                -a x86_64 \
                 -C staging \
                 --description "Swa Compiler" \
                 .
