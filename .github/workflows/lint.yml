@@ -205,13 +205,14 @@ jobs:
           name: SwaCompiler-Linux
 
       - name: Display structure of downloaded files
-        run: ls -R
+        run: |
+        pwd
+        ls -R
 
       - name: Run Smoke Test
         uses: addnab/docker-run-action@v3
         with:
           image: ${{ matrix.image }}
           run: |
-            find . -name "swa*" -exec cp {} . \;
             ${{ matrix.cmd }}
 
