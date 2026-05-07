@@ -7,7 +7,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        # os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -18,7 +19,7 @@ jobs:
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 21
-          sudo apt-get install -y libgtest-dev llvm-21-dev ninja-build
+          sudo apt-get install -y rpm ruby ruby-dev build-essential libgtest-dev llvm-21-dev ninja-build
 
       - name: Dependencies (macOS)
         if: runner.os == 'macOS'
@@ -69,19 +70,20 @@ jobs:
       - name: Package CLI AppImage (Linux)
         if: runner.os == 'Linux'
         run: |
-          wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
-          chmod +x linuxdeploy-x86_64.AppImage
-          DESTDIR=appdir cmake --install build
-          mkdir -p appdir/usr/share/applications
-          mkdir -p appdir/usr/share/icons/hicolor/256x256/apps
-          touch appdir/usr/share/icons/hicolor/256x256/apps/swa.png
-          export LD_LIBRARY_PATH=/usr/lib/llvm-21/lib:$LD_LIBRARY_PATH
-          touch empty-icon.svg
-          ./linuxdeploy-x86_64.AppImage --appdir appdir \
-            --executable appdir/usr/local/bin/swa \
-            --desktop-file none \
-            --icon-file empty-icon.svg \
-            --output appimage
+          mkdir -p staging/usr/bin
+          mkdir -p staging/usr/lib
+          cp build/swa staging/usr/bin/
+          cp /usr/lib/llvm-21/lib/libLLVM.so.21.1 staging/usr/lib/
+          ln -s libLLVM.so.21.1 staging/usr/lib/libLLVM.so.21
+
+      - name: Build All Linux Packages
+        if: runner.os == 'Linux'
+        run: |
+          FPM_FLAGS="-s dir -n swacompiler -v 0.0.1 -C staging --description 'Swa Compiler with LLVM 21'"
+          fpm $FPM_FLAGS -t deb
+          fpm $FPM_FLAGS -t rpm
+          fpm $FPM_FLAGS -t apk
+          fpm $FPM_FLAGS -t pacman 
 
       - name: Package DMG (macOS)
         if: runner.os == 'macOS'
@@ -94,7 +96,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: SwaCompiler-Linux
-          path: "*.AppImage"
+          path: |
+            *.deb
+            *.rpm
+            *.apk
+            *.pkg.tar.zst
 
       - name: Upload macOS DMG
         if: runner.os == 'macOS'
