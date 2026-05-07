@@ -1,0 +1,122 @@
+name: Multi-OS C++ CI (LLVM 21)
+on: [pull_request]
+
+jobs:
+  cpp-linter-and-package:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 21
+          sudo apt-get install -y rpm ruby ruby-dev build-essential libgtest-dev llvm-21-dev ninja-build  libarchive-tools
+          sudo gem install fpm
+
+      - name: Dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install llvm@21 googletest ninja
+          echo "LLVM_DIR=$(brew --prefix llvm@21)/lib/cmake/llvm" >> $GITHUB_ENV
+
+      - name: Dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install llvm --version=21.0.0 -y
+          choco install ninja
+          vcpkg install gtest:x64-windows
+
+      - name: Configure CMake
+        run: |
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            export LLVM_PATH=$(brew --prefix llvm@21)
+            cmake -S . -B build -G "Ninja" \
+              -DCMAKE_C_COMPILER=$LLVM_PATH/bin/clang \
+              -DCMAKE_CXX_COMPILER=$LLVM_PATH/bin/clang++ \
+              -DLLVM_DIR=$LLVM_PATH/lib/cmake/llvm \
+              -DCMAKE_BUILD_TYPE=Release
+          elif [ "${{ runner.os }}" = "Linux" ]; then
+            cmake -S . -B build -G "Ninja" \
+              -DCMAKE_C_COMPILER=clang-21 \
+              -DCMAKE_CXX_COMPILER=clang++-21 \
+              -DLLVM_DIR=/usr/lib/llvm-21/lib/cmake/llvm \
+              -DCMAKE_BUILD_TYPE=Release
+          else
+            # Windows default
+            cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release
+          fi
+      - name: Run Clang-Tidy & Format
+        uses: cpp-linter/cpp-linter-action@v2
+        id: linter
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          style: 'file'
+          database: 'build'
+          clang-tidy-version: '21'
+          clang-format-version: '21'
+
+      - name: Build Project
+        run: cmake --build build --config Release
+
+      - name: Package CLI AppImage (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p staging/usr/bin
+          mkdir -p staging/usr/lib
+          cp build/swa staging/usr/bin/
+          cp /usr/lib/llvm-21/lib/libLLVM.so.21.1 staging/usr/lib/
+          ln -s libLLVM.so.21.1 staging/usr/lib/libLLVM.so.21
+
+      - name: Build All Linux Packages
+        if: runner.os == 'Linux'
+        run: |
+          for fmt in deb rpm apk pacman; do
+            fpm -t $fmt \
+                -s dir \
+                -n swacompiler \
+                -v 0.0.1 \
+                -a x86_64 \
+                -C staging \
+                --description "Swa Compiler" \
+                .
+          done
+      - name: Package DMG (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cd build
+          cpack -G DragNDrop
+
+      - name: Upload Linux AppImage
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwaCompiler-Linux
+          path: |
+            *.deb
+            *.rpm
+            *.apk
+            *.pkg.tar.zst
+
+      - name: Upload macOS DMG
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwaCompiler-macOS
+          path: build/*.dmg
+
+      - name: Upload Windows Binary
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwaCompiler-Windows
+          path: build/*.exe
