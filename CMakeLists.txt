@@ -61,14 +61,13 @@ target_link_libraries(compiler_tests
 )
 
 install(TARGETS swa DESTINATION bin)
-set(CPACK_PACKAGE_NAME "Swa")
+set(CPACK_PACKAGE_NAME "swa")
 set(CPACK_PACKAGE_VENDOR "Engagements")
 set(CPACK_PACKAGE_VERSION "0.0.1")
 set(CPACK_PACKAGE_CONTACT "pathe.sene@gmail.com")
 set(CPACK_PACKAGE_DESCRIPTION "A multi dialect compiler")
 
 set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
-set(CPACK_DEBIAN_PACKAGE_NAME "swacompiler")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "llvm (>= 21.0.0)")
 
 if(APPLE)
