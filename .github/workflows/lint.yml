@@ -128,29 +128,55 @@ jobs:
           path: build/*.exe
 
   release:
-    needs: cpp-linter-and-package
-    if: startsWith(github.ref, 'refs/tags/')
+    needs: [validate-linux]
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Download All Artifacts
+      - name: Download All
         uses: actions/download-artifact@v4
-
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            **/*.deb
-            **/*.rpm
-            **/*.apk
-            **/*.pkg.tar.zst
-            **/*.dmg
-            **/*.exe
+          files: "**/swa-*"
           draft: true
-          prerelease: false
           generate_release_notes: true
-          name: Release ${{ github.ref_name }}
+
+  validate-macos:
+    needs: cpp-linter-and-package
+    runs-on: macos-latest
+    steps:
+      - name: Download macOS Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Swa-Packages-macos-latest
+
+      - name: Mount DMG and Verify Binary
+        run: |
+          # 1. Find the DMG (handles version wildcards)
+          DMG_PATH=$(ls swa-*.dmg)
+          echo "Testing $DMG_PATH..."
+
+          # 2. Mount the disk image
+          # -nobrowse prevents it from showing up in Finder/indexing
+          hdiutil attach "$DMG_PATH" -mountpoint ./swa_mnt -nobrowse
+
+          # 3. Check for binary existence
+          if [ ! -f "./swa_mnt/bin/swa" ]; then
+            echo "Error: Binary not found at /bin/swa in DMG!"
+            # List contents to help debug
+            ls -R ./swa_mnt
+            hdiutil detach ./swa_mnt
+            exit 1
+          fi
+
+          # 4. Smoke Test: Run the version command
+          # We use the full path to ensure it's running the packaged version
+          ./swa_mnt/bin/swa --version
+
+          # 5. Cleanup
+          hdiutil detach ./swa_mnt
 
   validate-linux:
     needs: cpp-linter-and-package
@@ -158,55 +184,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Test across the major target families
-        distro: [ubuntu-latest, fedora, alpine]
+        distro: [ubuntu, fedora, archlinux, alpine]
+        include:
+          - distro: ubuntu
+            image: ubuntu:latest
+            cmd: "apt-get update && apt-get install -y ./swa*.deb && swa --version"
+          - distro: fedora
+            image: fedora:latest
+            cmd: "dnf install -y ./swa*.rpm && swa --version"
+          - distro: archlinux
+            image: archlinux:latest
+            cmd: "pacman -U --noconfirm ./swa*.pkg.tar.zst && swa --version"
+          - distro: alpine
+            image: alpine:latest
+            cmd: "apk add --allow-untrusted ./swa*.apk && swa --version"
     steps:
-      - name: Download Linux Packages
+      - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
           name: Swa-Packages-ubuntu-latest
 
-      # --- Ubuntu/Debian Test ---
-      - name: Test DEB on Ubuntu
-        if: matrix.distro == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ./*.deb
-          swa --version
-
-      # --- Fedora/RPM Test ---
-      - name: Test RPM on Fedora
-        if: matrix.distro == 'fedora'
+      - name: Run Smoke Test
         uses: addnab/docker-run-action@v3
         with:
-          image: fedora:latest
+          image: ${{ matrix.image }}
           run: |
-            dnf install -y ./*.rpm
-            swa --version
+            ${{ matrix.cmd }}
 
-      # --- Alpine/APK Test ---
-      - name: Test APK on Alpine
-        if: matrix.distro == 'alpine'
-        uses: addnab/docker-run-action@v3
-        with:
-          image: alpine:latest
-          run: |
-            apk add --allow-untrusted ./*.apk
-            swa --version
-
-  validate-macos:
-    needs: cpp-linter-and-package
-    runs-on: macos-latest
-    steps:
-      - name: Download macOS Package
-        uses: actions/download-artifact@v4
-        with:
-          name: Swa-Packages-macos-latest
-      
-      - name: Test DMG Execution
-        run: |
-          # Mount the DMG and run the binary inside
-          hdiutil attach build/*.dmg
-          # Adjust path based on your DMG structure
-          /Volumes/Swa/swa --version
-          hdiutil detach /Volumes/Swa
