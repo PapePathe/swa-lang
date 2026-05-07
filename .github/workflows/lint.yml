@@ -74,15 +74,6 @@ jobs:
           DESTDIR=appdir cmake --install build
           mkdir -p appdir/usr/share/applications
           mkdir -p appdir/usr/share/icons/hicolor/256x256/apps
-          cat <<EOF > appdir/usr/share/applications/swa.desktop
-[Desktop Entry]
-Type=Application
-Name=Swa
-Exec=swa
-Icon=swa
-Categories=Development;
-Terminal=true
-EOF
           touch appdir/usr/share/icons/hicolor/256x256/apps/swa.png
           export LD_LIBRARY_PATH=/usr/lib/llvm-21/lib:$LD_LIBRARY_PATH
           ./linuxdeploy-x86_64.AppImage --appdir appdir \
