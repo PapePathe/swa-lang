@@ -204,7 +204,7 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: Swa-Packages-ubuntu-latest
+          name: SwaCompiler-Linux
 
       - name: Run Smoke Test
         uses: addnab/docker-run-action@v3
