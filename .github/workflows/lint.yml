@@ -153,3 +153,62 @@ jobs:
           prerelease: false
           generate_release_notes: true
           name: Release ${{ github.ref_name }}
+
+  validate-linux:
+    needs: cpp-linter-and-package
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Test across the major target families
+        distro: [ubuntu-latest, fedora, alpine]
+    steps:
+      - name: Download Linux Packages
+        uses: actions/download-artifact@v4
+        with:
+          name: Swa-Packages-ubuntu-latest
+
+      # --- Ubuntu/Debian Test ---
+      - name: Test DEB on Ubuntu
+        if: matrix.distro == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ./*.deb
+          swa --version
+
+      # --- Fedora/RPM Test ---
+      - name: Test RPM on Fedora
+        if: matrix.distro == 'fedora'
+        uses: addnab/docker-run-action@v3
+        with:
+          image: fedora:latest
+          run: |
+            dnf install -y ./*.rpm
+            swa --version
+
+      # --- Alpine/APK Test ---
+      - name: Test APK on Alpine
+        if: matrix.distro == 'alpine'
+        uses: addnab/docker-run-action@v3
+        with:
+          image: alpine:latest
+          run: |
+            apk add --allow-untrusted ./*.apk
+            swa --version
+
+  validate-macos:
+    needs: cpp-linter-and-package
+    runs-on: macos-latest
+    steps:
+      - name: Download macOS Package
+        uses: actions/download-artifact@v4
+        with:
+          name: Swa-Packages-macos-latest
+      
+      - name: Test DMG Execution
+        run: |
+          # Mount the DMG and run the binary inside
+          hdiutil attach build/*.dmg
+          # Adjust path based on your DMG structure
+          /Volumes/Swa/swa --version
+          hdiutil detach /Volumes/Swa
