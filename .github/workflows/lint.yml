@@ -70,28 +70,24 @@ jobs:
       - name: Build Project
         run: cmake --build build --config Release
 
-      # --- 3. Packaging ---
-
       - name: Package CLI AppImage (Linux)
         if: runner.os == 'Linux'
         run: |
           wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
           chmod +x linuxdeploy-x86_64.AppImage
-
-          # Use internal DESTDIR to staging area
           DESTDIR=appdir cmake --install build
-
-          # Create AppImage without desktop/icon requirements
           export LD_LIBRARY_PATH=/usr/lib/llvm-21/lib:$LD_LIBRARY_PATH
-          ./linuxdeploy-x86_64.AppImage --appdir appdir --output appimage
+          ./linuxdeploy-x86_64.AppImage --appdir appdir \
+            --executable appdir/usr/local/bin/swa \
+            --desktop-file none \
+            --icon-file none \
+            --output appimage
 
       - name: Package DMG (macOS)
         if: runner.os == 'macOS'
         run: |
           cd build
           cpack -G DragNDrop
-
-      # --- 4. Upload Results ---
 
       - name: Upload Linux AppImage
         if: runner.os == 'Linux'
