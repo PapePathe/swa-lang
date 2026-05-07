@@ -80,11 +80,11 @@ jobs:
       - name: Build All Linux Packages
         if: runner.os == 'Linux'
         run: |
-          FPM_FLAGS="-s dir -n swacompiler -v 0.0.1 -C staging --description 'Swa Compiler with LLVM 21'"
-          fpm $FPM_FLAGS -t deb
-          fpm $FPM_FLAGS -t rpm
-          fpm $FPM_FLAGS -t apk
-          fpm $FPM_FLAGS -t pacman 
+          COMMON_ARGS="-s dir -n swacompiler -v 0.0.1 -C staging --description 'Swa Compiler with LLVM 21' ."
+          fpm -t deb $COMMON_ARGS
+          fpm -t rpm $COMMON_ARGS
+          fpm -t apk $COMMON_ARGS
+          fpm -t pacman $COMMON_ARGS
 
       - name: Package DMG (macOS)
         if: runner.os == 'macOS'
