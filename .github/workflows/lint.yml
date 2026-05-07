@@ -76,10 +76,11 @@ jobs:
           mkdir -p appdir/usr/share/icons/hicolor/256x256/apps
           touch appdir/usr/share/icons/hicolor/256x256/apps/swa.png
           export LD_LIBRARY_PATH=/usr/lib/llvm-21/lib:$LD_LIBRARY_PATH
+          touch empty-icon.svg
           ./linuxdeploy-x86_64.AppImage --appdir appdir \
             --executable appdir/usr/local/bin/swa \
             --desktop-file none \
-            --icon-file none \
+            --icon-file empty-icon.svg \
             --output appimage
 
       - name: Package DMG (macOS)
