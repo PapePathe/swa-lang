@@ -209,6 +209,6 @@ jobs:
         with:
           image: ${{ matrix.image }}
           run: |
-            find . -name "swa-*" -exec cp {} . \;
+            find . -name "swa*" -exec cp {} . \;
             ${{ matrix.cmd }}
 
