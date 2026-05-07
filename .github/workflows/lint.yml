@@ -206,6 +206,9 @@ jobs:
         with:
           name: SwaCompiler-Linux
 
+      - name: Display structure of downloaded files
+        run: ls -R
+
       - name: Run Smoke Test
         uses: addnab/docker-run-action@v3
         with:
