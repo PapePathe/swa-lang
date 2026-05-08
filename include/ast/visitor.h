@@ -7,6 +7,7 @@ class NumberExpr;
 class AddExpr;
 class DeclarationExpr;
 class PrintExpr;
+class Formatted_Print_Expr;
 class StructDefExpr;
 class IfExpr;
 class IdExpr;
@@ -48,6 +49,7 @@ public:
   virtual void Visit(MainExpr *expr) = 0;
   virtual void Visit(NumberExpr *expr) = 0;
   virtual void Visit(MulExpr *expr) = 0;
+  virtual void Visit(Formatted_Print_Expr *expr) = 0;
   virtual void Visit(PrintExpr *expr) = 0;
   virtual void Visit(ProtoExpr *expr) = 0;
   virtual void Visit(ReturnExpr *expr) = 0;

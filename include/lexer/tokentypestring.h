@@ -33,6 +33,8 @@ std::string tokenTypeString(TokenType type) {
     return "BYTE";
   case TokenType::STRUCT:
     return "STRUCT";
+  case TokenType::PRINT_F:
+    return "PRINT_F";
   case TokenType::PRINT:
     return "PRINT";
   case TokenType::FUNCTION:

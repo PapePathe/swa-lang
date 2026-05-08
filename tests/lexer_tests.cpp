@@ -249,6 +249,15 @@ TEST_F(LexerTest, StringExpressionWithNumbers) {
   AssertToken(tokens[1], TokenType::END_OF_FILE, "");
 }
 
+TEST_F(LexerTest, PrintAndPrintF) {
+  auto tokens = getTokens("print print_f", KEYWORDS_ENGLISH);
+
+  ASSERT_EQ(tokens.size(), 3);
+  AssertToken(tokens[0], TokenType::PRINT, "print");
+  AssertToken(tokens[1], TokenType::PRINT_F, "print_f");
+  AssertToken(tokens[2], TokenType::END_OF_FILE, "");
+}
+
 TEST_F(LexerTest, BlankString) {
   auto tokens = getTokens(" ", KEYWORDS_ENGLISH);
 
@@ -268,7 +277,7 @@ TEST_F(LexerTest, Dialect) {
 }
 
 TEST_F(LexerTest, AllDialectKeywordsAreEqual) {
-  ASSERT_EQ(KEYWORDS_ENGLISH.size(), 25);
+  ASSERT_EQ(KEYWORDS_ENGLISH.size(), 26);
   ASSERT_EQ(KEYWORDS_FRENCH.size(), 24);
 }
 

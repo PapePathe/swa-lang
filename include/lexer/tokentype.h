@@ -18,6 +18,7 @@ enum class TokenType {
   BYTE,
   STRUCT,
   PRINT,
+  PRINT_F,
   FUNCTION,
   MAIN,
   RETURN,
