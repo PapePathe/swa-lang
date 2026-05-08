@@ -15,7 +15,3 @@ set -euxo pipefail
  cmake --build .
  
  ./compiler_tests
-
-
-cpack -G TGZ 
-cpack -G DEB --config CPackConfig.cmake
