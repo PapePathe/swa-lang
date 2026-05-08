@@ -16,7 +16,7 @@ public:
   int Value;
   NumberExpr(int value) : Value(value) {}
 
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class StructDefExpr : public Expr {
@@ -28,14 +28,14 @@ public:
                 std::vector<std::unique_ptr<Type>> ftypes)
       : Name(n), FieldTypes(std::move(ftypes)), FieldNames(fnames) {}
 
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class IdExpr : public Expr {
 public:
   std::string Name;
   IdExpr(std::string n) : Name(n) {}
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class PrintExpr : public Expr {
@@ -43,7 +43,7 @@ public:
   std::vector<std::unique_ptr<Expr>> Values;
   PrintExpr(std::vector<std::unique_ptr<Expr>> values)
       : Values(std::move(values)) {}
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class Formatted_Print_Expr : public Expr {
@@ -51,7 +51,7 @@ public:
   std::vector<std::unique_ptr<Expr>> Values;
   Formatted_Print_Expr(std::vector<std::unique_ptr<Expr>> values)
       : Values(std::move(values)) {}
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class BlockExpr : public Expr { // Added 'public'
@@ -59,7 +59,7 @@ public:
   std::vector<std::unique_ptr<Expr>> Exprs;
   BlockExpr(std::vector<std::unique_ptr<Expr>> exprs)
       : Exprs(std::move(exprs)) {}
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class DivExpr : public Expr {
@@ -68,7 +68,7 @@ public:
   std::unique_ptr<Expr> Right;
   DivExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class EqExpr : public Expr {
@@ -77,7 +77,7 @@ public:
   std::unique_ptr<Expr> Right;
   EqExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class MulExpr : public Expr {
@@ -86,7 +86,7 @@ public:
   std::unique_ptr<Expr> Right;
   MulExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class SubExpr : public Expr {
@@ -95,7 +95,7 @@ public:
   std::unique_ptr<Expr> Right;
   SubExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class AddExpr : public Expr {
@@ -104,7 +104,7 @@ public:
   std::unique_ptr<Expr> Right;
   AddExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class GTExpr : public Expr {
@@ -113,7 +113,7 @@ public:
   std::unique_ptr<Expr> Right;
   GTExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class GTEExpr : public Expr {
@@ -122,7 +122,7 @@ public:
   std::unique_ptr<Expr> Right;
   GTEExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class LTExpr : public Expr {
@@ -131,7 +131,7 @@ public:
   std::unique_ptr<Expr> Right;
   LTExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class LTEExpr : public Expr {
@@ -140,7 +140,7 @@ public:
   std::unique_ptr<Expr> Right;
   LTEExpr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
       : Left(std::move(left)), Right(std::move(right)) {}
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class IfExpr : public Expr {
@@ -172,7 +172,7 @@ public:
 
   const std::string &getName() const { return Name; }
 
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class FuncExpr : public Expr {
@@ -182,7 +182,7 @@ public:
   FuncExpr(std::unique_ptr<ProtoExpr> p, std::unique_ptr<BlockExpr> b)
       : Proto(std::move(p)), Body(std::move(b)) {}
 
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class MainExpr : public Expr {
@@ -191,7 +191,7 @@ public:
   std::unique_ptr<BlockExpr> Body;
   MainExpr(std::unique_ptr<BlockExpr> b) : Body(std::move(b)) {}
 
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class DeclarationExpr : public Expr {
@@ -202,7 +202,7 @@ public:
   DeclarationExpr(std::string name, std::unique_ptr<Expr> value, Type typ)
       : Name(name), Value(std::move(value)), T(typ) {}
 
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class StrExpr : public Expr {
@@ -210,7 +210,7 @@ public:
   std::string Name;
   StrExpr(std::string n) : Name(n) {}
 
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class UnaryMinusExpr : public Expr {
@@ -218,7 +218,7 @@ public:
   std::unique_ptr<Expr> Right;
   UnaryMinusExpr(std::unique_ptr<Expr> right) : Right(std::move(right)) {}
 
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class UnaryNotExpr : public Expr {
@@ -226,7 +226,7 @@ public:
   std::unique_ptr<Expr> Right;
   UnaryNotExpr(std::unique_ptr<Expr> right) : Right(std::move(right)) {}
 
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class ReturnExpr : public Expr {
@@ -234,7 +234,7 @@ public:
   std::unique_ptr<Expr> Value;
   ReturnExpr(std::unique_ptr<Expr> value) : Value(std::move(value)) {}
 
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class BoolExpr : public Expr {
@@ -242,5 +242,5 @@ public:
   bool Value;
   BoolExpr(bool value) : Value(value) {}
 
-  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
