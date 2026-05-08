@@ -26,7 +26,7 @@ public:
   std::vector<std::unique_ptr<Type>> FieldTypes;
   StructDefExpr(std::string n, std::vector<std::string> fnames,
                 std::vector<std::unique_ptr<Type>> ftypes)
-      : Name(n), FieldTypes(std::move(ftypes)), FieldNames(fnames) {}
+      : Name(std::move(n)), FieldTypes(std::move(ftypes)), FieldNames(fnames) {}
 
   void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
@@ -34,7 +34,7 @@ public:
 class IdExpr : public Expr {
 public:
   std::string Name;
-  IdExpr(std::string n) : Name(n) {}
+  IdExpr(std::string n) : Name(std::move(n)) {}
   void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
