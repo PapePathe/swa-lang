@@ -26,7 +26,8 @@ public:
   std::vector<std::unique_ptr<Type>> FieldTypes;
   StructDefExpr(std::string n, std::vector<std::string> fnames,
                 std::vector<std::unique_ptr<Type>> ftypes)
-      : Name(std::move(n)), FieldTypes(std::move(ftypes)), FieldNames(fnames) {}
+      : Name(std::move(n)), FieldTypes(std::move(ftypes)),
+        FieldNames(std::move(fnames)) {}
 
   void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
@@ -165,10 +166,10 @@ public:
 
   ProtoExpr(const std::string &name, std::vector<std::string> args,
             std::vector<Type> argsTypes)
-      : Name(name), Args(args), ArgsTypes(argsTypes) {}
+      : Name(std::move(name)), Args(args), ArgsTypes(argsTypes) {}
   ProtoExpr(const std::string &name, std::vector<std::string> args,
             std::vector<Type> argsTypes, Type ret)
-      : Name(name), Args(args), ArgsTypes(argsTypes), Ret(ret) {}
+      : Name(std::move(name)), Args(args), ArgsTypes(argsTypes), Ret(ret) {}
 
   const std::string &getName() const { return Name; }
 
@@ -200,7 +201,7 @@ public:
   Type T;
   std::unique_ptr<Expr> Value;
   DeclarationExpr(std::string name, std::unique_ptr<Expr> value, Type typ)
-      : Name(name), Value(std::move(value)), T(typ) {}
+      : Name(std::move(name)), Value(std::move(value)), T(typ) {}
 
   void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
@@ -208,7 +209,7 @@ public:
 class StrExpr : public Expr {
 public:
   std::string Name;
-  StrExpr(std::string n) : Name(n) {}
+  StrExpr(std::string n) : Name(std::move(n)) {}
 
   void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
