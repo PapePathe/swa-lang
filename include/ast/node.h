@@ -46,6 +46,14 @@ public:
   virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
+class Formatted_Print_Expr : public Expr {
+public:
+  std::vector<std::unique_ptr<Expr>> Values;
+  Formatted_Print_Expr(std::vector<std::unique_ptr<Expr>> values)
+      : Values(std::move(values)) {}
+  virtual void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+};
+
 class BlockExpr : public Expr { // Added 'public'
 public:
   std::vector<std::unique_ptr<Expr>> Exprs;

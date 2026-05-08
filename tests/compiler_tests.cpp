@@ -48,7 +48,7 @@ TEST_F(JITOutputTest, Print) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("10 = %d", 10); 
+        print_f("10 = %d", 10); 
       }
     )";
     SwaCompiler swa;
@@ -63,7 +63,7 @@ TEST_F(JITOutputTest, Print1) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("10 - 3 - 2 = %d", 10 - 3 - 2);
+        print_f("10 - 3 - 2 = %d", 10 - 3 - 2);
       }
     )";
     SwaCompiler swa;
@@ -78,7 +78,7 @@ TEST_F(JITOutputTest, Print2) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("16 / 4 / 2 = %d", 16 / 4 / 2);
+        print_f("16 / 4 / 2 = %d", 16 / 4 / 2);
       }
     )";
     SwaCompiler swa;
@@ -93,7 +93,7 @@ TEST_F(JITOutputTest, Print3) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("5 + 3 * 2 - 8 / 4 = %d", 5 + 3 * 2 - 8 / 4);
+        print_f("5 + 3 * 2 - 8 / 4 = %d", 5 + 3 * 2 - 8 / 4);
       }
     )";
     SwaCompiler swa;
@@ -108,7 +108,7 @@ TEST_F(JITOutputTest, Print4) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("7 / 2 = %d", 7/2);
+        print_f("7 / 2 = %d", 7/2);
       }
     )";
     SwaCompiler swa;
@@ -123,7 +123,7 @@ TEST_F(JITOutputTest, Print5) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("12 * 3 / 4 = %d", 12 * 3 / 4);
+        print_f("12 * 3 / 4 = %d", 12 * 3 / 4);
       }
     )";
     SwaCompiler swa;
@@ -138,7 +138,7 @@ TEST_F(JITOutputTest, Print6) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("5 - 3 + 2 = %d", 5 - 3 + 2);
+        print_f("5 - 3 + 2 = %d", 5 - 3 + 2);
       }
     )";
     SwaCompiler swa;
@@ -153,7 +153,7 @@ TEST_F(JITOutputTest, Print7) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("- 5 = %d", - 5);
+        print_f("- 5 = %d", - 5);
       }
     )";
     SwaCompiler swa;
@@ -168,7 +168,7 @@ TEST_F(JITOutputTest, Print8) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("-(3 + 4) = %d", -(3 + 4));
+        print_f("-(3 + 4) = %d", -(3 + 4));
       }
     )";
     SwaCompiler swa;
@@ -183,7 +183,7 @@ TEST_F(JITOutputTest, Print9) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("5 - (-3) = %d", 5 - (-3));
+        print_f("5 - (-3) = %d", 5 - (-3));
       }
     )";
     SwaCompiler swa;
@@ -198,7 +198,7 @@ TEST_F(JITOutputTest, Print10) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("-4 * 6 = %d", -4 * 6);
+        print_f("-4 * 6 = %d", -4 * 6);
       }
     )";
     SwaCompiler swa;
@@ -213,7 +213,7 @@ TEST_F(JITOutputTest, Print11) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("-15 / 4 = %d", -15 / 4);
+        print_f("-15 / 4 = %d", -15 / 4);
       }
     )";
     SwaCompiler swa;
@@ -228,7 +228,7 @@ TEST_F(JITOutputTest, Print12) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("-(-5) = %d", -(-5));
+        print_f("-(-5) = %d", -(-5));
       }
     )";
     SwaCompiler swa;
@@ -243,7 +243,7 @@ TEST_F(JITOutputTest, Print13) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("-7 / 2 = %d", -7 / 2);
+        print_f("-7 / 2 = %d", -7 / 2);
       }
     )";
     SwaCompiler swa;
@@ -258,7 +258,7 @@ TEST_F(JITOutputTest, Print14) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("7 / -2 = %d", 7 / -2);
+        print_f("7 / -2 = %d", 7 / -2);
       }
     )";
     SwaCompiler swa;
@@ -273,7 +273,7 @@ TEST_F(JITOutputTest, Print15) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("-7 / -2 = %d", -7 / -2);
+        print_f("-7 / -2 = %d", -7 / -2);
       }
     )";
     SwaCompiler swa;
@@ -288,7 +288,7 @@ TEST_F(JITOutputTest, Print16) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("-(3 * 4) = %d", -(3 * 4));
+        print_f("-(3 * 4) = %d", -(3 * 4));
       }
     )";
     SwaCompiler swa;
@@ -303,7 +303,7 @@ TEST_F(JITOutputTest, Print17) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("- -5 = %d", - -5);
+        print_f("- -5 = %d", - -5);
       }
     )";
     SwaCompiler swa;
@@ -318,7 +318,7 @@ TEST_F(JITOutputTest, Print18) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("(-3) * (-4) = %d", (-3) * (-4));
+        print_f("(-3) * (-4) = %d", (-3) * (-4));
       }
     )";
     SwaCompiler swa;
@@ -333,7 +333,7 @@ TEST_F(JITOutputTest, Print19) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print("-(2 + 3 * 4 - 5) = %d", -(2 + 3 * 4 - 5));
+        print_f("-(2 + 3 * 4 - 5) = %d", -(2 + 3 * 4 - 5));
       }
     )";
     SwaCompiler swa;
@@ -397,7 +397,7 @@ TEST_F(JITOutputTest, PrintLocalSymbol) {
       dialect:english;
       start() int {
         let x int := 3;
-        print("x = %d", x);
+        print_f("x = %d", x);
         return 0;
       }
     )";
@@ -415,7 +415,7 @@ TEST_F(JITOutputTest, PrintLocalSymbolCompositeAdd) {
       start() int {
         let x int := 3;
         let y int := x + 3;
-        print("x = %d, y = %d", x, y);
+        print_f("x = %d, y = %d", x, y);
         return 0;
       }
     )";
@@ -433,7 +433,7 @@ TEST_F(JITOutputTest, PrintLocalSymbolCompositeSub) {
       start() int {
         let x int := 3;
         let y int := x - 3;
-        print("x = %d, y = %d", x, y);
+        print_f("x = %d, y = %d", x, y);
         return 0;
       }
     )";
@@ -451,7 +451,7 @@ TEST_F(JITOutputTest, PrintLocalSymbolCompositeMul) {
       start() int {
         let x int := 3;
         let y int := x * 3;
-        print("x = %d, y = %d", x, y);
+        print_f("x = %d, y = %d", x, y);
         return 0;
       }
     )";
@@ -469,7 +469,7 @@ TEST_F(JITOutputTest, PrintLocalSymbolCompositeDiv) {
       start() int {
         let x int := 3;
         let y int := x / 3;
-        print("x = %d, y = %d", x, y);
+        print_f("x = %d, y = %d", x, y);
         return 0;
       }
     )";
@@ -480,13 +480,13 @@ TEST_F(JITOutputTest, PrintLocalSymbolCompositeDiv) {
   ASSERT_EQ(output, "x = 3, y = 1");
 }
 
-TEST_F(JITOutputTest, PrintGlocalSymbol) {
+TEST_F(JITOutputTest, PrintFGlocalSymbol) {
   std::string output = runAndCapture([&]() {
     std::string program = R"(
       dialect:english;
       let x int := 3;
       start() int {
-        print("x = %d", x);
+        print_f("x = %d", x);
         return 0;
       }
     )";
@@ -495,4 +495,38 @@ TEST_F(JITOutputTest, PrintGlocalSymbol) {
   });
 
   ASSERT_EQ(output, "x = 3");
+}
+
+TEST_F(JITOutputTest, PrintGlocalSymbol) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      let x int := 3;
+      start() int {
+        print("x =", x);
+        return 0;
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "x = 3");
+}
+
+TEST_F(JITOutputTest, PrintManyDataTypes) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+      dialect:english;
+      let x int := 3;
+      start() int {
+        print(true, false, x, "a string");
+        return 0;
+      }
+    )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "true false 3 a string");
 }

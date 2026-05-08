@@ -54,13 +54,14 @@ private:
   void setLastValue(llvm::Value *v);
   llvm::Value *getLastValue();
   llvm::Function *getLastFunc();
+  llvm::Value *evaluate(Expr *expr);
+  std::pair<std::string, std::vector<llvm::Value *>> buildFormatStringAndArgs(
+      const std::vector<std::unique_ptr<Expr>> &expressions);
 
 public:
   CodeGenVisitor(std::unique_ptr<SwaCompilerDriver> d) : driver(std::move(d)) {}
 
   std::unique_ptr<SwaCompilerDriver> finalize() { return std::move(driver); }
-
-  llvm::Value *evaluate(Expr *expr);
 
   void Visit(AddExpr *expr);
   void Visit(BoolExpr *expr);
@@ -78,6 +79,7 @@ public:
   void Visit(MainExpr *expr);
   void Visit(NumberExpr *expr);
   void Visit(MulExpr *expr);
+  void Visit(Formatted_Print_Expr *expr);
   void Visit(PrintExpr *expr);
   void Visit(ProtoExpr *expr);
   void Visit(ReturnExpr *expr);

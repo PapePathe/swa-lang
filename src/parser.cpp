@@ -2,6 +2,7 @@
 #include <iostream>
 #include <memory>
 #include <parser/parser.h>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -51,6 +52,8 @@ std::unique_ptr<Expr> Parser::parseStatement() {
     return parseFunction();
   if (current().type == TokenType::STRUCT)
     return parseStruct();
+  if (current().type == TokenType::PRINT_F)
+    return parsePrintFormatted();
   if (current().type == TokenType::PRINT)
     return parsePrint();
   if (current().type == TokenType::LET)
@@ -160,6 +163,36 @@ std::unique_ptr<Expr> Parser::parseReturn() {
   expect(TokenType::SEMICOLON);
 
   return std::make_unique<ReturnExpr>(std::move(expr));
+}
+std::unique_ptr<Expr> Parser::parsePrintFormatted() {
+  expect(TokenType::PRINT_F);
+  expect(TokenType::OPEN_PAREN);
+  std::vector<std::unique_ptr<Expr>> values;
+
+  while (current().type != TokenType::CLOSE_PAREN) {
+    auto v = parseExpression();
+    values.push_back(std::move(v));
+
+    if (current().type == TokenType::COMMA) {
+      expect(TokenType::COMMA);
+    }
+  }
+
+  expect(TokenType::CLOSE_PAREN);
+  expect(TokenType::SEMICOLON);
+
+  if (values.size() == 0) {
+    throw std::runtime_error(
+        "formatted print expr should have at least one value");
+  }
+
+  auto format = dynamic_cast<StrExpr *>(values[0].get());
+  if (format == nullptr) {
+    throw std::runtime_error(
+        "First arg to formatted print expr should be a string");
+  }
+
+  return std::make_unique<Formatted_Print_Expr>(std::move(values));
 }
 
 std::unique_ptr<Expr> Parser::parsePrint() {

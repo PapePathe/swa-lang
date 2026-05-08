@@ -1,8 +1,10 @@
 #include <ast/visitor.h>
 #include <compiler/codegen.h>
 #include <compiler/compiler.h>
+#include <llvm/IR/Constants.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 #include <stdexcept>
 
@@ -13,6 +15,81 @@ void codegenvisittrace(std::string s) {
 #ifdef SWA_CODEGEN_TRACE
   std::cout << "[TRACE] " << s << "\n";
 #endif // SWA_CODEGEN_TRACE
+}
+
+struct PrintTypeConfig {
+  std::string specifier;
+  bool isBoolean = false;
+};
+
+PrintTypeConfig getTypeConfig(llvm::Value *val) {
+  llvm::Type *type = val->getType();
+
+  if (type->isIntegerTy(1))
+    return {"%s", true};
+  if (type->isIntegerTy(32))
+    return {"%d", false};
+  if (type->isIntegerTy(64))
+    return {"%ld", false};
+  if (type->isFloatTy() || type->isDoubleTy())
+    return {"%f", false};
+
+  if (type->isPointerTy()) {
+    // Safe string extraction via GlobalVariable inspection
+    if (auto *globalVar = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
+      if (globalVar->hasInitializer() &&
+          llvm::isa<llvm::ConstantDataArray>(globalVar->getInitializer())) {
+        return {"%s", false};
+      }
+    }
+    // Safe string extraction via GEP element arrays
+    if (auto *gep = llvm::dyn_cast<llvm::GEPOperator>(val)) {
+      if (gep->getResultElementType()->isIntegerTy(8)) {
+        return {"%s", false};
+      }
+    }
+    // Fallback safety fallback: Treat raw pointers as addresses to prevent
+    // runtime segfaults
+    return {"%p", false};
+  }
+
+  throw std::runtime_error("Unsupported type passed to print engine.");
+}
+
+std::pair<std::string, std::vector<llvm::Value *>>
+CodeGenVisitor::buildFormatStringAndArgs(
+    const std::vector<std::unique_ptr<Expr>> &expressions) {
+  std::string formatStr = "";
+  std::vector<llvm::Value *> printfArgs;
+  printfArgs.reserve(expressions.size());
+
+  for (size_t i = 0; i < expressions.size(); ++i) {
+    auto *val = evaluate(expressions[i].get());
+    if (!val)
+      throw std::runtime_error(
+          "CodeGen failed inside print string evaluation pass.");
+
+    if (auto *alloca = llvm::dyn_cast<llvm::AllocaInst>(val)) {
+      val = driver->Builder.CreateLoad(alloca->getAllocatedType(), alloca,
+                                       "load_val");
+    }
+
+    auto [specifier, isBoolean] = getTypeConfig(val);
+    formatStr += specifier;
+
+    if (isBoolean) {
+      auto *trueStr = driver->Builder.CreateGlobalString("true", "str_true");
+      auto *falseStr = driver->Builder.CreateGlobalString("false", "str_false");
+      val = driver->Builder.CreateSelect(val, trueStr, falseStr, "bool_to_str");
+    }
+
+    if (i < expressions.size() - 1) {
+      formatStr += " ";
+    }
+    printfArgs.push_back(val);
+  }
+
+  return {formatStr, printfArgs};
 }
 
 void CodeGenVisitor::setLastFunc(llvm::Function *v) { lastFunc = v; }
@@ -42,7 +119,16 @@ void CodeGenVisitor::Visit(AddExpr *expr) {
   setLastValue(res);
 }
 
-void CodeGenVisitor::Visit(BoolExpr *expr) {}
+void CodeGenVisitor::Visit(BoolExpr *expr) {
+  auto btyp = llvm::Type::getInt1Ty(driver->Context);
+  if (expr->Value) {
+    setLastValue(llvm::ConstantInt::get(btyp, 1));
+
+    return;
+  }
+
+  setLastValue(llvm::ConstantInt::get(btyp, 0));
+}
 void CodeGenVisitor::Visit(BlockExpr *expr) {
   auto oldTable = driver->Symbols;
   auto localTable = SymbolTable(driver->Symbols);
@@ -171,6 +257,21 @@ void CodeGenVisitor::Visit(NumberExpr *expr) {
 }
 
 void CodeGenVisitor::Visit(PrintExpr *expr) {
+  auto printfTy = llvm::FunctionType::get(driver->Builder.getInt32Ty(),
+                                          driver->Builder.getPtrTy(), true);
+  auto printfn = driver->Module->getOrInsertFunction("printf", printfTy);
+
+  auto [formatStr, printfArgs] = buildFormatStringAndArgs(expr->Values);
+
+  llvm::Value *formatStrValue =
+      driver->Builder.CreateGlobalString(formatStr, "print_fmt");
+  printfArgs.insert(printfArgs.begin(), formatStrValue);
+
+  auto val = driver->Builder.CreateCall(printfn, printfArgs);
+  setLastValue(val);
+}
+
+void CodeGenVisitor::Visit(Formatted_Print_Expr *expr) {
   auto printfTy = llvm::FunctionType::get(driver->Builder.getInt32Ty(),
                                           driver->Builder.getPtrTy(), true);
   auto printfn = driver->Module->getOrInsertFunction("printf", printfTy);

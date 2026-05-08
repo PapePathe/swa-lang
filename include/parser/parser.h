@@ -26,6 +26,7 @@ private:
   std::unique_ptr<Expr> parseStatement();
   std::unique_ptr<Expr> parsePrimary();
   std::unique_ptr<Expr> parseIf();
+  std::unique_ptr<Expr> parsePrintFormatted();
   std::unique_ptr<Expr> parsePrint();
   std::unique_ptr<Expr> parseReturn();
   std::unique_ptr<Expr> parseStruct();

@@ -4,6 +4,7 @@
 #include <lexer/tokentypestring.h>
 #include <memory>
 #include <parser/parser.h>
+#include <stdexcept>
 #include <vector>
 
 std::vector<Token> getTokens(const std::string &source) {
@@ -61,6 +62,42 @@ TEST(ParserTest, ParseMinimalProgramWithDialect) {
   ASSERT_EQ(node->Body.get()->Exprs.size(), 1);
 }
 
+TEST(ParserTest, ParseEmptyPrintFStatement) {
+  std::string input = "print_f();";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+
+  ASSERT_THROW(parser.parseProgram(), std::runtime_error);
+}
+
+TEST(ParserTest, ParseInvalidPrintFStatement) {
+  std::string input = "print_f(x);";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+
+  ASSERT_THROW(parser.parseProgram(), std::runtime_error);
+}
+
+TEST(ParserTest, ParsePrintFStatement) {
+  std::string input = "print_f(\"Hello\");";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+
+  ASSERT_NE(program, nullptr);
+
+  auto &stmts = program->Exprs;
+  ASSERT_EQ(stmts.size(), 1);
+
+  auto printNode = dynamic_cast<Formatted_Print_Expr *>(stmts[0].get());
+  ASSERT_NE(printNode, nullptr);
+  ASSERT_EQ(printNode->Values.size(), 1);
+
+  auto str = dynamic_cast<StrExpr *>(printNode->Values[0].get());
+  ASSERT_NE(str, nullptr);
+  ASSERT_EQ(str->Name, "Hello");
+}
+
 TEST(ParserTest, ParsePrintStatement) {
   std::string input = "print(\"Hello\");";
   auto tokens = getTokens(input);
@@ -114,7 +151,7 @@ TEST(ParserTest, ParsePrintStatement3) {
   auto tokens = getTokens(input);
   Parser parser(tokens);
 
-  debugTokens(tokens);
+  //  debugTokens(tokens);
   auto program = parser.parseProgram();
 
   ASSERT_NE(program, nullptr);
