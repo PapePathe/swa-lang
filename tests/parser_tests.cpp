@@ -62,6 +62,14 @@ TEST(ParserTest, ParseMinimalProgramWithDialect) {
   ASSERT_EQ(node->Body.get()->Exprs.size(), 1);
 }
 
+TEST(ParserTest, ParseEmptyPrintStatement) {
+  std::string input = "print();";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+
+  ASSERT_THROW(parser.parseProgram(), std::runtime_error);
+}
+
 TEST(ParserTest, ParseEmptyPrintFStatement) {
   std::string input = "print_f();";
   auto tokens = getTokens(input);

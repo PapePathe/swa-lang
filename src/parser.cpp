@@ -212,6 +212,11 @@ std::unique_ptr<Expr> Parser::parsePrint() {
   expect(TokenType::CLOSE_PAREN);
   expect(TokenType::SEMICOLON);
 
+  if (values.size() == 0) {
+    throw std::runtime_error(
+        "formatted print expr should have at least one value");
+  }
+
   return std::make_unique<PrintExpr>(std::move(values));
 }
 
