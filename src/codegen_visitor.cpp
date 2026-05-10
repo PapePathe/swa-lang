@@ -6,6 +6,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
+#include <memory>
 #include <stdexcept>
 
 // Uncomment to enable tracing
@@ -237,7 +238,8 @@ void CodeGenVisitor::Visit(MainExpr *expr) {
   codegenvisittrace("start main");
 
   auto proto = std::make_unique<ProtoExpr>("main", std::vector<std::string>(),
-                                           std::vector<Type>(), TypeInt());
+                                           std::vector<std::unique_ptr<Type>>(),
+                                           std::unique_ptr<Type>());
   auto fn = std::make_unique<FuncExpr>(std::move(proto), std::move(expr->Body));
 
   fn->Accept(*this);

@@ -161,13 +161,14 @@ class ProtoExpr : public Expr {
 public:
   std::string Name;
   std::vector<std::string> Args;
-  std::vector<Type> ArgsTypes;
-  Type Ret;
+  std::vector<std::unique_ptr<Type>> ArgsTypes;
+  std::unique_ptr<Type> Ret;
 
   ProtoExpr(std::string name, std::vector<std::string> args,
-            std::vector<Type> argsTypes, Type ret)
+            std::vector<std::unique_ptr<Type>> argsTypes,
+            std::unique_ptr<Type> ret)
       : Name(std::move(name)), Args(std::move(args)),
-        ArgsTypes(std::move(argsTypes)), Ret(ret) {}
+        ArgsTypes(std::move(argsTypes)), Ret(std::move(ret)) {}
 
   const std::string &getName() const { return Name; }
 
@@ -195,10 +196,11 @@ public:
 class DeclarationExpr : public Expr {
 public:
   std::string Name;
-  Type T;
+  std::unique_ptr<Type> T;
   std::unique_ptr<Expr> Value;
-  DeclarationExpr(std::string name, std::unique_ptr<Expr> value, Type typ)
-      : Name(std::move(name)), Value(std::move(value)), T(typ) {}
+  DeclarationExpr(std::string name, std::unique_ptr<Expr> value,
+                  std::unique_ptr<Type> typ)
+      : Name(std::move(name)), Value(std::move(value)), T(std::move(typ)) {}
 
   void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };

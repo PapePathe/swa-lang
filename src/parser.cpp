@@ -1,3 +1,4 @@
+#include "lexer/tokentype.h"
 #include <algorithm>
 #include <iostream>
 #include <memory>
@@ -273,12 +274,21 @@ std::unique_ptr<Type> Parser::parseType() {
   }
 
   if (tok.type == TokenType::OPEN_BRACKET) {
+    auto slice = true;
     expect(TokenType::OPEN_BRACKET);
-    auto size = expect(TokenType::NUMBER);
+    if (current().type == TokenType::NUMBER) {
+      auto size = expect(TokenType::NUMBER);
+      slice = false;
+    }
     expect(TokenType::CLOSE_BRACKET);
     auto typ = parseType();
 
-    return std::make_unique<TypeArray>(*typ);
+    if (slice) {
+      return std::make_unique<TypeSlice>(std::move(typ));
+    }
+
+    // TODO(pathe) add size
+    return std::make_unique<TypeArray>(std::move(typ));
   }
 
   throw std::runtime_error("Unexpected type: ```" + current().value + "```");
@@ -299,12 +309,12 @@ std::unique_ptr<Expr> Parser::parseFunction() {
 
   expect(TokenType::OPEN_PAREN);
   std::vector<std::string> args;
-  std::vector<Type> argsTypes;
+  std::vector<std::unique_ptr<Type>> argsTypes;
   if (current().type != TokenType::CLOSE_PAREN) {
     do {
       args.push_back(expect(TokenType::IDENTIFIER).value);
       auto typ = parseType();
-      argsTypes.push_back(*typ);
+      argsTypes.push_back(std::move(typ));
 
       if (current().type == TokenType::COMMA)
         expect(TokenType::COMMA);
@@ -316,7 +326,8 @@ std::unique_ptr<Expr> Parser::parseFunction() {
 
   auto ret = parseType();
 
-  auto proto = std::make_unique<ProtoExpr>(name, args, argsTypes, *ret);
+  auto proto = std::make_unique<ProtoExpr>(name, args, std::move(argsTypes),
+                                           std::move(ret));
   auto body = parseBlock();
   return std::make_unique<FuncExpr>(std::move(proto), std::move(body));
 }
@@ -340,7 +351,8 @@ std::unique_ptr<Expr> Parser::parseDeclaration() {
   auto value = parseExpression();
   expect(TokenType::SEMICOLON);
 
-  return std::make_unique<DeclarationExpr>(name, std::move(value), *typ);
+  return std::make_unique<DeclarationExpr>(name, std::move(value),
+                                           std::move(typ));
 }
 
 std::unique_ptr<Expr> Parser::createBinaryNode(TokenType op,
