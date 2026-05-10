@@ -61,9 +61,10 @@ CodeGenVisitor::buildFormatStringAndArgs(
     const std::vector<std::unique_ptr<Expr>> &expressions) {
   std::string formatStr = "";
   std::vector<llvm::Value *> printfArgs;
-  printfArgs.reserve(expressions.size());
+  auto size = expressions.size();
+  printfArgs.reserve(size);
 
-  for (size_t i = 0; i < expressions.size(); ++i) {
+  for (size_t i = 0; i < size; ++i) {
     auto *val = evaluate(expressions[i].get());
     if (!val)
       throw std::runtime_error(
@@ -83,7 +84,7 @@ CodeGenVisitor::buildFormatStringAndArgs(
       val = driver->Builder.CreateSelect(val, trueStr, falseStr, "bool_to_str");
     }
 
-    if (i < expressions.size() - 1) {
+    if (i < size - 1) {
       formatStr += " ";
     }
     printfArgs.push_back(val);
