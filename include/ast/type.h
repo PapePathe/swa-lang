@@ -2,9 +2,10 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
+#include <memory>
 
-#ifndef AST_TYPE
-#define AST_TYPE
+#ifndef INCLUDE_AST_TYPE_H
+#define INCLUDE_AST_TYPE_H
 
 using SwaContext = std::unique_ptr<llvm::LLVMContext>;
 using SwaModule = std::unique_ptr<llvm::Module>;
@@ -25,8 +26,14 @@ class TypeVoid : public Type {};
 class TypeStruct : public Type {};
 class TypeArray : public Type {
 public:
-  Type T;
-  TypeArray(Type t) : T(t) {}
+  std::unique_ptr<Type> T;
+  explicit TypeArray(std::unique_ptr<Type> t) : T(std::move(t)) {}
 };
 
-#endif // !AST_TYPE
+class TypeSlice : public Type {
+public:
+  std::unique_ptr<Type> T;
+  explicit TypeSlice(std::unique_ptr<Type> t) : T(std::move(t)) {}
+};
+
+#endif // INCLUDE_AST_TYPE_H_
