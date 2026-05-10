@@ -165,10 +165,6 @@ public:
   Type Ret;
 
   ProtoExpr(std::string name, std::vector<std::string> args,
-            std::vector<Type> argsTypes)
-      : Name(std::move(name)), Args(std::move(args)),
-        ArgsTypes(std::move(argsTypes)) {}
-  ProtoExpr(std::string name, std::vector<std::string> args,
             std::vector<Type> argsTypes, Type ret)
       : Name(std::move(name)), Args(std::move(args)),
         ArgsTypes(std::move(argsTypes)), Ret(ret) {}

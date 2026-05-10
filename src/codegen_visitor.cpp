@@ -237,7 +237,7 @@ void CodeGenVisitor::Visit(MainExpr *expr) {
   codegenvisittrace("start main");
 
   auto proto = std::make_unique<ProtoExpr>("main", std::vector<std::string>(),
-                                           std::vector<Type>());
+                                           std::vector<Type>(), TypeInt());
   auto fn = std::make_unique<FuncExpr>(std::move(proto), std::move(expr->Body));
 
   fn->Accept(*this);
