@@ -38,6 +38,26 @@ TEST(ParserTest, ParseMinimalProgram) {
   ASSERT_EQ(node->Body.get()->Exprs.size(), 1);
 }
 
+TEST(ParserTest, ParseMinimalProgramWithCommandArgs) {
+  std::string input =
+      "main(arguments_count int, arguments []string)int { return 0; }";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+
+  ASSERT_NE(program, nullptr);
+
+  auto &stmts = program->Exprs;
+  ASSERT_EQ(stmts.size(), 1);
+
+  auto node = dynamic_cast<FuncExpr *>(stmts[0].get());
+  ASSERT_NE(node, nullptr);
+  ASSERT_EQ(node->Proto->Name, "main");
+  ASSERT_EQ(node->Proto->Args.size(), 2);
+  ASSERT_EQ(node->Proto->ArgsTypes.size(), 2);
+  ASSERT_EQ(node->Body.get()->Exprs.size(), 1);
+}
+
 TEST(ParserTest, ParseMinimalProgramWithDialect) {
   std::string input = R"(
     dialect:english;
