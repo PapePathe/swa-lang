@@ -1,5 +1,4 @@
 #include "lexer/tokentype.h"
-#include <algorithm>
 #include <iostream>
 #include <memory>
 #include <parser/parser.h>
@@ -298,10 +297,12 @@ std::unique_ptr<Expr> Parser::parseFunction() {
   trace("begin parse function, current token: " + current().value + "\n");
 
   std::string name;
+  bool is_main = false;
 
   if (current().type == TokenType::MAIN) {
     expect(TokenType::MAIN);
     name = "main";
+    is_main = true;
   } else {
     expect(TokenType::FUNCTION);
     name = expect(TokenType::IDENTIFIER).value;
@@ -325,6 +326,43 @@ std::unique_ptr<Expr> Parser::parseFunction() {
   expect(TokenType::CLOSE_PAREN);
 
   auto ret = parseType();
+
+  if (is_main) {
+    auto retval = dynamic_cast<TypeInt *>(ret.get());
+    if (retval == nullptr) {
+      throw std::runtime_error("return value of main should be TypeInt");
+    }
+
+    if (argsTypes.size() > 3) {
+      throw std::runtime_error("main should have at most 3 arguments");
+    }
+
+    if (argsTypes.size() >= 1) {
+      auto arg0 = dynamic_cast<TypeInt *>(argsTypes[0].get());
+
+      if (arg0 == nullptr) {
+        throw std::runtime_error("first argument of main should be of TypeInt");
+      }
+    }
+
+    if (argsTypes.size() >= 2) {
+      auto arg1 = dynamic_cast<TypeSlice *>(argsTypes[1].get());
+
+      if (arg1 == nullptr) {
+        throw std::runtime_error(
+            "second argument of main should be a slice of strings");
+      }
+    }
+
+    if (argsTypes.size() >= 3) {
+      auto arg1 = dynamic_cast<TypeSlice *>(argsTypes[2].get());
+
+      if (arg1 == nullptr) {
+        throw std::runtime_error(
+            "third argument of main should be a slice of strings");
+      }
+    }
+  }
 
   auto proto = std::make_unique<ProtoExpr>(name, args, std::move(argsTypes),
                                            std::move(ret));

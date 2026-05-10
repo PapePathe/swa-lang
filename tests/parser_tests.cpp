@@ -1,3 +1,4 @@
+#include <exception>
 #include <gtest/gtest.h>
 #include <iostream>
 #include <lexer/keywords.h>
@@ -56,6 +57,115 @@ TEST(ParserTest, ParseMinimalProgramWithCommandArgs) {
   ASSERT_EQ(node->Proto->Args.size(), 2);
   ASSERT_EQ(node->Proto->ArgsTypes.size(), 2);
   ASSERT_EQ(node->Body.get()->Exprs.size(), 1);
+}
+
+TEST(ParserTest, ParseMinimalProgramWithCommandArgsAndEnv) {
+  std::string input = "main(arguments_count int, arguments []string, "
+                      "environment []string)int { return 0; }";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+
+  ASSERT_NE(program, nullptr);
+
+  auto &stmts = program->Exprs;
+  ASSERT_EQ(stmts.size(), 1);
+
+  auto node = dynamic_cast<FuncExpr *>(stmts[0].get());
+  ASSERT_NE(node, nullptr);
+  ASSERT_EQ(node->Proto->Name, "main");
+  ASSERT_EQ(node->Proto->Args.size(), 3);
+  ASSERT_EQ(node->Proto->ArgsTypes.size(), 3);
+  ASSERT_EQ(node->Body.get()->Exprs.size(), 1);
+}
+
+TEST(SemanticTest, ThrowsErrorOnInvalidMainSignature) {
+  // Invalid: arguments should be []string, not int
+  std::string input = "main(argc int, argv int) int { return 0; }";
+
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+
+  try {
+    parser.parseProgram();
+    FAIL() << "Expected std::runtime_error was not thrown";
+  } catch (const std::runtime_error &e) {
+    EXPECT_STREQ(e.what(),
+                 "second argument of main should be a slice of strings");
+  } catch (std::exception e) {
+    FAIL() << "Expected std::runtime_error, but caught a different type ("
+           << e.what() << ")";
+  }
+}
+
+TEST(SemanticTest, ThrowsErrorOnInvalidMainSignature2) {
+  std::string input = "main(argc string) int { return 0; }";
+
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+
+  try {
+    parser.parseProgram();
+    FAIL() << "Expected std::runtime_error was not thrown";
+  } catch (const std::runtime_error &e) {
+    EXPECT_STREQ(e.what(), "first argument of main should be of TypeInt");
+  } catch (std::exception e) {
+    FAIL() << "Expected std::runtime_error, but caught a different type ("
+           << e.what() << ")";
+  }
+}
+
+TEST(SemanticTest, ThrowsErrorOnInvalidMainSignature3) {
+  std::string input = "main(a int, b []string, c string) int { return 0; }";
+
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+
+  try {
+    parser.parseProgram();
+    FAIL() << "Expected std::runtime_error was not thrown";
+  } catch (const std::runtime_error &e) {
+    EXPECT_STREQ(e.what(),
+                 "third argument of main should be a slice of strings");
+  } catch (std::exception e) {
+    FAIL() << "Expected std::runtime_error, but caught a different type ("
+           << e.what() << ")";
+  }
+}
+
+TEST(SemanticTest, ThrowsErrorOnInvalidMainSignature4) {
+  std::string input =
+      "main(a int, b []string, c []string, d int) int { return 0; }";
+
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+
+  try {
+    parser.parseProgram();
+    FAIL() << "Expected std::runtime_error was not thrown";
+  } catch (const std::runtime_error &e) {
+    EXPECT_STREQ(e.what(), "main should have at most 3 arguments");
+  } catch (std::exception e) {
+    FAIL() << "Expected std::runtime_error, but caught a different type ("
+           << e.what() << ")";
+  }
+}
+
+TEST(SemanticTest, ThrowsErrorOnInvalidMainSignature5) {
+  std::string input = "main() string { return 0; }";
+
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+
+  try {
+    parser.parseProgram();
+    FAIL() << "Expected std::runtime_error was not thrown";
+  } catch (const std::runtime_error &e) {
+    EXPECT_STREQ(e.what(), "return value of main should be TypeInt");
+  } catch (std::exception e) {
+    FAIL() << "Expected std::runtime_error, but caught a different type ("
+           << e.what() << ")";
+  }
 }
 
 TEST(ParserTest, ParseMinimalProgramWithDialect) {
