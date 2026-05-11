@@ -74,6 +74,10 @@ std::unique_ptr<Expr> Parser::parseStatement() {
 
 int Parser::getPrecedence(TokenType type) {
   switch (type) {
+  case TokenType::OR:
+    return 5;
+  case TokenType::AND:
+    return 10;
   case TokenType::EQUALS:
   case TokenType::LESS_THAN:
   case TokenType::LESS_THAN_EQUALS:
@@ -444,6 +448,11 @@ std::unique_ptr<Expr> Parser::createBinaryNode(TokenType op,
     return std::make_unique<GTExpr>(std::move(left), std::move(right));
   case TokenType::GREATER_THAN_EQUALS:
     return std::make_unique<GTEExpr>(std::move(left), std::move(right));
+  case TokenType::AND:
+    return std::make_unique<Logical_And_Expr>(std::move(left),
+                                              std::move(right));
+  case TokenType::OR:
+    return std::make_unique<Logical_Or_Expr>(std::move(left), std::move(right));
   default:
     throw std::runtime_error("Unknown operator in expression `" +
                              current().value + "`");
@@ -472,6 +481,12 @@ std::unique_ptr<Expr> Parser::parseExpression(int minPrecedence) {
 
   while (true) {
     TokenType opType = current().type;
+
+    if (opType == TokenType::SEMICOLON || opType == TokenType::OPEN_CURLY ||
+        opType == TokenType::CLOSE_PAREN || opType == TokenType::COMMA) {
+      break;
+    }
+
     int precedence = getPrecedence(opType);
 
     if (precedence < minPrecedence) {
