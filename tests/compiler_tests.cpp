@@ -21,11 +21,25 @@ protected:
       return testing::internal::GetCapturedStdout();
     }
   }
+
+  void assertSwaOutput(const std::string &code, const std::string &expected) {
+    testing::internal::CaptureStdout();
+
+    try {
+      SwaCompiler swa;
+      swa.Run(code);
+    } catch (const std::exception &e) {
+      std::cout << e.what();
+    }
+
+    std::string output = testing::internal::GetCapturedStdout();
+    ASSERT_EQ(output, expected);
+  }
 };
 
 TEST_F(JITOutputTest, ParseMinimalProgram2) {
   std::string output = runAndCapture([&]() {
-    std::string program = "main()int { print(\"1 + 3 = 4\"); }";
+    std::string program = "main()int { print(\"1 + 3 = 4\"); return 0; }";
     SwaCompiler swa;
     swa.Run(program);
   });
@@ -35,7 +49,7 @@ TEST_F(JITOutputTest, ParseMinimalProgram2) {
 
 TEST_F(JITOutputTest, ParseMinimalProgram) {
   std::string output = runAndCapture([&]() {
-    std::string program = "main()int { print(\"Salam\"); }";
+    std::string program = "main()int { print(\"Salam\"); return 0;}";
     SwaCompiler swa = SwaCompiler();
     swa.Run(program);
   });
@@ -49,6 +63,7 @@ TEST_F(JITOutputTest, Print) {
       dialect:english;
       start() int {
         print_f("10 = %d", 10); 
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -64,6 +79,7 @@ TEST_F(JITOutputTest, Print1) {
       dialect:english;
       start() int {
         print_f("10 - 3 - 2 = %d", 10 - 3 - 2);
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -79,6 +95,7 @@ TEST_F(JITOutputTest, Print2) {
       dialect:english;
       start() int {
         print_f("16 / 4 / 2 = %d", 16 / 4 / 2);
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -94,6 +111,7 @@ TEST_F(JITOutputTest, Print3) {
       dialect:english;
       start() int {
         print_f("5 + 3 * 2 - 8 / 4 = %d", 5 + 3 * 2 - 8 / 4);
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -109,6 +127,7 @@ TEST_F(JITOutputTest, Print4) {
       dialect:english;
       start() int {
         print_f("7 / 2 = %d", 7/2);
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -124,6 +143,7 @@ TEST_F(JITOutputTest, Print5) {
       dialect:english;
       start() int {
         print_f("12 * 3 / 4 = %d", 12 * 3 / 4);
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -139,6 +159,7 @@ TEST_F(JITOutputTest, Print6) {
       dialect:english;
       start() int {
         print_f("5 - 3 + 2 = %d", 5 - 3 + 2);
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -154,6 +175,7 @@ TEST_F(JITOutputTest, Print7) {
       dialect:english;
       start() int {
         print_f("- 5 = %d", - 5);
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -169,6 +191,7 @@ TEST_F(JITOutputTest, Print8) {
       dialect:english;
       start() int {
         print_f("-(3 + 4) = %d", -(3 + 4));
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -184,6 +207,7 @@ TEST_F(JITOutputTest, Print9) {
       dialect:english;
       start() int {
         print_f("5 - (-3) = %d", 5 - (-3));
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -199,6 +223,7 @@ TEST_F(JITOutputTest, Print10) {
       dialect:english;
       start() int {
         print_f("-4 * 6 = %d", -4 * 6);
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -214,6 +239,7 @@ TEST_F(JITOutputTest, Print11) {
       dialect:english;
       start() int {
         print_f("-15 / 4 = %d", -15 / 4);
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -229,6 +255,7 @@ TEST_F(JITOutputTest, Print12) {
       dialect:english;
       start() int {
         print_f("-(-5) = %d", -(-5));
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -244,6 +271,7 @@ TEST_F(JITOutputTest, Print13) {
       dialect:english;
       start() int {
         print_f("-7 / 2 = %d", -7 / 2);
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -259,6 +287,7 @@ TEST_F(JITOutputTest, Print14) {
       dialect:english;
       start() int {
         print_f("7 / -2 = %d", 7 / -2);
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -274,6 +303,7 @@ TEST_F(JITOutputTest, Print15) {
       dialect:english;
       start() int {
         print_f("-7 / -2 = %d", -7 / -2);
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -289,6 +319,7 @@ TEST_F(JITOutputTest, Print16) {
       dialect:english;
       start() int {
         print_f("-(3 * 4) = %d", -(3 * 4));
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -304,6 +335,7 @@ TEST_F(JITOutputTest, Print17) {
       dialect:english;
       start() int {
         print_f("- -5 = %d", - -5);
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -319,6 +351,7 @@ TEST_F(JITOutputTest, Print18) {
       dialect:english;
       start() int {
         print_f("(-3) * (-4) = %d", (-3) * (-4));
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -334,6 +367,7 @@ TEST_F(JITOutputTest, Print19) {
       dialect:english;
       start() int {
         print_f("-(2 + 3 * 4 - 5) = %d", -(2 + 3 * 4 - 5));
+        return 0;
       }
     )";
     SwaCompiler swa;
@@ -532,17 +566,77 @@ TEST_F(JITOutputTest, PrintManyDataTypes) {
 }
 
 TEST_F(JITOutputTest, PrintArgc) {
-  std::string output = runAndCapture([&]() {
-    std::string program = R"(
+  std::string program = R"(
     dialect:english;
     start(argc int, argv []string) int {
       let x int := 3;
       print_f("argc = %d", argc);
+      return 0;
     }
   )";
-    SwaCompiler swa;
-    swa.Run(program);
-  });
 
-  ASSERT_EQ(output, "argc = 0");
+  assertSwaOutput(program, "argc = 0");
+}
+
+TEST_F(JITOutputTest, FunctionCalls1) {
+  std::string program = R"(
+    dialect:english;
+    func my_func()int { 
+      return 21;
+    }
+    start() int {
+      print("Result", my_func());
+      return 0;
+    }
+  )";
+
+  assertSwaOutput(program, "Result 21");
+}
+
+TEST_F(JITOutputTest, FunctionCalls2) {
+  std::string program = R"(
+    dialect:english;
+    func add(a int, b int)int { 
+      return a + b;
+    }
+    func sub(a int, b int)int { 
+      return a - b;
+    }
+    func mul(a int, b int)int { 
+      return a * b;
+    }
+    func div(a int, b int)int { 
+      return a / b;
+    }
+    start() int {
+      print("Add", add(4,2), "\n");
+      print("Sub", sub(4,2), "\n");
+      print("Mul", mul(4,2), "\n");
+      print("Div", div(4,2), "\n");
+      return 0;
+    }
+  )";
+
+  assertSwaOutput(program, "Add 6 \nSub 2 \nMul 8 \nDiv 2 \n");
+}
+
+TEST_F(JITOutputTest, FunctionCalls3) {
+  std::string program = R"(
+    dialect:english;
+    func mul_three(a int)int { 
+      return 3 * a;
+    }
+    func mul_two(a int)int { 
+      return 2 * a;
+    }
+    func add(a int, b int)int { 
+      return a + b;
+    }
+    start() int {
+      print("Result", mul_three(mul_two(add(2, 3))));
+      return 0;
+    }
+  )";
+
+  assertSwaOutput(program, "Result 30");
 }
