@@ -90,6 +90,28 @@ int Parser::getPrecedence(TokenType type) {
     return -1; // Not an operator
   }
 }
+std::unique_ptr<Expr> Parser::parseFunctionCall(std::unique_ptr<Expr> callee) {
+  expect(TokenType::OPEN_PAREN);
+
+  std::vector<std::unique_ptr<Expr>> args;
+
+  while (current().type != TokenType::CLOSE_PAREN) {
+    auto arg = parseExpression(0);
+    args.push_back(std::move(arg));
+
+    if (current().type == TokenType::COMMA) {
+      expect(TokenType::COMMA);
+    }
+  }
+
+  expect(TokenType::CLOSE_PAREN);
+
+  // if (current().type == TokenType::SEMICOLON) {
+  //   expect(TokenType::SEMICOLON);
+  // }
+
+  return std::make_unique<CallExpr>(std::move(callee), std::move(args));
+}
 
 std::unique_ptr<Expr> Parser::parsePrimary() {
   if (current().type == TokenType::TRUE) {
@@ -106,7 +128,14 @@ std::unique_ptr<Expr> Parser::parsePrimary() {
   }
   if (current().type == TokenType::IDENTIFIER) {
     std::string name = expect(TokenType::IDENTIFIER).value;
-    return std::make_unique<IdExpr>(name);
+    auto expr = std::make_unique<IdExpr>(name);
+
+    switch (current().type) {
+    case TokenType::OPEN_PAREN:
+      return parseFunctionCall(std::move(expr));
+    default:
+      return expr;
+    }
   }
   if (current().type == TokenType::STRING) {
     std::string name = expect(TokenType::STRING).value;

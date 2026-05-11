@@ -42,6 +42,7 @@ private:
   std::unique_ptr<Expr> parseLessThanEquals(std::unique_ptr<Expr> left);
   std::unique_ptr<Expr> parseGreaterThanEquals(std::unique_ptr<Expr> left);
   std::unique_ptr<Expr> parseGreaterThan(std::unique_ptr<Expr> left);
+  std::unique_ptr<Expr> parseFunctionCall(std::unique_ptr<Expr> callee);
   bool isCompareOp(TokenType t);
   int getPrecedence(TokenType type);
   std::unique_ptr<Expr> parseExpression(int = 0);
