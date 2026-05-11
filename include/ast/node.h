@@ -1,3 +1,6 @@
+#ifndef SWA_AST_NODE_H
+#define SWA_AST_NODE_H
+
 #include "expr.h"
 #include "type.h"
 #include <llvm/IR/IRBuilder.h>
@@ -246,3 +249,35 @@ public:
 
   void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
+
+class CallExpr : public Expr {
+public:
+  std::unique_ptr<Expr> Callee;
+  std::vector<std::unique_ptr<Expr>> Args;
+
+  CallExpr(std::unique_ptr<Expr> callee,
+           std::vector<std::unique_ptr<Expr>> args)
+      : Callee(std::move(callee)), Args(std::move(args)) {}
+
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+};
+
+class Logical_And_Expr : public Expr {
+public:
+  std::unique_ptr<Expr> Left;
+  std::unique_ptr<Expr> Right;
+  Logical_And_Expr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
+      : Left(std::move(left)), Right(std::move(right)) {}
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+};
+
+class Logical_Or_Expr : public Expr {
+public:
+  std::unique_ptr<Expr> Left;
+  std::unique_ptr<Expr> Right;
+  Logical_Or_Expr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
+      : Left(std::move(left)), Right(std::move(right)) {}
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+};
+
+#endif // !SWA_AST_NODE_H
