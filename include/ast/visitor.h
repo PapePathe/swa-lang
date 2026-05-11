@@ -1,5 +1,5 @@
-#ifndef SWA_VISITOR
-#define SWA_VISITOR
+#ifndef INCLUDE_AST_VISITOR_H_
+#define INCLUDE_AST_VISITOR_H_
 
 #include <llvm/IR/Value.h>
 
@@ -29,6 +29,19 @@ class UnaryMinusExpr;
 class UnaryNotExpr;
 class ReturnExpr;
 class BoolExpr;
+class CallExpr;
+class Logical_And_Expr;
+class Logical_Or_Expr;
+
+class TypeInt;
+class TypeFloat;
+class TypeBool;
+class TypeByte;
+class TypeString;
+class TypeVoid;
+class TypeStruct;
+class TypeArray;
+class TypeSlice;
 
 class ASTVisitor {
 public:
@@ -58,6 +71,19 @@ public:
   virtual void Visit(SubExpr *expr) = 0;
   virtual void Visit(UnaryMinusExpr *expr) = 0;
   virtual void Visit(UnaryNotExpr *expr) = 0;
+  virtual void Visit(CallExpr *expr) = 0;
+  virtual void Visit(Logical_And_Expr *expr) = 0;
+  virtual void Visit(Logical_Or_Expr *expr) = 0;
+
+  virtual void Visit(TypeSlice *expr) = 0;
+  virtual void Visit(TypeArray *expr) = 0;
+  virtual void Visit(TypeInt *expr) = 0;
+  virtual void Visit(TypeFloat *expr) = 0;
+  virtual void Visit(TypeString *expr) = 0;
+  virtual void Visit(TypeVoid *expr) = 0;
+  virtual void Visit(TypeBool *expr) = 0;
+  virtual void Visit(TypeByte *expr) = 0;
+  virtual void Visit(TypeStruct *expr) = 0;
 };
 
-#endif // !SWA_VISITOR
+#endif // INCLUDE_SWA_VISITOR_H_
