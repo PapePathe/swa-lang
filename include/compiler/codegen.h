@@ -1,5 +1,5 @@
-#ifndef SWA_CODEGEN
-#define SWA_CODEGEN
+#ifndef INCLUDE_COMPILER_CODEGEN_H_
+#define INCLUDE_COMPILER_CODEGEN_H_
 
 #include <ast/expr.h>
 #include <ast/symboltable.h>
@@ -7,6 +7,7 @@
 #include <llvm/IR/DIBuilder.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 
 struct SourceLocation {
@@ -38,7 +39,7 @@ public:
   SymbolTable Symbols;
   DebugInfoContext DebugInfo;
 
-  SwaCompilerDriver(std::string moduleName)
+  explicit SwaCompilerDriver(std::string moduleName)
       : Builder(Context),
         Module(std::make_unique<llvm::Module>(moduleName, Context)) {}
 };
@@ -49,12 +50,16 @@ private:
 
   llvm::Value *lastValue = nullptr;
   llvm::Function *lastFunc = nullptr;
+  llvm::Type *lastType = nullptr;
 
   void setLastFunc(llvm::Function *v);
   void setLastValue(llvm::Value *v);
+  void setLastType(llvm::Type *t);
+  llvm::Type *setLastType();
   llvm::Value *getLastValue();
   llvm::Function *getLastFunc();
   llvm::Value *evaluate(Expr *expr);
+  llvm::Type *evaluate(Type *expr);
   std::pair<std::string, std::vector<llvm::Value *>> buildFormatStringAndArgs(
       const std::vector<std::unique_ptr<Expr>> &expressions);
 
@@ -88,5 +93,18 @@ public:
   void Visit(SubExpr *expr);
   void Visit(UnaryMinusExpr *expr);
   void Visit(UnaryNotExpr *expr);
+  void Visit(CallExpr *expr);
+  void Visit(Logical_Or_Expr *expr);
+  void Visit(Logical_And_Expr *expr);
+
+  virtual void Visit(TypeSlice *expr);
+  virtual void Visit(TypeArray *expr);
+  virtual void Visit(TypeInt *expr);
+  virtual void Visit(TypeFloat *expr);
+  virtual void Visit(TypeString *expr);
+  virtual void Visit(TypeVoid *expr);
+  virtual void Visit(TypeBool *expr);
+  virtual void Visit(TypeByte *expr);
+  virtual void Visit(TypeStruct *expr);
 };
-#endif // !SWA_CODEGEN
+#endif // INCLUDE_COMPILER_CODEGEN_H_
