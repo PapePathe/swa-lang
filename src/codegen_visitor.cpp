@@ -6,10 +6,13 @@
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Instructions.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
+#include <llvm/Support/Casting.h>
 #include <memory>
 #include <stdexcept>
+#include <vector>
 
 // Uncomment to enable tracing
 // #define SWA_CODEGEN_TRACE ;
@@ -128,9 +131,24 @@ llvm::Type *CodeGenVisitor::evaluate(Type *expr) {
   return setLastType();
 }
 
+std::pair<llvm::Value *, llvm::Value *>
+CodeGenVisitor::evaluate_bin_expr(Expr *left, Expr *right) {
+  auto l = evaluate(left);
+  auto r = evaluate(right);
+
+  if (auto a = llvm::dyn_cast<llvm::AllocaInst>(l)) {
+    l = driver->Builder.CreateLoad(a->getAllocatedType(), a);
+  }
+
+  if (auto a = llvm::dyn_cast<llvm::AllocaInst>(r)) {
+    r = driver->Builder.CreateLoad(a->getAllocatedType(), a);
+  }
+
+  return {l, r};
+}
+
 void CodeGenVisitor::Visit(AddExpr *expr) {
-  auto l = evaluate(expr->Left.get());
-  auto r = evaluate(expr->Right.get());
+  auto [l, r] = evaluate_bin_expr(expr->Left.get(), expr->Right.get());
   auto res = driver->Builder.CreateAdd(l, r);
 
   setLastValue(res);
@@ -197,8 +215,7 @@ void CodeGenVisitor::Visit(DeclarationExpr *expr) {
 }
 
 void CodeGenVisitor::Visit(DivExpr *expr) {
-  auto l = evaluate(expr->Left.get());
-  auto r = evaluate(expr->Right.get());
+  auto [l, r] = evaluate_bin_expr(expr->Left.get(), expr->Right.get());
 
   auto res = driver->Builder.CreateSDiv(l, r);
   setLastValue(res);
@@ -258,8 +275,6 @@ void CodeGenVisitor::Visit(FuncExpr *expr) {
 
   if (expr->Body) {
     expr->Body->Accept(*this);
-
-    driver->Builder.CreateRet(driver->Builder.getInt32(0));
   }
 
   driver->Symbols = old;
@@ -279,8 +294,7 @@ void CodeGenVisitor::Visit(MainExpr *expr) {
 }
 
 void CodeGenVisitor::Visit(MulExpr *expr) {
-  auto l = evaluate(expr->Left.get());
-  auto r = evaluate(expr->Right.get());
+  auto [l, r] = evaluate_bin_expr(expr->Left.get(), expr->Right.get());
 
   auto res = driver->Builder.CreateMul(l, r);
   setLastValue(res);
@@ -356,14 +370,17 @@ void CodeGenVisitor::Visit(ProtoExpr *expr) {
 
   codegenvisittrace("finish proto expr");
 }
-void CodeGenVisitor::Visit(ReturnExpr *expr) { expr->Value->Accept(*this); }
+void CodeGenVisitor::Visit(ReturnExpr *expr) {
+  auto res = evaluate(expr->Value.get());
+
+  driver->Builder.CreateRet(res);
+}
 void CodeGenVisitor::Visit(StrExpr *expr) {
   setLastValue(driver->Builder.CreateGlobalString(expr->Name));
 }
 void CodeGenVisitor::Visit(StructDefExpr *expr) {}
 void CodeGenVisitor::Visit(SubExpr *expr) {
-  auto l = evaluate(expr->Left.get());
-  auto r = evaluate(expr->Right.get());
+  auto [l, r] = evaluate_bin_expr(expr->Left.get(), expr->Right.get());
 
   auto res = driver->Builder.CreateSub(l, r);
   setLastValue(res);
@@ -384,7 +401,26 @@ void CodeGenVisitor::Visit(UnaryNotExpr *expr) {
 }
 
 void CodeGenVisitor::Visit(CallExpr *expr) {
-  throw std::runtime_error("Not implemented CallExpr");
+  if (auto s = dynamic_cast<IdExpr *>(expr->Callee.get()); s != nullptr) {
+    auto ft = driver->Module->getFunction(s->Name);
+
+    if (ft == nullptr) {
+      throw std::runtime_error("Not implemented CallExpr");
+    }
+
+    std::vector<llvm::Value *> args;
+
+    for (auto &arg : expr->Args) {
+      args.push_back(evaluate(arg.get()));
+    }
+
+    auto c = driver->Builder.CreateCall(ft, args);
+    setLastValue(c);
+
+    return;
+  }
+
+  throw std::runtime_error("Callee not supported for CallExpr");
 }
 
 void CodeGenVisitor::Visit(Logical_Or_Expr *expr) {

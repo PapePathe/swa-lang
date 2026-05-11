@@ -60,6 +60,8 @@ private:
   llvm::Function *getLastFunc();
   llvm::Value *evaluate(Expr *expr);
   llvm::Type *evaluate(Type *expr);
+  std::pair<llvm::Value *, llvm::Value *> evaluate_bin_expr(Expr *left,
+                                                            Expr *right);
   std::pair<std::string, std::vector<llvm::Value *>> buildFormatStringAndArgs(
       const std::vector<std::unique_ptr<Expr>> &expressions);
 
