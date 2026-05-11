@@ -83,15 +83,15 @@ int Parser::getPrecedence(TokenType type) {
   case TokenType::LESS_THAN_EQUALS:
   case TokenType::GREATER_THAN:
   case TokenType::GREATER_THAN_EQUALS:
-    return 10; // Comparison
+    return 10;
   case TokenType::PLUS:
   case TokenType::MINUS:
-    return 20; // Addition/Subtraction
+    return 20;
   case TokenType::MULTIPLY:
   case TokenType::DIVIDE:
-    return 30; // Multiplication/Division
+    return 30;
   default:
-    return -1; // Not an operator
+    return -1;
   }
 }
 std::unique_ptr<Expr> Parser::parseFunctionCall(std::unique_ptr<Expr> callee) {
