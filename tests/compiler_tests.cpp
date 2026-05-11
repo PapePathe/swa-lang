@@ -530,3 +530,19 @@ TEST_F(JITOutputTest, PrintManyDataTypes) {
 
   ASSERT_EQ(output, "true false 3 a string");
 }
+
+TEST_F(JITOutputTest, PrintArgc) {
+  std::string output = runAndCapture([&]() {
+    std::string program = R"(
+    dialect:english;
+    start(argc int, argv []string) int {
+      let x int := 3;
+      print_f("argc = %d", argc);
+    }
+  )";
+    SwaCompiler swa;
+    swa.Run(program);
+  });
+
+  ASSERT_EQ(output, "argc = 0");
+}

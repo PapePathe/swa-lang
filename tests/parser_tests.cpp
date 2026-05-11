@@ -1,3 +1,4 @@
+#include "ast/node.h"
 #include <exception>
 #include <gtest/gtest.h>
 #include <iostream>
@@ -693,4 +694,279 @@ TEST(ParserTest, Return) {
   auto v = dynamic_cast<NumberExpr *>(returnexpr->Value.get());
   ASSERT_NE(v, nullptr);
   ASSERT_EQ(v->Value, 0);
+}
+
+// TEST(ParserTest, MissingClosingParen) {
+//   std::string input = "myFunc(1, 2";
+//   auto tokens = getTokens(input);
+//   Parser parser(tokens);
+//
+//   EXPECT_THROW(parser.parseProgram(), std::runtime_error);
+// }
+
+TEST(ParserTest, TrailingComma) {
+  std::string input = "myFunc(1, )";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+
+  auto call = dynamic_cast<CallExpr *>(program->Exprs[0].get());
+  ASSERT_NE(call, nullptr);
+  ASSERT_EQ(call->Args.size(), 1);
+
+  auto arg = dynamic_cast<NumberExpr *>(call->Args[0].get());
+  EXPECT_NE(arg, nullptr);
+  EXPECT_EQ(arg->Value, 1);
+}
+
+TEST(ParserTest, EmptyArgInMiddle) {
+  std::string input = "myFunc(1, , 3)";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+
+  EXPECT_THROW(parser.parseProgram(), std::runtime_error);
+}
+
+TEST(ParserTest, MultipleArguments) {
+  std::string input = "add(x, 10, \"result\")";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+
+  auto call = dynamic_cast<CallExpr *>(program->Exprs[0].get());
+  ASSERT_NE(call, nullptr);
+  ASSERT_EQ(call->Args.size(), 3);
+
+  EXPECT_TRUE(dynamic_cast<IdExpr *>(call->Args[0].get()));
+  EXPECT_TRUE(dynamic_cast<NumberExpr *>(call->Args[1].get()));
+  EXPECT_TRUE(dynamic_cast<StrExpr *>(call->Args[2].get()));
+}
+
+TEST(ParserTest, NestedFunctionCalls) {
+  std::string input = "highOrderFunc(square(abs(y)))";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+
+  auto outer = dynamic_cast<CallExpr *>(program->Exprs[0].get());
+  ASSERT_NE(outer, nullptr);
+  ASSERT_EQ(outer->Args.size(), 1);
+
+  auto outerCallee = dynamic_cast<IdExpr *>(outer->Callee.get());
+  ASSERT_NE(outerCallee, nullptr);
+  ASSERT_EQ(outerCallee->Name, "highOrderFunc");
+
+  auto middle = dynamic_cast<CallExpr *>(outer->Args[0].get());
+  ASSERT_NE(middle, nullptr);
+  ASSERT_EQ(middle->Args.size(), 1);
+
+  auto middleCallee = dynamic_cast<IdExpr *>(middle->Callee.get());
+  ASSERT_NE(middleCallee, nullptr);
+  ASSERT_EQ(middleCallee->Name, "square");
+
+  auto inner = dynamic_cast<CallExpr *>(middle->Args[0].get());
+  ASSERT_NE(inner, nullptr);
+  ASSERT_EQ(inner->Args.size(), 1);
+
+  auto innerCallee = dynamic_cast<IdExpr *>(inner->Callee.get());
+  ASSERT_NE(innerCallee, nullptr);
+  ASSERT_EQ(innerCallee->Name, "abs");
+}
+
+TEST(ParserTest, FunctionCallInArithmetic) {
+  std::string input = "5 + getVal() * 2";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+
+  auto add = dynamic_cast<AddExpr *>(program->Exprs[0].get());
+  ASSERT_NE(add, nullptr);
+
+  auto mul = dynamic_cast<MulExpr *>(add->Right.get());
+  ASSERT_NE(mul, nullptr);
+
+  auto call = dynamic_cast<CallExpr *>(mul->Left.get());
+  ASSERT_NE(call, nullptr);
+
+  auto callee = dynamic_cast<IdExpr *>(call->Callee.get());
+  EXPECT_EQ(callee->Name, "getVal");
+}
+
+TEST(ParserTest, SimpleFunctionCallNoArgs) {
+  std::string input = "myFunc()";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+
+  auto call = dynamic_cast<CallExpr *>(program->Exprs[0].get());
+  ASSERT_NE(call, nullptr);
+
+  auto callee = dynamic_cast<IdExpr *>(call->Callee.get());
+  EXPECT_EQ(callee->Name, "myFunc");
+  EXPECT_EQ(call->Args.size(), 0);
+}
+
+TEST(ParserTest, FunctionCallWithSingleArg) {
+  std::string input = "myFunc(42)";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+
+  auto call = dynamic_cast<CallExpr *>(program->Exprs[0].get());
+  ASSERT_NE(call, nullptr);
+  EXPECT_EQ(call->Args.size(), 1);
+
+  auto callee = dynamic_cast<IdExpr *>(call->Callee.get());
+  EXPECT_EQ(callee->Name, "myFunc");
+
+  auto arg = dynamic_cast<NumberExpr *>(call->Args[0].get());
+  ASSERT_NE(arg, nullptr);
+  ASSERT_EQ(arg->Value, 42);
+}
+
+TEST(ParserTest, NestedFunctionCall) {
+  std::string input = "exponent(calculate(1 + 2))";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+
+  auto call = dynamic_cast<CallExpr *>(program->Exprs[0].get());
+  ASSERT_NE(call, nullptr);
+  ASSERT_EQ(call->Args.size(), 1);
+
+  auto callee = dynamic_cast<IdExpr *>(call->Callee.get());
+  EXPECT_EQ(callee->Name, "exponent");
+
+  auto inner = dynamic_cast<CallExpr *>(call->Args[0].get());
+  ASSERT_NE(inner, nullptr);
+  ASSERT_EQ(inner->Args.size(), 1);
+
+  auto innerCallee = dynamic_cast<IdExpr *>(inner->Callee.get());
+  ASSERT_NE(innerCallee, nullptr);
+  EXPECT_EQ(innerCallee->Name, "calculate");
+}
+
+TEST(ParserTest, FunctionCallPrecedenceInLogic) {
+  std::string input = "isTrue() && check(5 + 2)";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+
+  auto and_expr = dynamic_cast<Logical_And_Expr *>(program->Exprs[0].get());
+  ASSERT_NE(and_expr, nullptr);
+
+  auto left = dynamic_cast<CallExpr *>(and_expr->Left.get());
+  ASSERT_NE(left, nullptr);
+
+  auto lcallee = dynamic_cast<IdExpr *>(left->Callee.get());
+  ASSERT_EQ(lcallee->Name, "isTrue");
+  ASSERT_EQ(left->Args.size(), 0);
+
+  auto right = dynamic_cast<CallExpr *>(and_expr->Right.get());
+  ASSERT_NE(right, nullptr);
+  ASSERT_EQ(right->Args.size(), 1);
+
+  auto rcallee = dynamic_cast<IdExpr *>(right->Callee.get());
+  ASSERT_EQ(rcallee->Name, "check");
+}
+
+TEST(ParserTest, FunctionCallPrecedenceInLogic2) {
+  std::string input = "isTrue() || check(5 + 2)";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+
+  auto and_expr = dynamic_cast<Logical_Or_Expr *>(program->Exprs[0].get());
+  ASSERT_NE(and_expr, nullptr);
+
+  auto left = dynamic_cast<CallExpr *>(and_expr->Left.get());
+  ASSERT_NE(left, nullptr);
+
+  auto lcallee = dynamic_cast<IdExpr *>(left->Callee.get());
+  ASSERT_NE(lcallee, nullptr);
+  ASSERT_EQ(lcallee->Name, "isTrue");
+  ASSERT_EQ(left->Args.size(), 0);
+
+  auto right = dynamic_cast<CallExpr *>(and_expr->Right.get());
+  ASSERT_NE(right, nullptr);
+  ASSERT_EQ(right->Args.size(), 1);
+
+  auto rcallee = dynamic_cast<IdExpr *>(right->Callee.get());
+  ASSERT_EQ(rcallee->Name, "check");
+}
+
+TEST(ParserTest, CallWithinAssignment) {
+  std::string input = "let x int := getVal() + 5;";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+
+  auto decl = dynamic_cast<DeclarationExpr *>(program->Exprs[0].get());
+  ASSERT_NE(decl, nullptr);
+}
+
+TEST(ParserTest, CallsAsArgumentsInMath) {
+  std::string input = "calculate(sum(1, 2) * 3, is_valid(x) && true)";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+
+  auto call = dynamic_cast<CallExpr *>(program->Exprs[0].get());
+  ASSERT_NE(call, nullptr);
+  ASSERT_EQ(call->Args.size(), 2);
+
+  // First Arg: sum(1,2) * 3 (MulExpr)
+  auto firstArg = dynamic_cast<MulExpr *>(call->Args[0].get());
+  ASSERT_NE(firstArg, nullptr);
+
+  auto mleft = dynamic_cast<CallExpr *>(firstArg->Left.get());
+  ASSERT_NE(mleft, nullptr);
+
+  auto mright = dynamic_cast<NumberExpr *>(firstArg->Right.get());
+  ASSERT_NE(mright, nullptr);
+
+  auto secondArg = dynamic_cast<Logical_And_Expr *>(call->Args[1].get());
+  ASSERT_NE(secondArg, nullptr);
+
+  auto lleft = dynamic_cast<CallExpr *>(secondArg->Left.get());
+  ASSERT_NE(lleft, nullptr);
+
+  auto lright = dynamic_cast<BoolExpr *>(secondArg->Right.get());
+  ASSERT_NE(lright, nullptr);
+  ASSERT_EQ(lright->Value, true);
+}
+
+TEST(ParserTest, CallInArrayInitialization) {
+  std::string input = "let buffer []byte := generate_buffer(size());";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+  auto program = parser.parseProgram();
+
+  auto decl = dynamic_cast<DeclarationExpr *>(program->Exprs[0].get());
+  ASSERT_NE(decl, nullptr);
+
+  auto call = dynamic_cast<CallExpr *>(decl->Value.get());
+  ASSERT_NE(call, nullptr);
+  EXPECT_EQ(call->Args.size(), 1);
+}
+
+TEST(ParserTest, CallInsideExpressionSemicolonLoophole) {
+  std::string input = "let x int := getVal() + 1;";
+  auto tokens = getTokens(input);
+  Parser parser(tokens);
+
+  auto program = parser.parseProgram();
+
+  auto decl = dynamic_cast<DeclarationExpr *>(program->Exprs[0].get());
+  ASSERT_NE(decl, nullptr);
+
+  auto add = dynamic_cast<AddExpr *>(decl->Value.get());
+  ASSERT_NE(add, nullptr);
+
+  auto call = dynamic_cast<CallExpr *>(add->Left.get());
+  ASSERT_NE(call, nullptr);
+
+  auto num = dynamic_cast<NumberExpr *>(add->Right.get());
+  ASSERT_NE(num, nullptr);
+  ASSERT_EQ(num->Value, 1);
 }
