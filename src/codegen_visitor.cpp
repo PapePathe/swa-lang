@@ -1,7 +1,9 @@
+#include "ast/symboltable.h"
 #include <ast/visitor.h>
 #include <compiler/codegen.h>
 #include <compiler/compiler.h>
 #include <llvm/IR/Constants.h>
+#include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Type.h>
@@ -96,9 +98,15 @@ CodeGenVisitor::buildFormatStringAndArgs(
 
 void CodeGenVisitor::setLastFunc(llvm::Function *v) { lastFunc = v; }
 void CodeGenVisitor::setLastValue(llvm::Value *v) { lastValue = v; }
+void CodeGenVisitor::setLastType(llvm::Type *t) { lastType = t; }
 llvm::Value *CodeGenVisitor::getLastValue() {
   auto old = lastValue;
   lastValue = nullptr;
+  return old;
+}
+llvm::Type *CodeGenVisitor::setLastType() {
+  auto old = lastType;
+  lastType = nullptr;
   return old;
 }
 llvm::Function *CodeGenVisitor::getLastFunc() {
@@ -111,6 +119,13 @@ llvm::Value *CodeGenVisitor::evaluate(Expr *expr) {
     return nullptr;
   expr->Accept(*this);
   return getLastValue();
+}
+
+llvm::Type *CodeGenVisitor::evaluate(Type *expr) {
+  if (!expr)
+    return nullptr;
+  expr->Accept(*this);
+  return setLastType();
 }
 
 void CodeGenVisitor::Visit(AddExpr *expr) {
@@ -227,11 +242,27 @@ void CodeGenVisitor::Visit(FuncExpr *expr) {
       llvm::BasicBlock::Create(driver->Context, "entry", TheFunction);
   driver->Builder.SetInsertPoint(BB);
 
+  auto old = driver->Symbols;
+  auto localTable = SymbolTable{old};
+  driver->Symbols = localTable;
+
+  unsigned Idx = 0;
+  for (auto &Arg : TheFunction->args()) {
+    std::string ArgName = expr->Proto->Args[Idx++];
+    llvm::AllocaInst *Alloca =
+        driver->Builder.CreateAlloca(Arg.getType(), nullptr, ArgName);
+
+    driver->Builder.CreateStore(&Arg, Alloca);
+    driver->Symbols.define(ArgName, Alloca);
+  }
+
   if (expr->Body) {
     expr->Body->Accept(*this);
 
     driver->Builder.CreateRet(driver->Builder.getInt32(0));
   }
+
+  driver->Symbols = old;
 }
 
 void CodeGenVisitor::Visit(MainExpr *expr) {
@@ -303,11 +334,15 @@ void CodeGenVisitor::Visit(Formatted_Print_Expr *expr) {
 void CodeGenVisitor::Visit(ProtoExpr *expr) {
   codegenvisittrace("start proto expr " + expr->Name);
 
-  std::vector<llvm::Type *> Ints(expr->Args.size(),
-                                 driver->Builder.getInt32Ty());
+  std::vector<llvm::Type *> Ints;
 
-  llvm::FunctionType *FT =
-      llvm::FunctionType::get(driver->Builder.getInt32Ty(), Ints, false);
+  for (auto &typ : expr->ArgsTypes) {
+    auto lltyp = evaluate(typ.get());
+    Ints.push_back(lltyp);
+  }
+
+  auto ret = evaluate(expr->Ret.get());
+  llvm::FunctionType *FT = llvm::FunctionType::get(ret, Ints, false);
 
   llvm::Function *F = llvm::Function::Create(
       FT, llvm::Function::ExternalLinkage, expr->Name, driver->Module.get());
@@ -346,4 +381,54 @@ void CodeGenVisitor::Visit(UnaryNotExpr *expr) {
   auto res = driver->Builder.CreateNot(val);
 
   setLastValue(res);
+}
+
+void CodeGenVisitor::Visit(CallExpr *expr) {
+  throw std::runtime_error("Not implemented CallExpr");
+}
+
+void CodeGenVisitor::Visit(Logical_Or_Expr *expr) {
+  throw std::runtime_error("Not implemented Logical_Or_Expr");
+}
+void CodeGenVisitor::Visit(Logical_And_Expr *expr) {
+  throw std::runtime_error("Not implemented Logical_And_Expr");
+}
+
+// Types
+
+void CodeGenVisitor::Visit(TypeSlice *expr) {
+  auto inner = evaluate(expr->T.get());
+
+  auto t = llvm::PointerType::get(inner, 0);
+  setLastType(t);
+}
+void CodeGenVisitor::Visit(TypeArray *expr) {
+  auto inner = evaluate(expr->T.get());
+
+  auto t = llvm::ArrayType::get(inner, 10);
+  setLastType(t);
+}
+void CodeGenVisitor::Visit(TypeInt *expr) {
+  auto t = llvm::Type::getInt32Ty(driver->Context);
+  setLastType(t);
+}
+void CodeGenVisitor::Visit(TypeFloat *expr) {
+  auto t = llvm::Type::getFloatTy(driver->Context);
+  setLastType(t);
+}
+void CodeGenVisitor::Visit(TypeString *expr) {
+  auto t = llvm::PointerType::get(llvm::Type::getInt8Ty(driver->Context), 0);
+  setLastType(t);
+}
+void CodeGenVisitor::Visit(TypeVoid *expr) {
+  auto t = llvm::Type::getVoidTy(driver->Context);
+}
+void CodeGenVisitor::Visit(TypeBool *expr) {
+  auto t = llvm::Type::getInt1Ty(driver->Context);
+}
+void CodeGenVisitor::Visit(TypeByte *expr) {
+  auto t = llvm::Type::getInt8Ty(driver->Context);
+}
+void CodeGenVisitor::Visit(TypeStruct *expr) {
+  throw std::runtime_error("Not implemented");
 }
