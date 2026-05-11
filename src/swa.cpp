@@ -6,9 +6,9 @@
 int main(int argc, char *argv[]) {
   std::string program = R"(
     dialect:english;
-    start() int {
+    start(argc int, argv []string) int {
       let x int := 3;
-      print("x = %d", x);
+      print_f("x = %d, argc = %d", x, argc);
     }
   )";
   SwaCompiler swa = SwaCompiler();
