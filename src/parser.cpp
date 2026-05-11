@@ -152,8 +152,9 @@ std::unique_ptr<Expr> Parser::parsePrimary() {
     return expr;
   }
 
-  if (isAtEnd())
+  if (isAtEnd()) {
     return nullptr;
+  }
 
   throw std::runtime_error("Expected expression but got " + current().value);
 }
