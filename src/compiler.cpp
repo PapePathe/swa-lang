@@ -90,8 +90,6 @@ void SwaCompiler::Run(const std::string &_source) {
   Lexer l(_source, KEYWORDS_ENGLISH);
   Parser parser(l.tokenize());
   auto program = parser.parseProgram();
-  //  auto st = SymbolTable();
-  //  program->Codegen(context, m, builder, st);
 
   auto driver = std::make_unique<SwaCompilerDriver>("swa_module");
   CodeGenVisitor gen = CodeGenVisitor(std::move(driver));
@@ -99,8 +97,6 @@ void SwaCompiler::Run(const std::string &_source) {
   program->Accept(gen);
 
   driver = gen.finalize();
-  // m->print(llvm::errs(), nullptr);
-  // driver->Module->print(llvm::errs(), nullptr);
 
   llvm::ExecutionEngine *engine =
       llvm::EngineBuilder(std::move(driver->Module)).create();
