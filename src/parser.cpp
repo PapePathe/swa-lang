@@ -119,11 +119,11 @@ std::unique_ptr<Expr> Parser::parseFunctionCall(std::unique_ptr<Expr> callee) {
 
 std::unique_ptr<Expr> Parser::parsePrimary() {
   if (current().type == TokenType::TRUE) {
-    std::string name = expect(TokenType::TRUE).value;
+    expect(TokenType::TRUE);
     return std::make_unique<BoolExpr>(true);
   }
   if (current().type == TokenType::FALSE) {
-    std::string name = expect(TokenType::FALSE).value;
+    expect(TokenType::FALSE);
     return std::make_unique<BoolExpr>(false);
   }
   if (current().type == TokenType::NUMBER) {
