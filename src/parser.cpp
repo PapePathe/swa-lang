@@ -1,3 +1,4 @@
+#include "ast/node.h"
 #include "lexer/tokentype.h"
 #include <iostream>
 #include <memory>
@@ -64,8 +65,22 @@ std::unique_ptr<Expr> Parser::parseStatement() {
     parseDialect();
     return parseStatement();
   }
-  if (current().type == TokenType::IF)
+  if (current().type == TokenType::IF) {
     return parseIf();
+  }
+  if (current().type == TokenType::TEST) {
+    return parseTest();
+  }
+  if (current().type == TokenType::TEST_ASSERT_TRUE ||
+      current().type == TokenType::TEST_ASSERT_FALSE ||
+      current().type == TokenType::TEST_ASSERT_EQUAL ||
+      current().type == TokenType::TEST_ASSERT_NOT_EQUAL ||
+      current().type == TokenType::TEST_ASSERT_LESS_THAN ||
+      current().type == TokenType::TEST_ASSERT_GREATER_THAN ||
+      current().type == TokenType::TEST_ASSERT_LESS_THAN_OR_EQUALS ||
+      current().type == TokenType::TEST_ASSERT_GREATER_THAN_OR_EQUALS) {
+    return parseAsserts();
+  }
 
   trace("end parse statement\n");
 
@@ -94,6 +109,104 @@ int Parser::getPrecedence(TokenType type) {
     return -1;
   }
 }
+
+std::unique_ptr<Expr> Parser::parseAsserts() {
+  switch (current().type) {
+  case TokenType::TEST_ASSERT_TRUE: {
+    expect(TokenType::TEST_ASSERT_TRUE);
+    auto expr = parseExpression();
+    expect(TokenType::SEMICOLON);
+
+    return std::make_unique<Assert_True_Expr>(std::move(expr));
+  }
+  case TokenType::TEST_ASSERT_FALSE: {
+    expect(TokenType::TEST_ASSERT_FALSE);
+    auto expr = parseExpression();
+    expect(TokenType::SEMICOLON);
+
+    return std::make_unique<Assert_False_Expr>(std::move(expr));
+  }
+
+  case TokenType::TEST_ASSERT_EQUAL: {
+    expect(TokenType::TEST_ASSERT_EQUAL);
+    auto left = parseExpression();
+    expect(TokenType::COMMA);
+    auto right = parseExpression();
+    expect(TokenType::SEMICOLON);
+
+    return std::make_unique<Assert_Equal_Expr>(std::move(left),
+                                               std::move(right));
+  }
+
+  case TokenType::TEST_ASSERT_NOT_EQUAL: {
+    expect(TokenType::TEST_ASSERT_NOT_EQUAL);
+    auto left = parseExpression();
+    expect(TokenType::COMMA);
+    auto right = parseExpression();
+    expect(TokenType::SEMICOLON);
+
+    return std::make_unique<Assert_Not_Equal_Expr>(std::move(left),
+                                                   std::move(right));
+  }
+
+  case TokenType::TEST_ASSERT_GREATER_THAN: {
+    expect(TokenType::TEST_ASSERT_GREATER_THAN);
+    auto left = parseExpression();
+    expect(TokenType::COMMA);
+    auto right = parseExpression();
+    expect(TokenType::SEMICOLON);
+
+    return std::make_unique<Assert_Greater_Than_Expr>(std::move(left),
+                                                      std::move(right));
+  }
+
+  case TokenType::TEST_ASSERT_GREATER_THAN_OR_EQUALS: {
+    expect(TokenType::TEST_ASSERT_GREATER_THAN_OR_EQUALS);
+    auto left = parseExpression();
+    expect(TokenType::COMMA);
+    auto right = parseExpression();
+    expect(TokenType::SEMICOLON);
+
+    return std::make_unique<Assert_Greater_Than_Equals_Expr>(std::move(left),
+                                                             std::move(right));
+  }
+
+  case TokenType::TEST_ASSERT_LESS_THAN: {
+    expect(TokenType::TEST_ASSERT_LESS_THAN);
+    auto left = parseExpression();
+    expect(TokenType::COMMA);
+    auto right = parseExpression();
+    expect(TokenType::SEMICOLON);
+
+    return std::make_unique<Assert_Less_Than_Expr>(std::move(left),
+                                                   std::move(right));
+  }
+
+  case TokenType::TEST_ASSERT_LESS_THAN_OR_EQUALS: {
+    expect(TokenType::TEST_ASSERT_LESS_THAN_OR_EQUALS);
+    auto left = parseExpression();
+    expect(TokenType::COMMA);
+    auto right = parseExpression();
+    expect(TokenType::SEMICOLON);
+
+    return std::make_unique<Assert_Less_Than_Equal_Expr>(std::move(left),
+                                                         std::move(right));
+  }
+
+  default:
+    throw std::runtime_error("unknown assertion for token ");
+  }
+  throw std::runtime_error("unknown assertion for token ");
+}
+
+std::unique_ptr<Expr> Parser::parseTest() {
+  expect(TokenType::TEST);
+  auto name = expect(TokenType::STRING).value;
+  auto body = parseBlock();
+
+  return std::make_unique<Test_Expr>(name, std::move(body));
+}
+
 std::unique_ptr<Expr> Parser::parseFunctionCall(std::unique_ptr<Expr> callee) {
   expect(TokenType::OPEN_PAREN);
 
