@@ -98,6 +98,15 @@ public:
   void Visit(CallExpr *expr);
   void Visit(Logical_Or_Expr *expr);
   void Visit(Logical_And_Expr *expr);
+  void Visit(Test_Expr *expr);
+  void Visit(Assert_Equal_Expr *expr);
+  void Visit(Assert_Not_Equal_Expr *expr);
+  void Visit(Assert_True_Expr *expr);
+  void Visit(Assert_False_Expr *expr);
+  void Visit(Assert_Less_Than_Expr *expr);
+  void Visit(Assert_Less_Than_Equal_Expr *expr);
+  void Visit(Assert_Greater_Than_Expr *expr);
+  void Visit(Assert_Greater_Than_Equals_Expr *expr);
 
   virtual void Visit(TypeSlice *expr);
   virtual void Visit(TypeArray *expr);

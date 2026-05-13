@@ -33,6 +33,16 @@ class CallExpr;
 class Logical_And_Expr;
 class Logical_Or_Expr;
 
+class Test_Expr;
+class Assert_True_Expr;
+class Assert_False_Expr;
+class Assert_Equal_Expr;
+class Assert_Not_Equal_Expr;
+class Assert_Less_Than_Expr;
+class Assert_Less_Than_Equal_Expr;
+class Assert_Greater_Than_Expr;
+class Assert_Greater_Than_Equals_Expr;
+
 class TypeInt;
 class TypeFloat;
 class TypeBool;
@@ -74,6 +84,15 @@ public:
   virtual void Visit(CallExpr *expr) = 0;
   virtual void Visit(Logical_And_Expr *expr) = 0;
   virtual void Visit(Logical_Or_Expr *expr) = 0;
+  virtual void Visit(Test_Expr *expr) = 0;
+  virtual void Visit(Assert_Equal_Expr *expr) = 0;
+  virtual void Visit(Assert_Not_Equal_Expr *expr) = 0;
+  virtual void Visit(Assert_True_Expr *expr) = 0;
+  virtual void Visit(Assert_False_Expr *expr) = 0;
+  virtual void Visit(Assert_Less_Than_Expr *expr) = 0;
+  virtual void Visit(Assert_Less_Than_Equal_Expr *expr) = 0;
+  virtual void Visit(Assert_Greater_Than_Expr *expr) = 0;
+  virtual void Visit(Assert_Greater_Than_Equals_Expr *expr) = 0;
 
   virtual void Visit(TypeSlice *expr) = 0;
   virtual void Visit(TypeArray *expr) = 0;
