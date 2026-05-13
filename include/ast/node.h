@@ -280,4 +280,84 @@ public:
   void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
+class Test_Expr : public Expr {
+public:
+  std::string Name;
+  std::unique_ptr<BlockExpr> Body;
+  Test_Expr(std::string name, std::unique_ptr<BlockExpr> body)
+      : Name(name), Body(std::move(body)) {}
+};
+
+class Assert_True_Expr : public Expr {
+public:
+  std::unique_ptr<Expr> Assertion;
+  Assert_True_Expr(std::unique_ptr<Expr> assertion)
+      : Assertion(std::move(assertion)) {}
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+};
+
+class Assert_False_Expr : public Expr {
+public:
+  std::unique_ptr<Expr> Assertion;
+  Assert_False_Expr(std::unique_ptr<Expr> assertion)
+      : Assertion(std::move(assertion)) {}
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+};
+
+class Assert_Equal_Expr : public Expr {
+public:
+  std::unique_ptr<Expr> Left;
+  std::unique_ptr<Expr> Right;
+  Assert_Equal_Expr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
+      : Left(std::move(left)), Right(std::move(right)) {}
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+};
+
+class Assert_Not_Equal_Expr : public Expr {
+public:
+  std::unique_ptr<Expr> Left;
+  std::unique_ptr<Expr> Right;
+  Assert_Not_Equal_Expr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
+      : Left(std::move(left)), Right(std::move(right)) {}
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+};
+
+class Assert_Less_Than_Expr : public Expr {
+public:
+  std::unique_ptr<Expr> Left;
+  std::unique_ptr<Expr> Right;
+  Assert_Less_Than_Expr(std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
+      : Left(std::move(left)), Right(std::move(right)) {}
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+};
+
+class Assert_Less_Than_Equal_Expr : public Expr {
+public:
+  std::unique_ptr<Expr> Left;
+  std::unique_ptr<Expr> Right;
+  Assert_Less_Than_Equal_Expr(std::unique_ptr<Expr> left,
+                              std::unique_ptr<Expr> right)
+      : Left(std::move(left)), Right(std::move(right)) {}
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+};
+
+class Assert_Greater_Than_Expr : public Expr {
+public:
+  std::unique_ptr<Expr> Left;
+  std::unique_ptr<Expr> Right;
+  Assert_Greater_Than_Expr(std::unique_ptr<Expr> left,
+                           std::unique_ptr<Expr> right)
+      : Left(std::move(left)), Right(std::move(right)) {}
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+};
+
+class Assert_Greater_Than_Equals_Expr : public Expr {
+public:
+  std::unique_ptr<Expr> Left;
+  std::unique_ptr<Expr> Right;
+  Assert_Greater_Than_Equals_Expr(std::unique_ptr<Expr> left,
+                                  std::unique_ptr<Expr> right)
+      : Left(std::move(left)), Right(std::move(right)) {}
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
+};
 #endif // !SWA_AST_NODE_H
