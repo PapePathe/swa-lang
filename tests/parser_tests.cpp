@@ -21,16 +21,47 @@ void debugTokens(std::vector<Token> tokens) {
   }
 }
 
-TEST(ParserTest, ParseMinimalProgram) {
+class ParserTests : public ::testing::Test {
+public:
+  void ASSERT_EXPR_NUMBER(Expr *node, int expected) {
+    ASSERT_NE(node, nullptr);
+    auto *casted = dynamic_cast<NumberExpr *>(node);
+    ASSERT_NE(casted, nullptr) << "Node is not a NumberExpr";
+    EXPECT_EQ(casted->Value, expected);
+  }
+
+  void ASSERT_EXPR_ID(Expr *node, std::string expected) {
+    ASSERT_NE(node, nullptr);
+    auto *casted = dynamic_cast<IdExpr *>(node);
+    ASSERT_NE(casted, nullptr) << "Node is not a IdExpr";
+    EXPECT_EQ(casted->Name, expected);
+  }
+
+  void ASSERT_EXPR_STRING(Expr *node, std::string expected) {
+    ASSERT_NE(node, nullptr);
+    auto *casted = dynamic_cast<StrExpr *>(node);
+    ASSERT_NE(casted, nullptr) << "Node is not a StrExpr";
+    EXPECT_EQ(casted->Name, expected);
+  }
+
+  std::vector<std::unique_ptr<Expr>> PARSE_PROGRAM(const std::string &input,
+                                                   size_t expectedCount) {
+    auto tokens = getTokens(input);
+    Parser parser(tokens);
+    auto program = parser.parseProgram();
+
+    EXPECT_NE(program, nullptr) << "Parser returned nullptr for: " << input;
+
+    EXPECT_EQ(program->Exprs.size(), expectedCount)
+        << "Statement count mismatch for: " << input;
+
+    return std::move(program->Exprs);
+  }
+};
+
+TEST_F(ParserTests, ParseMinimalProgram) {
   std::string input = "main()int { print(\"Salam\"); }";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
-
-  ASSERT_NE(program, nullptr);
-
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto node = dynamic_cast<FuncExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
@@ -40,17 +71,10 @@ TEST(ParserTest, ParseMinimalProgram) {
   ASSERT_EQ(node->Body.get()->Exprs.size(), 1);
 }
 
-TEST(ParserTest, ParseMinimalProgramWithCommandArgs) {
+TEST_F(ParserTests, ParseMinimalProgramWithCommandArgs) {
   std::string input =
       "main(arguments_count int, arguments []string)int { return 0; }";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
-
-  ASSERT_NE(program, nullptr);
-
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto node = dynamic_cast<FuncExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
@@ -60,17 +84,10 @@ TEST(ParserTest, ParseMinimalProgramWithCommandArgs) {
   ASSERT_EQ(node->Body.get()->Exprs.size(), 1);
 }
 
-TEST(ParserTest, ParseMinimalProgramWithCommandArgsAndEnv) {
+TEST_F(ParserTests, ParseMinimalProgramWithCommandArgsAndEnv) {
   std::string input = "main(arguments_count int, arguments []string, "
                       "environment []string)int { return 0; }";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
-
-  ASSERT_NE(program, nullptr);
-
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto node = dynamic_cast<FuncExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
@@ -169,21 +186,14 @@ TEST(SemanticTest, ThrowsErrorOnInvalidMainSignature5) {
   }
 }
 
-TEST(ParserTest, ParseMinimalProgramWithDialect) {
+TEST_F(ParserTests, ParseMinimalProgramWithDialect) {
   std::string input = R"(
     dialect:english;
     main() int {
       print("Salam");
     }
   )";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
-
-  ASSERT_NE(program, nullptr);
-
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto node = dynamic_cast<FuncExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
@@ -193,7 +203,7 @@ TEST(ParserTest, ParseMinimalProgramWithDialect) {
   ASSERT_EQ(node->Body.get()->Exprs.size(), 1);
 }
 
-TEST(ParserTest, ParseEmptyPrintStatement) {
+TEST_F(ParserTests, ParseEmptyPrintStatement) {
   std::string input = "print();";
   auto tokens = getTokens(input);
   Parser parser(tokens);
@@ -201,7 +211,7 @@ TEST(ParserTest, ParseEmptyPrintStatement) {
   ASSERT_THROW(parser.parseProgram(), std::runtime_error);
 }
 
-TEST(ParserTest, ParseEmptyPrintFStatement) {
+TEST_F(ParserTests, ParseEmptyPrintFStatement) {
   std::string input = "print_f();";
   auto tokens = getTokens(input);
   Parser parser(tokens);
@@ -209,7 +219,7 @@ TEST(ParserTest, ParseEmptyPrintFStatement) {
   ASSERT_THROW(parser.parseProgram(), std::runtime_error);
 }
 
-TEST(ParserTest, ParseInvalidPrintFStatement) {
+TEST_F(ParserTests, ParseInvalidPrintFStatement) {
   std::string input = "print_f(x);";
   auto tokens = getTokens(input);
   Parser parser(tokens);
@@ -217,224 +227,125 @@ TEST(ParserTest, ParseInvalidPrintFStatement) {
   ASSERT_THROW(parser.parseProgram(), std::runtime_error);
 }
 
-TEST(ParserTest, ParsePrintFStatement) {
+TEST_F(ParserTests, ParsePrintFStatement) {
   std::string input = "print_f(\"Hello\");";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
-
-  ASSERT_NE(program, nullptr);
-
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto printNode = dynamic_cast<Formatted_Print_Expr *>(stmts[0].get());
   ASSERT_NE(printNode, nullptr);
   ASSERT_EQ(printNode->Values.size(), 1);
 
-  auto str = dynamic_cast<StrExpr *>(printNode->Values[0].get());
-  ASSERT_NE(str, nullptr);
-  ASSERT_EQ(str->Name, "Hello");
+  ASSERT_EXPR_STRING(printNode->Values[0].get(), "Hello");
 }
 
-TEST(ParserTest, ParsePrintStatement) {
+TEST_F(ParserTests, ParsePrintStatement) {
   std::string input = "print(\"Hello\");";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
-
-  ASSERT_NE(program, nullptr);
-
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto printNode = dynamic_cast<PrintExpr *>(stmts[0].get());
   ASSERT_NE(printNode, nullptr);
   ASSERT_EQ(printNode->Values.size(), 1);
 
-  auto str = dynamic_cast<StrExpr *>(printNode->Values[0].get());
-  ASSERT_NE(str, nullptr);
-  ASSERT_EQ(str->Name, "Hello");
+  ASSERT_EXPR_STRING(printNode->Values[0].get(), "Hello");
 }
 
-TEST(ParserTest, ParsePrintStatement2) {
-  std::string input = R"(
-      print("10 - 3 - 2 = %d", a);
-  )";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
-
-  ASSERT_NE(program, nullptr);
-
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+TEST_F(ParserTests, ParsePrintStatement2) {
+  std::string input = R"( print("10 - 3 - 2 = %d", a);)";
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto printNode = dynamic_cast<PrintExpr *>(stmts[0].get());
   ASSERT_NE(printNode, nullptr);
   ASSERT_EQ(printNode->Values.size(), 2);
 
-  auto str = dynamic_cast<StrExpr *>(printNode->Values[0].get());
-  ASSERT_NE(str, nullptr);
-  ASSERT_EQ(str->Name, "10 - 3 - 2 = %d");
-
-  auto id = dynamic_cast<IdExpr *>(printNode->Values[1].get());
-  ASSERT_NE(id, nullptr);
-  ASSERT_EQ(id->Name, "a");
+  ASSERT_EXPR_STRING(printNode->Values[0].get(), "10 - 3 - 2 = %d");
+  ASSERT_EXPR_ID(printNode->Values[1].get(), "a");
 }
 
-TEST(ParserTest, ParsePrintStatement3) {
-  std::string input = R"(
-  -5
-  )";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-
-  //  debugTokens(tokens);
-  auto program = parser.parseProgram();
-
-  ASSERT_NE(program, nullptr);
-
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
-
+TEST_F(ParserTests, ParsePrintStatement3) {
+  std::string input = R"( -5)";
+  auto stmts = PARSE_PROGRAM(input, 1);
   auto node = dynamic_cast<UnaryMinusExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
 
-  auto val = dynamic_cast<NumberExpr *>(node->Right.get());
-  ASSERT_NE(val, nullptr);
-  ASSERT_EQ(val->Value, 5);
+  ASSERT_EXPR_NUMBER(node->Right.get(), 5);
 }
 
-TEST(ParserTest, AddExpr) {
+TEST_F(ParserTests, AddExpr) {
   std::string input = "x + 0 ";
-  auto tokens = getTokens(input);
-
-  Parser parser(tokens);
-
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto node = dynamic_cast<AddExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
 
-  auto left = dynamic_cast<IdExpr *>(node->Left.get());
-  ASSERT_EQ(left->Name, "x");
-
-  auto right = dynamic_cast<NumberExpr *>(node->Right.get());
-  ASSERT_EQ(right->Value, 0);
+  ASSERT_EXPR_ID(node->Left.get(), "x");
+  ASSERT_EXPR_NUMBER(node->Right.get(), 0);
 }
 
-TEST(ParserTest, CompositeBinaryExpr1) {
+TEST_F(ParserTests, CompositeBinaryExpr1) {
   std::string input = "2 + 3 * 4";
-  auto tokens = getTokens(input);
-
-  Parser parser(tokens);
-
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto node = dynamic_cast<AddExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
 
-  auto left = dynamic_cast<NumberExpr *>(node->Left.get());
-  ASSERT_EQ(left->Value, 2);
+  ASSERT_EXPR_NUMBER(node->Left.get(), 2);
 
   auto mul = dynamic_cast<MulExpr *>(node->Right.get());
   ASSERT_NE(mul, nullptr);
 
-  auto mulleft = dynamic_cast<NumberExpr *>(mul->Left.get());
-  ASSERT_EQ(mulleft->Value, 3);
-
-  auto mulright = dynamic_cast<NumberExpr *>(mul->Right.get());
-  ASSERT_EQ(mulright->Value, 4);
+  ASSERT_EXPR_NUMBER(mul->Left.get(), 3);
+  ASSERT_EXPR_NUMBER(mul->Right.get(), 4);
 }
 
-TEST(ParserTest, CompositeBinaryExpr2) {
+TEST_F(ParserTests, CompositeBinaryExpr2) {
   std::string input = "(2 + 3) * 4";
-  auto tokens = getTokens(input);
-
-  Parser parser(tokens);
-
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto node = dynamic_cast<MulExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
 
   auto add = dynamic_cast<AddExpr *>(node->Left.get());
   ASSERT_NE(add, nullptr);
-
-  auto left = dynamic_cast<NumberExpr *>(add->Left.get());
-  ASSERT_EQ(left->Value, 2);
-
-  auto right = dynamic_cast<NumberExpr *>(add->Right.get());
-  ASSERT_EQ(right->Value, 3);
-
-  auto num = dynamic_cast<NumberExpr *>(node->Right.get());
-  ASSERT_NE(num, nullptr);
-  ASSERT_EQ(num->Value, 4);
+  ASSERT_EXPR_NUMBER(add->Left.get(), 2);
+  ASSERT_EXPR_NUMBER(add->Right.get(), 3);
+  ASSERT_EXPR_NUMBER(node->Right.get(), 4);
 }
 
-TEST(ParserTest, SubExpr) {
+TEST_F(ParserTests, SubExpr) {
   std::string input = "x - 0 ";
-  auto tokens = getTokens(input);
-
-  Parser parser(tokens);
-
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto node = dynamic_cast<SubExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
 
-  auto left = dynamic_cast<IdExpr *>(node->Left.get());
-  ASSERT_EQ(left->Name, "x");
-
-  auto right = dynamic_cast<NumberExpr *>(node->Right.get());
-  ASSERT_EQ(right->Value, 0);
+  ASSERT_EXPR_ID(node->Left.get(), "x");
+  ASSERT_EXPR_NUMBER(node->Right.get(), 0);
 }
 
-TEST(ParserTest, MulExpr) {
+TEST_F(ParserTests, MulExpr) {
   std::string input = "x * 0 ";
-  auto tokens = getTokens(input);
-
-  Parser parser(tokens);
-
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto node = dynamic_cast<MulExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
 
-  auto left = dynamic_cast<IdExpr *>(node->Left.get());
-  ASSERT_EQ(left->Name, "x");
-
-  auto right = dynamic_cast<NumberExpr *>(node->Right.get());
-  ASSERT_EQ(right->Value, 0);
+  ASSERT_EXPR_ID(node->Left.get(), "x");
+  ASSERT_EXPR_NUMBER(node->Right.get(), 0);
 }
 
-TEST(ParserTest, DivExpr) {
+TEST_F(ParserTests, DivExpr) {
   std::string input = "x / 0 ";
-  auto tokens = getTokens(input);
-
-  Parser parser(tokens);
-
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto node = dynamic_cast<DivExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
+
+  ASSERT_EXPR_ID(node->Left.get(), "x");
+  ASSERT_EXPR_NUMBER(node->Right.get(), 0);
 }
 
 // FIXME
-// TEST(ParserTest, ConditionalNotEq) {
+// TEST_F(ParserTests, ConditionalNotEq) {
 //   std::string input = "!true";
 //   auto tokens = getTokens(input);
 //   debugTokens(tokens);
@@ -452,111 +363,64 @@ TEST(ParserTest, DivExpr) {
 //    ASSERT_EQ(right->Value, 0);
 // }
 
-TEST(ParserTest, ConditionalEq) {
+TEST_F(ParserTests, ConditionalEq) {
   std::string input = "x = 0 ";
-  auto tokens = getTokens(input);
-
-  Parser parser(tokens);
-
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto node = dynamic_cast<EqExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
 
-  auto left = dynamic_cast<IdExpr *>(node->Left.get());
-  ASSERT_EQ(left->Name, "x");
-
-  auto right = dynamic_cast<NumberExpr *>(node->Right.get());
-  ASSERT_EQ(right->Value, 0);
+  ASSERT_EXPR_ID(node->Left.get(), "x");
+  ASSERT_EXPR_NUMBER(node->Right.get(), 0);
 }
 
-TEST(ParserTest, ConditionalGt) {
+TEST_F(ParserTests, ConditionalGt) {
   std::string input = "x > 0 ";
-  auto tokens = getTokens(input);
-  //  debugTokens(tokens);
-  Parser parser(tokens);
-
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto node = dynamic_cast<GTExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
 
-  auto left = dynamic_cast<IdExpr *>(node->Left.get());
-  ASSERT_EQ(left->Name, "x");
-
-  auto right = dynamic_cast<NumberExpr *>(node->Right.get());
-  ASSERT_EQ(right->Value, 0);
+  ASSERT_EXPR_ID(node->Left.get(), "x");
+  ASSERT_EXPR_NUMBER(node->Right.get(), 0);
 }
 
-TEST(ParserTest, ConditionalGte) {
+TEST_F(ParserTests, ConditionalGte) {
   std::string input = "x >= 0 ";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto node = dynamic_cast<GTEExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
 
-  auto left = dynamic_cast<IdExpr *>(node->Left.get());
-  ASSERT_EQ(left->Name, "x");
-
-  auto right = dynamic_cast<NumberExpr *>(node->Right.get());
-  ASSERT_EQ(right->Value, 0);
+  ASSERT_EXPR_ID(node->Left.get(), "x");
+  ASSERT_EXPR_NUMBER(node->Right.get(), 0);
 }
 
-TEST(ParserTest, ConditionalLt) {
+TEST_F(ParserTests, ConditionalLt) {
   std::string input = "x < 0 ";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto node = dynamic_cast<LTExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
 
-  auto left = dynamic_cast<IdExpr *>(node->Left.get());
-  ASSERT_EQ(left->Name, "x");
-
-  auto right = dynamic_cast<NumberExpr *>(node->Right.get());
-  ASSERT_EQ(right->Value, 0);
+  ASSERT_EXPR_ID(node->Left.get(), "x");
+  ASSERT_EXPR_NUMBER(node->Right.get(), 0);
 }
 
-TEST(ParserTest, ConditionalLte) {
+TEST_F(ParserTests, ConditionalLte) {
   std::string input = "x <= 0 ";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto node = dynamic_cast<LTEExpr *>(stmts[0].get());
   ASSERT_NE(node, nullptr);
 
-  auto left = dynamic_cast<IdExpr *>(node->Left.get());
-  ASSERT_EQ(left->Name, "x");
-
-  auto right = dynamic_cast<NumberExpr *>(node->Right.get());
-  ASSERT_EQ(right->Value, 0);
+  ASSERT_EXPR_ID(node->Left.get(), "x");
+  ASSERT_EXPR_NUMBER(node->Right.get(), 0);
 }
 
-TEST(ParserTest, ParseIf) {
+TEST_F(ParserTests, ParseIf) {
   std::string input = "if x = 0 {print(\"x\");}";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto ifnode = dynamic_cast<IfExpr *>(stmts[0].get());
   ASSERT_NE(ifnode->Success, nullptr);
@@ -564,22 +428,14 @@ TEST(ParserTest, ParseIf) {
   ASSERT_NE(ifnode->Cond, nullptr);
 
   auto cond = dynamic_cast<EqExpr *>(ifnode->Cond.get());
-  auto left = dynamic_cast<IdExpr *>(cond->Left.get());
-  auto right = dynamic_cast<NumberExpr *>(cond->Right.get());
-
-  ASSERT_EQ(left->Name, "x");
-  ASSERT_EQ(right->Value, 0);
+  ASSERT_EXPR_ID(cond->Left.get(), "x");
+  ASSERT_EXPR_NUMBER(cond->Right.get(), 0);
 }
 
-TEST(ParserTest, ParseElse) {
+TEST_F(ParserTests, ParseElse) {
   std::string input = "if x = 0 { print(\"x\"); }"
                       "else { print(\"x\"); }";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto ifnode = dynamic_cast<IfExpr *>(stmts[0].get());
   ASSERT_NE(ifnode->Cond, nullptr);
@@ -587,21 +443,14 @@ TEST(ParserTest, ParseElse) {
   ASSERT_NE(ifnode->Failure, nullptr);
 
   auto cond = dynamic_cast<EqExpr *>(ifnode->Cond.get());
-  auto left = dynamic_cast<IdExpr *>(cond->Left.get());
-  auto right = dynamic_cast<NumberExpr *>(cond->Right.get());
 
-  ASSERT_EQ(left->Name, "x");
-  ASSERT_EQ(right->Value, 0);
+  ASSERT_EXPR_ID(cond->Left.get(), "x");
+  ASSERT_EXPR_NUMBER(cond->Right.get(), 0);
 }
 
-TEST(ParserTest, ParseVariableDeclaration) {
+TEST_F(ParserTests, ParseVariableDeclaration) {
   std::string input = "let x int := 42;";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto declNode = dynamic_cast<DeclarationExpr *>(stmts[0].get());
   ASSERT_NE(declNode, nullptr);
@@ -613,15 +462,12 @@ TEST(ParserTest, ParseVariableDeclaration) {
   // FIXME assert declNode->T == TypeInt
 }
 
-TEST(ParserTest, ParseFunctionDefinition) {
+TEST_F(ParserTests, ParseFunctionDefinition) {
   std::string input =
       "func my_func(a int, b float, c bool, d string, e byte) int "
       "{ print(\"hi\"); }";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
   auto funcNode = dynamic_cast<FuncExpr *>(stmts[0].get());
 
   ASSERT_NE(funcNode, nullptr);
@@ -637,14 +483,9 @@ TEST(ParserTest, ParseFunctionDefinition) {
   ASSERT_EQ(funcNode->Proto->ArgsTypes.size(), 5);
 }
 
-TEST(ParserTest, ParseStructDefinition) {
+TEST_F(ParserTests, ParseStructDefinition) {
   std::string input = "struct Point { x int }";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto structNode = dynamic_cast<StructDefExpr *>(stmts[0].get());
   ASSERT_NE(structNode, nullptr);
@@ -653,16 +494,11 @@ TEST(ParserTest, ParseStructDefinition) {
   ASSERT_EQ(structNode->FieldNames[0], "x");
 }
 
-TEST(ParserTest, ParseStructDefinitionAllTypes) {
+TEST_F(ParserTests, ParseStructDefinitionAllTypes) {
   std::string input =
       "struct Point { x int, y float, a string, b bool, c byte, "
       "d [2]int}";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto structNode = dynamic_cast<StructDefExpr *>(stmts[0].get());
   ASSERT_NE(structNode, nullptr);
@@ -679,24 +515,17 @@ TEST(ParserTest, ParseStructDefinitionAllTypes) {
   ASSERT_EQ(structNode->Name, "Point");
 }
 
-TEST(ParserTest, Return) {
+TEST_F(ParserTests, Return) {
   std::string input = "return 0;";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-
-  auto program = parser.parseProgram();
-  auto &stmts = program->Exprs;
-  ASSERT_EQ(stmts.size(), 1);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
   auto returnexpr = dynamic_cast<ReturnExpr *>(stmts[0].get());
   ASSERT_NE(returnexpr, nullptr);
 
-  auto v = dynamic_cast<NumberExpr *>(returnexpr->Value.get());
-  ASSERT_NE(v, nullptr);
-  ASSERT_EQ(v->Value, 0);
+  ASSERT_EXPR_NUMBER(returnexpr->Value.get(), 0);
 }
 
-// TEST(ParserTest, MissingClosingParen) {
+// TEST_F(ParserTests, MissingClosingParen) {
 //   std::string input = "myFunc(1, 2";
 //   auto tokens = getTokens(input);
 //   Parser parser(tokens);
@@ -704,22 +533,17 @@ TEST(ParserTest, Return) {
 //   EXPECT_THROW(parser.parseProgram(), std::runtime_error);
 // }
 
-TEST(ParserTest, TrailingComma) {
+TEST_F(ParserTests, TrailingComma) {
   std::string input = "myFunc(1, )";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
+  auto stmts = PARSE_PROGRAM(input, 1);
 
-  auto call = dynamic_cast<CallExpr *>(program->Exprs[0].get());
+  auto call = dynamic_cast<CallExpr *>(stmts[0].get());
   ASSERT_NE(call, nullptr);
   ASSERT_EQ(call->Args.size(), 1);
-
-  auto arg = dynamic_cast<NumberExpr *>(call->Args[0].get());
-  EXPECT_NE(arg, nullptr);
-  EXPECT_EQ(arg->Value, 1);
+  ASSERT_EXPR_NUMBER(call->Args[0].get(), 1);
 }
 
-TEST(ParserTest, EmptyArgInMiddle) {
+TEST_F(ParserTests, EmptyArgInMiddle) {
   std::string input = "myFunc(1, , 3)";
   auto tokens = getTokens(input);
   Parser parser(tokens);
@@ -727,59 +551,45 @@ TEST(ParserTest, EmptyArgInMiddle) {
   EXPECT_THROW(parser.parseProgram(), std::runtime_error);
 }
 
-TEST(ParserTest, MultipleArguments) {
+TEST_F(ParserTests, MultipleArguments) {
   std::string input = "add(x, 10, \"result\")";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
+  auto stmts = PARSE_PROGRAM(input, 1);
 
-  auto call = dynamic_cast<CallExpr *>(program->Exprs[0].get());
+  auto call = dynamic_cast<CallExpr *>(stmts[0].get());
   ASSERT_NE(call, nullptr);
   ASSERT_EQ(call->Args.size(), 3);
 
-  EXPECT_TRUE(dynamic_cast<IdExpr *>(call->Args[0].get()));
-  EXPECT_TRUE(dynamic_cast<NumberExpr *>(call->Args[1].get()));
-  EXPECT_TRUE(dynamic_cast<StrExpr *>(call->Args[2].get()));
+  ASSERT_EXPR_ID(call->Args[0].get(), "x");
+  ASSERT_EXPR_NUMBER(call->Args[1].get(), 10);
+  ASSERT_EXPR_STRING(call->Args[2].get(), "result");
 }
 
-TEST(ParserTest, NestedFunctionCalls) {
+TEST_F(ParserTests, NestedFunctionCalls) {
   std::string input = "highOrderFunc(square(abs(y)))";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
+  auto stmts = PARSE_PROGRAM(input, 1);
 
-  auto outer = dynamic_cast<CallExpr *>(program->Exprs[0].get());
+  auto outer = dynamic_cast<CallExpr *>(stmts[0].get());
   ASSERT_NE(outer, nullptr);
   ASSERT_EQ(outer->Args.size(), 1);
 
-  auto outerCallee = dynamic_cast<IdExpr *>(outer->Callee.get());
-  ASSERT_NE(outerCallee, nullptr);
-  ASSERT_EQ(outerCallee->Name, "highOrderFunc");
+  ASSERT_EXPR_ID(outer->Callee.get(), "highOrderFunc");
 
   auto middle = dynamic_cast<CallExpr *>(outer->Args[0].get());
   ASSERT_NE(middle, nullptr);
   ASSERT_EQ(middle->Args.size(), 1);
-
-  auto middleCallee = dynamic_cast<IdExpr *>(middle->Callee.get());
-  ASSERT_NE(middleCallee, nullptr);
-  ASSERT_EQ(middleCallee->Name, "square");
+  ASSERT_EXPR_ID(middle->Callee.get(), "square");
 
   auto inner = dynamic_cast<CallExpr *>(middle->Args[0].get());
   ASSERT_NE(inner, nullptr);
   ASSERT_EQ(inner->Args.size(), 1);
-
-  auto innerCallee = dynamic_cast<IdExpr *>(inner->Callee.get());
-  ASSERT_NE(innerCallee, nullptr);
-  ASSERT_EQ(innerCallee->Name, "abs");
+  ASSERT_EXPR_ID(inner->Callee.get(), "abs");
 }
 
-TEST(ParserTest, FunctionCallInArithmetic) {
+TEST_F(ParserTests, FunctionCallInArithmetic) {
   std::string input = "5 + getVal() * 2";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
+  auto stmts = PARSE_PROGRAM(input, 1);
 
-  auto add = dynamic_cast<AddExpr *>(program->Exprs[0].get());
+  auto add = dynamic_cast<AddExpr *>(stmts[0].get());
   ASSERT_NE(add, nullptr);
 
   auto mul = dynamic_cast<MulExpr *>(add->Right.get());
@@ -788,130 +598,100 @@ TEST(ParserTest, FunctionCallInArithmetic) {
   auto call = dynamic_cast<CallExpr *>(mul->Left.get());
   ASSERT_NE(call, nullptr);
 
-  auto callee = dynamic_cast<IdExpr *>(call->Callee.get());
-  EXPECT_EQ(callee->Name, "getVal");
+  ASSERT_EXPR_ID(call->Callee.get(), "getVal");
 }
 
-TEST(ParserTest, SimpleFunctionCallNoArgs) {
+TEST_F(ParserTests, SimpleFunctionCallNoArgs) {
   std::string input = "myFunc()";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
+  auto stmts = PARSE_PROGRAM(input, 1);
 
-  auto call = dynamic_cast<CallExpr *>(program->Exprs[0].get());
+  auto call = dynamic_cast<CallExpr *>(stmts[0].get());
   ASSERT_NE(call, nullptr);
-
-  auto callee = dynamic_cast<IdExpr *>(call->Callee.get());
-  EXPECT_EQ(callee->Name, "myFunc");
   EXPECT_EQ(call->Args.size(), 0);
+
+  ASSERT_EXPR_ID(call->Callee.get(), "myFunc");
 }
 
-TEST(ParserTest, FunctionCallWithSingleArg) {
+TEST_F(ParserTests, FunctionCallWithSingleArg) {
   std::string input = "myFunc(42)";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
+  auto stmts = PARSE_PROGRAM(input, 1);
 
-  auto call = dynamic_cast<CallExpr *>(program->Exprs[0].get());
+  auto call = dynamic_cast<CallExpr *>(stmts[0].get());
   ASSERT_NE(call, nullptr);
   EXPECT_EQ(call->Args.size(), 1);
 
-  auto callee = dynamic_cast<IdExpr *>(call->Callee.get());
-  EXPECT_EQ(callee->Name, "myFunc");
-
-  auto arg = dynamic_cast<NumberExpr *>(call->Args[0].get());
-  ASSERT_NE(arg, nullptr);
-  ASSERT_EQ(arg->Value, 42);
+  ASSERT_EXPR_ID(call->Callee.get(), "myFunc");
+  ASSERT_EXPR_NUMBER(call->Args[0].get(), 42);
 }
 
-TEST(ParserTest, NestedFunctionCall) {
+TEST_F(ParserTests, NestedFunctionCall) {
   std::string input = "exponent(calculate(1 + 2))";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
+  auto stmts = PARSE_PROGRAM(input, 1);
 
-  auto call = dynamic_cast<CallExpr *>(program->Exprs[0].get());
+  auto call = dynamic_cast<CallExpr *>(stmts[0].get());
   ASSERT_NE(call, nullptr);
   ASSERT_EQ(call->Args.size(), 1);
-
-  auto callee = dynamic_cast<IdExpr *>(call->Callee.get());
-  EXPECT_EQ(callee->Name, "exponent");
+  ASSERT_EXPR_ID(call->Callee.get(), "exponent");
 
   auto inner = dynamic_cast<CallExpr *>(call->Args[0].get());
   ASSERT_NE(inner, nullptr);
   ASSERT_EQ(inner->Args.size(), 1);
-
-  auto innerCallee = dynamic_cast<IdExpr *>(inner->Callee.get());
-  ASSERT_NE(innerCallee, nullptr);
-  EXPECT_EQ(innerCallee->Name, "calculate");
+  ASSERT_EXPR_ID(inner->Callee.get(), "calculate");
 }
 
-TEST(ParserTest, FunctionCallPrecedenceInLogic) {
+TEST_F(ParserTests, FunctionCallPrecedenceInLogic) {
   std::string input = "isTrue() && check(5 + 2)";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
+  auto stmts = PARSE_PROGRAM(input, 1);
 
-  auto and_expr = dynamic_cast<Logical_And_Expr *>(program->Exprs[0].get());
+  auto and_expr = dynamic_cast<Logical_And_Expr *>(stmts[0].get());
   ASSERT_NE(and_expr, nullptr);
 
   auto left = dynamic_cast<CallExpr *>(and_expr->Left.get());
   ASSERT_NE(left, nullptr);
-
-  auto lcallee = dynamic_cast<IdExpr *>(left->Callee.get());
-  ASSERT_EQ(lcallee->Name, "isTrue");
   ASSERT_EQ(left->Args.size(), 0);
+
+  ASSERT_EXPR_ID(left->Callee.get(), "isTrue");
 
   auto right = dynamic_cast<CallExpr *>(and_expr->Right.get());
   ASSERT_NE(right, nullptr);
   ASSERT_EQ(right->Args.size(), 1);
 
-  auto rcallee = dynamic_cast<IdExpr *>(right->Callee.get());
-  ASSERT_EQ(rcallee->Name, "check");
+  ASSERT_EXPR_ID(right->Callee.get(), "check");
 }
 
-TEST(ParserTest, FunctionCallPrecedenceInLogic2) {
+TEST_F(ParserTests, FunctionCallPrecedenceInLogic2) {
   std::string input = "isTrue() || check(5 + 2)";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
+  auto stmts = PARSE_PROGRAM(input, 1);
 
-  auto and_expr = dynamic_cast<Logical_Or_Expr *>(program->Exprs[0].get());
+  auto and_expr = dynamic_cast<Logical_Or_Expr *>(stmts[0].get());
   ASSERT_NE(and_expr, nullptr);
 
   auto left = dynamic_cast<CallExpr *>(and_expr->Left.get());
   ASSERT_NE(left, nullptr);
-
-  auto lcallee = dynamic_cast<IdExpr *>(left->Callee.get());
-  ASSERT_NE(lcallee, nullptr);
-  ASSERT_EQ(lcallee->Name, "isTrue");
   ASSERT_EQ(left->Args.size(), 0);
+
+  ASSERT_EXPR_ID(left->Callee.get(), "isTrue");
 
   auto right = dynamic_cast<CallExpr *>(and_expr->Right.get());
   ASSERT_NE(right, nullptr);
   ASSERT_EQ(right->Args.size(), 1);
 
-  auto rcallee = dynamic_cast<IdExpr *>(right->Callee.get());
-  ASSERT_EQ(rcallee->Name, "check");
+  ASSERT_EXPR_ID(right->Callee.get(), "check");
 }
 
-TEST(ParserTest, CallWithinAssignment) {
+TEST_F(ParserTests, CallWithinAssignment) {
   std::string input = "let x int := getVal() + 5;";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
+  auto stmts = PARSE_PROGRAM(input, 1);
 
-  auto decl = dynamic_cast<DeclarationExpr *>(program->Exprs[0].get());
+  auto decl = dynamic_cast<DeclarationExpr *>(stmts[0].get());
   ASSERT_NE(decl, nullptr);
 }
 
-TEST(ParserTest, CallsAsArgumentsInMath) {
+TEST_F(ParserTests, CallsAsArgumentsInMath) {
   std::string input = "calculate(sum(1, 2) * 3, is_valid(x) && true)";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
+  auto stmts = PARSE_PROGRAM(input, 1);
 
-  auto call = dynamic_cast<CallExpr *>(program->Exprs[0].get());
+  auto call = dynamic_cast<CallExpr *>(stmts[0].get());
   ASSERT_NE(call, nullptr);
   ASSERT_EQ(call->Args.size(), 2);
 
@@ -922,8 +702,7 @@ TEST(ParserTest, CallsAsArgumentsInMath) {
   auto mleft = dynamic_cast<CallExpr *>(firstArg->Left.get());
   ASSERT_NE(mleft, nullptr);
 
-  auto mright = dynamic_cast<NumberExpr *>(firstArg->Right.get());
-  ASSERT_NE(mright, nullptr);
+  ASSERT_EXPR_NUMBER(firstArg->Right.get(), 3);
 
   auto secondArg = dynamic_cast<Logical_And_Expr *>(call->Args[1].get());
   ASSERT_NE(secondArg, nullptr);
@@ -936,13 +715,11 @@ TEST(ParserTest, CallsAsArgumentsInMath) {
   ASSERT_EQ(lright->Value, true);
 }
 
-TEST(ParserTest, CallInArrayInitialization) {
+TEST_F(ParserTests, CallInArrayInitialization) {
   std::string input = "let buffer []byte := generate_buffer(size());";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
-  auto program = parser.parseProgram();
+  auto stmts = PARSE_PROGRAM(input, 1);
 
-  auto decl = dynamic_cast<DeclarationExpr *>(program->Exprs[0].get());
+  auto decl = dynamic_cast<DeclarationExpr *>(stmts[0].get());
   ASSERT_NE(decl, nullptr);
 
   auto call = dynamic_cast<CallExpr *>(decl->Value.get());
@@ -950,14 +727,11 @@ TEST(ParserTest, CallInArrayInitialization) {
   EXPECT_EQ(call->Args.size(), 1);
 }
 
-TEST(ParserTest, CallInsideExpressionSemicolonLoophole) {
+TEST_F(ParserTests, CallInsideExpressionSemicolonLoophole) {
   std::string input = "let x int := getVal() + 1;";
-  auto tokens = getTokens(input);
-  Parser parser(tokens);
+  auto stmts = PARSE_PROGRAM(input, 1);
 
-  auto program = parser.parseProgram();
-
-  auto decl = dynamic_cast<DeclarationExpr *>(program->Exprs[0].get());
+  auto decl = dynamic_cast<DeclarationExpr *>(stmts[0].get());
   ASSERT_NE(decl, nullptr);
 
   auto add = dynamic_cast<AddExpr *>(decl->Value.get());
@@ -966,7 +740,28 @@ TEST(ParserTest, CallInsideExpressionSemicolonLoophole) {
   auto call = dynamic_cast<CallExpr *>(add->Left.get());
   ASSERT_NE(call, nullptr);
 
-  auto num = dynamic_cast<NumberExpr *>(add->Right.get());
-  ASSERT_NE(num, nullptr);
-  ASSERT_EQ(num->Value, 1);
+  ASSERT_EXPR_NUMBER(add->Right.get(), 1);
+}
+
+TEST_F(ParserTests, TestFramework) {
+  std::string input = R"(
+    test "test primitives" {
+      let result int := add(5, 5);
+
+      assert_true                   result > 5;
+      assert_false                  result > 11;
+      assert_equal                  result, 10;
+      assert_not_equal              result, 11;
+      assert_less_than              result, 10;
+      assert_greater_than           result, 10;
+      assert_less_than_or_equals    result, 11;
+      assert_greater_than_or_equals result, 11;
+    }
+  )";
+  auto stmts = PARSE_PROGRAM(input, 1);
+
+  auto texpr = dynamic_cast<Test_Expr *>(stmts[0].get());
+  ASSERT_NE(texpr, nullptr);
+  ASSERT_EQ(texpr->Name, "test primitives");
+  ASSERT_EQ(texpr->Body->Exprs.size(), 9);
 }
