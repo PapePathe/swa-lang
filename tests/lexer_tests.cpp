@@ -277,7 +277,7 @@ TEST_F(LexerTest, Dialect) {
 }
 
 TEST_F(LexerTest, AllDialectKeywordsAreEqual) {
-  ASSERT_EQ(KEYWORDS_ENGLISH.size(), 26);
+  ASSERT_EQ(KEYWORDS_ENGLISH.size(), 35);
   ASSERT_EQ(KEYWORDS_FRENCH.size(), 24);
 }
 
