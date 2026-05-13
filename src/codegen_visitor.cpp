@@ -430,6 +430,34 @@ void CodeGenVisitor::Visit(Logical_And_Expr *expr) {
   throw std::runtime_error("Not implemented Logical_And_Expr");
 }
 
+void CodeGenVisitor::Visit(Test_Expr *expr) {
+  throw std::runtime_error("Not implemented");
+}
+void CodeGenVisitor::Visit(Assert_Equal_Expr *expr) {
+  throw std::runtime_error("Not implemented");
+}
+void CodeGenVisitor::Visit(Assert_Not_Equal_Expr *expr) {
+  throw std::runtime_error("Not implemented");
+}
+void CodeGenVisitor::Visit(Assert_True_Expr *expr) {
+  throw std::runtime_error("Not implemented");
+}
+void CodeGenVisitor::Visit(Assert_False_Expr *expr) {
+  throw std::runtime_error("Not implemented");
+}
+void CodeGenVisitor::Visit(Assert_Less_Than_Expr *expr) {
+  throw std::runtime_error("Not implemented");
+}
+void CodeGenVisitor::Visit(Assert_Less_Than_Equal_Expr *expr) {
+  throw std::runtime_error("Not implemented");
+}
+void CodeGenVisitor::Visit(Assert_Greater_Than_Expr *expr) {
+  throw std::runtime_error("Not implemented");
+}
+void CodeGenVisitor::Visit(Assert_Greater_Than_Equals_Expr *expr) {
+  throw std::runtime_error("Not implemented");
+}
+
 // Types
 
 void CodeGenVisitor::Visit(TypeSlice *expr) {
