@@ -46,5 +46,7 @@ private:
   bool isCompareOp(TokenType t);
   int getPrecedence(TokenType type);
   std::unique_ptr<Expr> parseExpression(int = 0);
+  std::unique_ptr<Expr> parseTest();
+  std::unique_ptr<Expr> parseAsserts();
 };
 #endif // !SWA_PARSER
