@@ -69,7 +69,8 @@ std::unique_ptr<Expr> Parser::parseStatement() {
     return parseIf();
   }
   if (current().type == TokenType::TEST) {
-    return parseTest();
+    parseTest();
+    return parseExpression();
   }
   if (current().type == TokenType::TEST_ASSERT_TRUE ||
       current().type == TokenType::TEST_ASSERT_FALSE ||
@@ -199,12 +200,14 @@ std::unique_ptr<Expr> Parser::parseAsserts() {
   throw std::runtime_error("unknown assertion for token ");
 }
 
-std::unique_ptr<Expr> Parser::parseTest() {
+void Parser::parseTest() {
   expect(TokenType::TEST);
   auto name = expect(TokenType::STRING).value;
   auto body = parseBlock();
 
-  return std::make_unique<Test_Expr>(name, std::move(body));
+  auto t = std::make_unique<Test_Expr>(name, std::move(body));
+
+  tests.push_back(std::move(t));
 }
 
 std::unique_ptr<Expr> Parser::parseFunctionCall(std::unique_ptr<Expr> callee) {
@@ -615,4 +618,8 @@ std::unique_ptr<Expr> Parser::parseExpression(int minPrecedence) {
   }
 
   return left;
+}
+
+std::vector<std::unique_ptr<Test_Expr>> Parser::Tests() {
+  return std::move(tests);
 }

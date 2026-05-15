@@ -17,9 +17,11 @@ class Parser {
 public:
   Parser(std::vector<Token> t) : tokens(t) {}
 
+  std::vector<std::unique_ptr<Test_Expr>> Tests();
   std::unique_ptr<BlockExpr> parseProgram();
 
 private:
+  std::vector<std::unique_ptr<Test_Expr>> tests;
   void trace(std::string msg);
   void debug(std::string msg);
   void parseDialect();
@@ -46,7 +48,7 @@ private:
   bool isCompareOp(TokenType t);
   int getPrecedence(TokenType type);
   std::unique_ptr<Expr> parseExpression(int = 0);
-  std::unique_ptr<Expr> parseTest();
+  void parseTest();
   std::unique_ptr<Expr> parseAsserts();
 };
 #endif // !SWA_PARSER
