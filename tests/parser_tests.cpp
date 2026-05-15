@@ -7,6 +7,7 @@
 #include <memory>
 #include <parser/parser.h>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 std::vector<Token> getTokens(const std::string &source) {
@@ -56,6 +57,21 @@ public:
         << "Statement count mismatch for: " << input;
 
     return std::move(program->Exprs);
+  }
+
+  std::pair<std::vector<std::unique_ptr<Expr>>,
+            std::vector<std::unique_ptr<Test_Expr>>>
+  PARSE_TESTABLE_PROGRAM(const std::string &input, size_t expectedCount) {
+    auto tokens = getTokens(input);
+    Parser parser(tokens);
+    auto program = parser.parseProgram();
+
+    EXPECT_NE(program, nullptr) << "Parser returned nullptr for: " << input;
+
+    EXPECT_EQ(program->Exprs.size(), expectedCount)
+        << "Statement count mismatch for: " << input;
+
+    return {std::move(program->Exprs), std::move(parser.Tests())};
   }
 };
 
@@ -758,9 +774,9 @@ TEST_F(ParserTests, TestFramework) {
       assert_greater_than_or_equals result, 11;
     }
   )";
-  auto stmts = PARSE_PROGRAM(input, 1);
+  auto [stmts, tests] = PARSE_TESTABLE_PROGRAM(input, 1);
 
-  auto texpr = dynamic_cast<Test_Expr *>(stmts[0].get());
+  auto texpr = dynamic_cast<Test_Expr *>(tests[0].get());
   ASSERT_NE(texpr, nullptr);
   ASSERT_EQ(texpr->Name, "test primitives");
   ASSERT_EQ(texpr->Body->Exprs.size(), 9);
