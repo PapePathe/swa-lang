@@ -60,7 +60,6 @@ jobs:
             # Windows default
             cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release
           fi
-          ./build/compiler_tests
       - name: Run Clang-Tidy & Format
         uses: cpp-linter/cpp-linter-action@v2
         id: linter
@@ -75,6 +74,8 @@ jobs:
       - name: Build Project
         run: cmake --build build --config Release
 
+      - name: Run Tests
+        run: ./build/compiler_tests
       - name: Package CLI AppImage (Linux)
         if: runner.os == 'Linux'
         run: |
