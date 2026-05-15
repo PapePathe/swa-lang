@@ -97,6 +97,7 @@ void SwaCompiler::Run(const std::string &_source) {
   program->Accept(gen);
 
   driver = gen.finalize();
+  // driver->Module->print(llvm::errs(), nullptr);
 
   llvm::ExecutionEngine *engine =
       llvm::EngineBuilder(std::move(driver->Module)).create();
