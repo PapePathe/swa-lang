@@ -12,6 +12,7 @@
 class SwaCompiler {
 public:
   SwaCompiler() {}
-  void Run(const std::string &_source);
   void Build(const std::string &_source);
+  void Run(const std::string &_source);
+  void Test(const std::string &_source);
 };

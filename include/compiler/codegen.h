@@ -38,10 +38,20 @@ public:
   std::unique_ptr<llvm::Module> Module;
   SymbolTable Symbols;
   DebugInfoContext DebugInfo;
+  bool TestMode;
 
   explicit SwaCompilerDriver(std::string moduleName)
       : Builder(Context),
-        Module(std::make_unique<llvm::Module>(moduleName, Context)) {}
+        Module(std::make_unique<llvm::Module>(moduleName, Context)),
+        TestMode(false) {
+    Symbols = SymbolTable();
+  }
+  SwaCompilerDriver(std::string moduleName, bool testMode)
+      : Builder(Context),
+        Module(std::make_unique<llvm::Module>(moduleName, Context)),
+        TestMode(testMode) {
+    Symbols = SymbolTable();
+  }
 };
 
 class CodeGenVisitor : public ASTVisitor {
@@ -69,7 +79,7 @@ public:
   CodeGenVisitor(std::unique_ptr<SwaCompilerDriver> d) : driver(std::move(d)) {}
 
   std::unique_ptr<SwaCompilerDriver> finalize() { return std::move(driver); }
-
+  void generateTestEntrypoint(const std::vector<std::string> &testNames);
   void Visit(AddExpr *expr);
   void Visit(BoolExpr *expr);
   void Visit(BlockExpr *expr);
