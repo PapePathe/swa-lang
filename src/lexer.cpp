@@ -1,5 +1,6 @@
 #include "lexer/lexer.h"
 #include <cctype>
+#include <cstddef>
 #include <unordered_map>
 #include <vector>
 
@@ -35,6 +36,8 @@ std::vector<Token> Lexer::tokenize() {
       continue;
     }
 
+    size_t startPosition = pos;
+
     if (c == '"') {
       get();
       std::string literal;
@@ -67,10 +70,12 @@ std::vector<Token> Lexer::tokenize() {
 
       if (pos >= src.length()) {
         // You might want a specific error for unterminated strings
-        tokens.push_back({TokenType::UNKNOWN, literal});
+        tokens.push_back(
+            {TokenType::UNKNOWN, literal, {{startPosition}, {pos}}});
       } else {
         get(); // Consume closing quote
-        tokens.push_back({TokenType::STRING, literal});
+        tokens.push_back(
+            {TokenType::STRING, literal, {{startPosition}, {pos}}});
       }
       continue;
     }
@@ -83,7 +88,9 @@ std::vector<Token> Lexer::tokenize() {
           hasDot = true;
         num += get();
       }
-      tokens.push_back({hasDot ? TokenType::FLOAT : TokenType::NUMBER, num});
+      tokens.push_back({hasDot ? TokenType::FLOAT : TokenType::NUMBER,
+                        num,
+                        {{startPosition}, {pos}}});
     }
 
     else if (isalpha(static_cast<unsigned char>(c)) || c == '_' ||
@@ -95,9 +102,10 @@ std::vector<Token> Lexer::tokenize() {
       }
 
       if (keywords.count(ident)) {
-        tokens.push_back({keywords.at(ident), ident});
+        tokens.push_back({keywords.at(ident), ident, {{startPosition}, {pos}}});
       } else {
-        tokens.push_back({TokenType::IDENTIFIER, ident});
+        tokens.push_back(
+            {TokenType::IDENTIFIER, ident, {{startPosition}, {pos}}});
       }
     }
 
@@ -107,72 +115,83 @@ std::vector<Token> Lexer::tokenize() {
       case '!':
         if (peek() == '=') {
           get();
-          tokens.push_back({TokenType::NOT_EQUALS, "!="});
+          tokens.push_back(
+              {TokenType::NOT_EQUALS, "!=", {{startPosition}, {pos}}});
         } else {
-          tokens.push_back({TokenType::NOT, "!"});
+          tokens.push_back({TokenType::NOT, "!", {{startPosition}, {pos}}});
         }
         break;
       case '<':
         if (peek() == '=') {
           get();
-          tokens.push_back({TokenType::LESS_THAN_EQUALS, "<="});
+          tokens.push_back(
+              {TokenType::LESS_THAN_EQUALS, "<=", {{startPosition}, {pos}}});
         } else {
-          tokens.push_back({TokenType::LESS_THAN, "<"});
+          tokens.push_back(
+              {TokenType::LESS_THAN, "<", {{startPosition}, {pos}}});
         }
         break;
       case '>':
         if (peek() == '=') {
           get();
-          tokens.push_back({TokenType::GREATER_THAN_EQUALS, ">="});
+          tokens.push_back(
+              {TokenType::GREATER_THAN_EQUALS, ">=", {{startPosition}, {pos}}});
         } else {
-          tokens.push_back({TokenType::GREATER_THAN, ">"});
+          tokens.push_back(
+              {TokenType::GREATER_THAN, ">", {{startPosition}, {pos}}});
         }
         break;
       case '+':
         if (peek() == '=') {
           get();
-          tokens.push_back({TokenType::PLUS_EQUALS, "+="});
+          tokens.push_back(
+              {TokenType::PLUS_EQUALS, "+=", {{startPosition}, {pos}}});
         } else {
-          tokens.push_back({TokenType::PLUS, "+"});
+          tokens.push_back({TokenType::PLUS, "+", {{startPosition}, {pos}}});
         }
         break;
       case '-':
         if (peek() == '=') {
           get();
-          tokens.push_back({TokenType::MINUS_EQUALS, "-="});
+          tokens.push_back(
+              {TokenType::MINUS_EQUALS, "-=", {{startPosition}, {pos}}});
         } else {
-          tokens.push_back({TokenType::MINUS, "-"});
+          tokens.push_back({TokenType::MINUS, "-", {{startPosition}, {pos}}});
         }
         break;
       case '/':
-        tokens.push_back({TokenType::DIVIDE, "/"});
+        tokens.push_back({TokenType::DIVIDE, "/", {{startPosition}, {pos}}});
         break;
       case '*':
         if (peek() == '*') {
           get();
-          tokens.push_back({TokenType::DOUBLE_STAR, "**"});
+          tokens.push_back(
+              {TokenType::DOUBLE_STAR, "**", {{startPosition}, {pos}}});
         } else if (peek() == '=') {
           get();
-          tokens.push_back({TokenType::STAR_EQUALS, "*="});
+          tokens.push_back(
+              {TokenType::STAR_EQUALS, "*=", {{startPosition}, {pos}}});
         } else {
-          tokens.push_back({TokenType::MULTIPLY, "*"});
+          tokens.push_back(
+              {TokenType::MULTIPLY, "*", {{startPosition}, {pos}}});
         }
         break;
       case '=':
-        tokens.push_back({TokenType::EQUALS, "="});
+        tokens.push_back({TokenType::EQUALS, "=", {{startPosition}, {pos}}});
         break;
       case '&':
         if (peek() == '&') {
           get();
-          tokens.push_back({TokenType::AND, "&&"});
+          tokens.push_back({TokenType::AND, "&&", {{startPosition}, {pos}}});
         } else {
-          tokens.push_back({TokenType::AMPERSAND, "&"});
+          tokens.push_back(
+              {TokenType::AMPERSAND, "&", {{startPosition}, {pos}}});
         }
         break;
       case '|':
         if (peek() == '|') {
           get();
-          tokens.push_back({TokenType::OR, "||"});
+          tokens.push_back({TokenType::OR, "||", {{startPosition}, {pos}}});
         }
         break;
       case '.':
@@ -180,51 +199,61 @@ std::vector<Token> Lexer::tokenize() {
           get(); // consume second .
           if (peek() == '.') {
             get();
-            tokens.push_back({TokenType::VARIADIC, "..."});
+            tokens.push_back(
+                {TokenType::VARIADIC, "...", {{startPosition}, {pos}}});
           }
         } else {
-          tokens.push_back({TokenType::DOT, "."});
+          tokens.push_back({TokenType::DOT, ".", {{startPosition}, {pos}}});
         }
         break;
       case '(':
-        tokens.push_back({TokenType::OPEN_PAREN, "("});
+        tokens.push_back(
+            {TokenType::OPEN_PAREN, "(", {{startPosition}, {pos}}});
         break;
       case ')':
-        tokens.push_back({TokenType::CLOSE_PAREN, ")"});
+        tokens.push_back(
+            {TokenType::CLOSE_PAREN, ")", {{startPosition}, {pos}}});
         break;
       case '{':
-        tokens.push_back({TokenType::OPEN_CURLY, "{"});
+        tokens.push_back(
+            {TokenType::OPEN_CURLY, "{", {{startPosition}, {pos}}});
         break;
       case '}':
-        tokens.push_back({TokenType::CLOSE_CURLY, "}"});
+        tokens.push_back(
+            {TokenType::CLOSE_CURLY, "}", {{startPosition}, {pos}}});
         break;
       case '[':
-        tokens.push_back({TokenType::OPEN_BRACKET, "["});
+        tokens.push_back(
+            {TokenType::OPEN_BRACKET, "[", {{startPosition}, {pos}}});
         break;
       case ']':
-        tokens.push_back({TokenType::CLOSE_BRACKET, "]"});
+        tokens.push_back(
+            {TokenType::CLOSE_BRACKET, "]", {{startPosition}, {pos}}});
         break;
       case ':':
         if (peek() == '=') {
           get();
-          tokens.push_back({TokenType::ASSIGNMENT, ":="});
+          tokens.push_back(
+              {TokenType::ASSIGNMENT, ":=", {{startPosition}, {pos}}});
           break;
         }
-        tokens.push_back({TokenType::COLON, ":"});
+        tokens.push_back({TokenType::COLON, ":", {{startPosition}, {pos}}});
         break;
       case ';':
-        tokens.push_back({TokenType::SEMICOLON, ";"});
+        tokens.push_back({TokenType::SEMICOLON, ";", {{startPosition}, {pos}}});
         break;
       case ',':
-        tokens.push_back({TokenType::COMMA, ","});
+        tokens.push_back({TokenType::COMMA, ",", {{startPosition}, {pos}}});
         break;
       default:
-        tokens.push_back({TokenType::UNKNOWN, std::string(1, current)});
+        tokens.push_back({TokenType::UNKNOWN,
+                          std::string(1, current),
+                          {{startPosition}, {pos}}});
         break;
       }
     }
   }
 
-  tokens.push_back({TokenType::END_OF_FILE, ""});
+  tokens.push_back({TokenType::END_OF_FILE, "", {{pos}, {pos}}});
   return tokens;
-};
+}
