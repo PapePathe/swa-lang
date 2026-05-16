@@ -28,79 +28,6 @@
 #include <utility>
 #include <vector>
 
-void dumpModuleToFile(llvm::Module *module, const std::string &filename) {
-  std::error_code errorCode;
-
-  llvm::raw_fd_ostream fileStream(filename, errorCode, llvm::sys::fs::OF_None);
-
-  if (errorCode) {
-    llvm::errs() << "Error opening file for dumping IR: " << errorCode.message()
-                 << "\n";
-    return;
-  }
-
-  module->print(fileStream, nullptr);
-
-  fileStream.flush();
-}
-
-void emitObjectFile(llvm::Module *TheModule,
-                    llvm::TargetMachine *TargetMachine) {
-  auto TargetTriple = llvm::sys::getDefaultTargetTriple();
-  TheModule->setTargetTriple(llvm::Triple(TargetTriple));
-  TheModule->setDataLayout(TargetMachine->createDataLayout());
-
-  std::error_code EC;
-  llvm::raw_fd_ostream dest("output.o", EC, llvm::sys::fs::OF_None);
-
-  if (EC) {
-    llvm::errs() << "Could not open file: " << EC.message();
-    return;
-  }
-
-  llvm::LoopAnalysisManager LAM;
-  llvm::FunctionAnalysisManager FAM;
-  llvm::CGSCCAnalysisManager CGAM;
-  llvm::ModuleAnalysisManager MAM;
-
-  llvm::PassBuilder PB(TargetMachine);
-
-  PB.registerModuleAnalyses(MAM);
-  PB.registerCGSCCAnalyses(CGAM);
-  PB.registerFunctionAnalyses(FAM);
-  PB.registerLoopAnalyses(LAM);
-  PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
-
-  llvm::ModulePassManager MPM =
-      PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O0);
-
-  MPM.run(*TheModule, MAM);
-
-  llvm::legacy::PassManager CodeGenPass;
-  if (TargetMachine->addPassesToEmitFile(CodeGenPass, dest, nullptr,
-                                         llvm::CodeGenFileType::ObjectFile)) {
-    llvm::errs() << "TargetMachine can't emit a file of this type";
-    return;
-  }
-
-  CodeGenPass.run(*TheModule);
-  dest.flush();
-}
-
-void link(const std::string &objectFile, const std::string &executableName) {
-  std::string command = "clang " + objectFile + " -o " + executableName;
-
-  std::cout << "Linking executable: " << executableName << "..." << std::endl;
-  int result = std::system(command.c_str());
-
-  if (result != 0) {
-    throw std::runtime_error("Linking failed with exit code " +
-                             std::to_string(result));
-  }
-
-  std::cout << "Successfully generated " << executableName << std::endl;
-}
-
 void SwaCompiler::Run(const std::string &_source) {
   llvm::InitializeNativeTarget();
   llvm::InitializeNativeTargetAsmPrinter();
@@ -204,4 +131,77 @@ void SwaCompiler::Test(const std::string &_source) {
 
   auto Fn = engine->FindFunctionNamed("main");
   engine->runFunctionAsMain(Fn, std::vector<std::string>(), nullptr);
+}
+
+void dumpModuleToFile(llvm::Module *module, const std::string &filename) {
+  std::error_code errorCode;
+
+  llvm::raw_fd_ostream fileStream(filename, errorCode, llvm::sys::fs::OF_None);
+
+  if (errorCode) {
+    llvm::errs() << "Error opening file for dumping IR: " << errorCode.message()
+                 << "\n";
+    return;
+  }
+
+  module->print(fileStream, nullptr);
+
+  fileStream.flush();
+}
+
+void emitObjectFile(llvm::Module *TheModule,
+                    llvm::TargetMachine *TargetMachine) {
+  auto TargetTriple = llvm::sys::getDefaultTargetTriple();
+  TheModule->setTargetTriple(llvm::Triple(TargetTriple));
+  TheModule->setDataLayout(TargetMachine->createDataLayout());
+
+  std::error_code EC;
+  llvm::raw_fd_ostream dest("output.o", EC, llvm::sys::fs::OF_None);
+
+  if (EC) {
+    llvm::errs() << "Could not open file: " << EC.message();
+    return;
+  }
+
+  llvm::LoopAnalysisManager LAM;
+  llvm::FunctionAnalysisManager FAM;
+  llvm::CGSCCAnalysisManager CGAM;
+  llvm::ModuleAnalysisManager MAM;
+
+  llvm::PassBuilder PB(TargetMachine);
+
+  PB.registerModuleAnalyses(MAM);
+  PB.registerCGSCCAnalyses(CGAM);
+  PB.registerFunctionAnalyses(FAM);
+  PB.registerLoopAnalyses(LAM);
+  PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+  llvm::ModulePassManager MPM =
+      PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O0);
+
+  MPM.run(*TheModule, MAM);
+
+  llvm::legacy::PassManager CodeGenPass;
+  if (TargetMachine->addPassesToEmitFile(CodeGenPass, dest, nullptr,
+                                         llvm::CodeGenFileType::ObjectFile)) {
+    llvm::errs() << "TargetMachine can't emit a file of this type";
+    return;
+  }
+
+  CodeGenPass.run(*TheModule);
+  dest.flush();
+}
+
+void link(const std::string &objectFile, const std::string &executableName) {
+  std::string command = "clang " + objectFile + " -o " + executableName;
+
+  std::cout << "Linking executable: " << executableName << "..." << std::endl;
+  int result = std::system(command.c_str());
+
+  if (result != 0) {
+    throw std::runtime_error("Linking failed with exit code " +
+                             std::to_string(result));
+  }
+
+  std::cout << "Successfully generated " << executableName << std::endl;
 }
