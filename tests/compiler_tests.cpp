@@ -1,10 +1,11 @@
+#include <unistd.h>
+
 #include <compiler/codegen.h>
 #include <compiler/compiler.h>
 #include <fcntl.h>
 #include <gtest/gtest.h>
 #include <stdexcept>
 #include <string>
-#include <unistd.h>
 
 class JITOutputTest : public ::testing::Test {
 protected:
@@ -28,6 +29,21 @@ protected:
     try {
       SwaCompiler swa;
       swa.Run(code);
+    } catch (const std::exception &e) {
+      std::cout << e.what();
+    }
+
+    std::string output = testing::internal::GetCapturedStdout();
+    ASSERT_EQ(output, expected);
+  }
+
+  void assertSwaTestOutput(const std::string &code,
+                           const std::string &expected) {
+    testing::internal::CaptureStdout();
+
+    try {
+      SwaCompiler swa;
+      swa.Test(code);
     } catch (const std::exception &e) {
       std::cout << e.what();
     }
@@ -62,7 +78,7 @@ TEST_F(JITOutputTest, Print) {
     std::string program = R"(
       dialect:english;
       start() int {
-        print_f("10 = %d", 10); 
+        print_f("10 = %d", 10);
         return 0;
       }
     )";
@@ -581,7 +597,7 @@ TEST_F(JITOutputTest, PrintArgc) {
 TEST_F(JITOutputTest, FunctionCalls1) {
   std::string program = R"(
     dialect:english;
-    func my_func()int { 
+    func my_func()int {
       return 21;
     }
     start() int {
@@ -596,16 +612,16 @@ TEST_F(JITOutputTest, FunctionCalls1) {
 TEST_F(JITOutputTest, FunctionCalls2) {
   std::string program = R"(
     dialect:english;
-    func add(a int, b int)int { 
+    func add(a int, b int)int {
       return a + b;
     }
-    func sub(a int, b int)int { 
+    func sub(a int, b int)int {
       return a - b;
     }
-    func mul(a int, b int)int { 
+    func mul(a int, b int)int {
       return a * b;
     }
-    func div(a int, b int)int { 
+    func div(a int, b int)int {
       return a / b;
     }
     start() int {
@@ -623,13 +639,13 @@ TEST_F(JITOutputTest, FunctionCalls2) {
 TEST_F(JITOutputTest, FunctionCalls3) {
   std::string program = R"(
     dialect:english;
-    func mul_three(a int)int { 
+    func mul_three(a int)int {
       return 3 * a;
     }
-    func mul_two(a int)int { 
+    func mul_two(a int)int {
       return 2 * a;
     }
-    func add(a int, b int)int { 
+    func add(a int, b int)int {
       return a + b;
     }
     start() int {
@@ -639,4 +655,30 @@ TEST_F(JITOutputTest, FunctionCalls3) {
   )";
 
   assertSwaOutput(program, "Result 30");
+}
+
+TEST_F(JITOutputTest, TestFrameworkAssertEqual) {
+  std::string program = R"(
+    dialect:english;
+
+    func add_not_impl(a int, b int)int {
+      return -1;
+    }
+
+    func add(a int, b int)int {
+      return a + b;
+    }
+
+    test "assert equal success" {
+      let result int := add(5, 5);
+
+      assert_equal result, 10;
+      assert_equal result, 11;
+    }
+  )";
+
+  assertSwaTestOutput(
+      program,
+      "[RUN] swa_test_assert_equal_success\n  -> \x1B[31m[FAIL]\x1B[0m "
+      "Expected 11, but got 10\n  -> \x1B[32m[PASS]\x1B[0m\n");
 }

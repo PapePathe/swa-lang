@@ -1,7 +1,3 @@
-#include <compiler/codegen.h>
-#include <compiler/compiler.h>
-#include <cstdlib>
-#include <iostream>
 #include <llvm/Bitcode/BitcodeWriter.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/IR/IRBuilder.h>
@@ -9,6 +5,7 @@
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/PassManager.h>
+#include <llvm/IR/Verifier.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/StandardInstrumentations.h>
@@ -20,10 +17,32 @@
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/TargetParser/Host.h>
 #include <llvm/TargetParser/Triple.h>
+
+#include <compiler/codegen.h>
+#include <compiler/compiler.h>
+#include <cstdlib>
+#include <iostream>
+
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
+
+void dumpModuleToFile(llvm::Module *module, const std::string &filename) {
+  std::error_code errorCode;
+
+  llvm::raw_fd_ostream fileStream(filename, errorCode, llvm::sys::fs::OF_None);
+
+  if (errorCode) {
+    llvm::errs() << "Error opening file for dumping IR: " << errorCode.message()
+                 << "\n";
+    return;
+  }
+
+  module->print(fileStream, nullptr);
+
+  fileStream.flush();
+}
 
 void emitObjectFile(llvm::Module *TheModule,
                     llvm::TargetMachine *TargetMachine) {
@@ -95,9 +114,14 @@ void SwaCompiler::Run(const std::string &_source) {
   CodeGenVisitor gen = CodeGenVisitor(std::move(driver));
 
   program->Accept(gen);
-
   driver = gen.finalize();
-  // driver->Module->print(llvm::errs(), nullptr);
+  dumpModuleToFile(driver->Module.get(), "run_module.ll");
+
+  if (llvm::verifyModule(*driver->Module, &llvm::errs())) {
+    llvm::errs()
+        << "> Fatal Error: Generated LLVM IR is structurally malformed!\n";
+    std::exit(1);
+  }
 
   llvm::ExecutionEngine *engine =
       llvm::EngineBuilder(std::move(driver->Module)).create();
@@ -126,19 +150,58 @@ void SwaCompiler::Build(const std::string &_source) {
   Lexer l(_source, KEYWORDS_ENGLISH);
   Parser parser(l.tokenize());
   auto program = parser.parseProgram();
-  // auto st = SymbolTable();
-  // program->Codegen(context, m, builder, st);
-  // m->print(llvm::errs(), nullptr);
 
   auto driver = std::make_unique<SwaCompilerDriver>("swa_module");
   CodeGenVisitor gen = CodeGenVisitor(std::move(driver));
   program->Accept(gen);
-
   driver = gen.finalize();
-  // driver->Module->print(llvm::errs(), nullptr);
+  if (llvm::verifyModule(*driver->Module, &llvm::errs())) {
+    llvm::errs()
+        << "> Fatal Error: Generated LLVM IR is structurally malformed!\n";
+    std::exit(1);
+  }
 
   emitObjectFile(driver->Module.get(), TargetMachine);
   link("output.o", "output");
 }
 
-// void SwaCompiler::Test(const std::string &_source) {}
+void SwaCompiler::Test(const std::string &_source) {
+  llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmPrinter();
+  llvm::InitializeNativeTargetAsmParser();
+
+  Lexer l(_source, KEYWORDS_ENGLISH);
+  Parser parser(l.tokenize());
+  auto program = parser.parseProgram();
+
+  auto driver = std::make_unique<SwaCompilerDriver>("swa_test_module", true);
+  CodeGenVisitor gen = CodeGenVisitor(std::move(driver));
+
+  program->Accept(gen);
+
+  std::vector<std::string> testNames;
+  for (const auto &testNode : parser.Tests()) {
+    std::string mangled = "swa_test_" + testNode->Name;
+
+    testNode->Accept(gen);
+
+    std::replace(mangled.begin(), mangled.end(), ' ', '_');
+    testNames.push_back(mangled);
+  }
+
+  gen.generateTestEntrypoint(testNames);
+
+  driver = gen.finalize();
+  dumpModuleToFile(driver->Module.get(), "test_module.ll");
+  if (llvm::verifyModule(*driver->Module, &llvm::errs())) {
+    llvm::errs()
+        << "> Fatal Error: Generated LLVM IR is structurally malformed!\n";
+    std::exit(1);
+  }
+
+  llvm::ExecutionEngine *engine =
+      llvm::EngineBuilder(std::move(driver->Module)).create();
+
+  auto Fn = engine->FindFunctionNamed("main");
+  engine->runFunctionAsMain(Fn, std::vector<std::string>(), nullptr);
+}

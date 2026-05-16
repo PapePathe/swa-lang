@@ -70,7 +70,7 @@ std::unique_ptr<Expr> Parser::parseStatement() {
   }
   if (current().type == TokenType::TEST) {
     parseTest();
-    return parseExpression();
+    return parseStatement();
   }
   if (current().type == TokenType::TEST_ASSERT_TRUE ||
       current().type == TokenType::TEST_ASSERT_FALSE ||
@@ -225,10 +225,6 @@ std::unique_ptr<Expr> Parser::parseFunctionCall(std::unique_ptr<Expr> callee) {
   }
 
   expect(TokenType::CLOSE_PAREN);
-
-  // if (current().type == TokenType::SEMICOLON) {
-  //   expect(TokenType::SEMICOLON);
-  // }
 
   return std::make_unique<CallExpr>(std::move(callee), std::move(args));
 }

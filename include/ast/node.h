@@ -286,6 +286,8 @@ public:
   std::unique_ptr<BlockExpr> Body;
   Test_Expr(std::string name, std::unique_ptr<BlockExpr> body)
       : Name(name), Body(std::move(body)) {}
+
+  void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
 
 class Assert_True_Expr : public Expr {

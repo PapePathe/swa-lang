@@ -2,6 +2,7 @@
 #include <ast/visitor.h>
 #include <compiler/codegen.h>
 #include <compiler/compiler.h>
+#include <iostream>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
@@ -12,6 +13,7 @@
 #include <llvm/Support/Casting.h>
 #include <memory>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 // Uncomment to enable tracing
@@ -164,13 +166,18 @@ void CodeGenVisitor::Visit(BoolExpr *expr) {
 
   setLastValue(llvm::ConstantInt::get(btyp, 0));
 }
+
 void CodeGenVisitor::Visit(BlockExpr *expr) {
   auto oldTable = driver->Symbols;
-  auto localTable = SymbolTable(driver->Symbols);
+  auto localTable = SymbolTable(oldTable);
   driver->Symbols = localTable;
 
   codegenvisittrace("start block expr");
   for (auto &e : expr->Exprs) {
+    if (!e) {
+      continue;
+    }
+
     e->Accept(*this);
   }
   codegenvisittrace("finish block expr");
@@ -283,7 +290,12 @@ void CodeGenVisitor::Visit(FuncExpr *expr) {
 void CodeGenVisitor::Visit(MainExpr *expr) {
   codegenvisittrace("start main");
 
-  auto proto = std::make_unique<ProtoExpr>("main", std::vector<std::string>(),
+  std::string funcName = "main";
+  if (driver->TestMode) {
+    funcName = "user_main";
+  }
+
+  auto proto = std::make_unique<ProtoExpr>(funcName, std::vector<std::string>(),
                                            std::vector<std::unique_ptr<Type>>(),
                                            std::unique_ptr<Type>());
   auto fn = std::make_unique<FuncExpr>(std::move(proto), std::move(expr->Body));
@@ -431,11 +443,56 @@ void CodeGenVisitor::Visit(Logical_And_Expr *expr) {
 }
 
 void CodeGenVisitor::Visit(Test_Expr *expr) {
-  throw std::runtime_error("Not implemented");
+  std::string mangledName = "swa_test_" + expr->Name;
+  std::replace(mangledName.begin(), mangledName.end(), ' ', '_');
+
+  codegenvisittrace("Visit Test_Expr " + mangledName);
+  llvm::FunctionType *testType =
+      llvm::FunctionType::get(driver->Builder.getVoidTy(), false);
+  llvm::Function *testFunc =
+      llvm::Function::Create(testType, llvm::Function::ExternalLinkage,
+                             mangledName, driver->Module.get());
+
+  auto *oldInsertPoint = driver->Builder.GetInsertBlock();
+  llvm::BasicBlock *entry =
+      llvm::BasicBlock::Create(driver->Context, "entry", testFunc);
+  driver->Builder.SetInsertPoint(entry);
+
+  expr->Body->Accept(*this);
+  driver->Builder.CreateRetVoid();
+  if (oldInsertPoint) {
+    driver->Builder.SetInsertPoint(oldInsertPoint);
+  }
+
+  codegenvisittrace("Visit Test_Expr");
 }
+
 void CodeGenVisitor::Visit(Assert_Equal_Expr *expr) {
-  throw std::runtime_error("Not implemented");
+  auto l = evaluate(expr->Left.get());
+  auto r = evaluate(expr->Right.get());
+
+  auto is_eq = driver->Builder.CreateICmpEQ(l, r);
+  llvm::Function *parent = driver->Builder.GetInsertBlock()->getParent();
+  llvm::BasicBlock *failBB =
+      llvm::BasicBlock::Create(driver->Context, "assert_fail", parent);
+  llvm::BasicBlock *continueBB =
+      llvm::BasicBlock::Create(driver->Context, "assert_cont", parent);
+
+  driver->Builder.CreateCondBr(is_eq, continueBB, failBB);
+  driver->Builder.SetInsertPoint(failBB);
+  auto printfTy = llvm::FunctionType::get(driver->Builder.getInt32Ty(),
+                                          driver->Builder.getPtrTy(), true);
+  auto printfunc = driver->Module->getOrInsertFunction("printf", printfTy);
+
+  llvm::Value *formatStr = driver->Builder.CreateGlobalString(
+      "  -> \033[31m[FAIL]\033[0m Expected %d, but got %d\n");
+
+  driver->Builder.CreateCall(printfunc, {formatStr, r, l});
+  driver->Builder.CreateBr(continueBB);
+
+  driver->Builder.SetInsertPoint(continueBB);
 }
+
 void CodeGenVisitor::Visit(Assert_Not_Equal_Expr *expr) {
   throw std::runtime_error("Not implemented");
 }
@@ -456,6 +513,44 @@ void CodeGenVisitor::Visit(Assert_Greater_Than_Expr *expr) {
 }
 void CodeGenVisitor::Visit(Assert_Greater_Than_Equals_Expr *expr) {
   throw std::runtime_error("Not implemented");
+}
+void CodeGenVisitor::generateTestEntrypoint(
+    const std::vector<std::string> &testNames) {
+  llvm::FunctionType *mainType =
+      llvm::FunctionType::get(driver->Builder.getInt32Ty(), false);
+  llvm::Function *mainFunc = llvm::Function::Create(
+      mainType, llvm::Function::ExternalLinkage, "main", driver->Module.get());
+
+  llvm::BasicBlock *entry =
+      llvm::BasicBlock::Create(driver->Context, "test-entry", mainFunc);
+  driver->Builder.SetInsertPoint(entry);
+
+  // Direct string logging for diagnostics
+  auto printfTy = llvm::FunctionType::get(driver->Builder.getInt32Ty(),
+                                          driver->Builder.getPtrTy(), true);
+  auto printfunc = driver->Module->getOrInsertFunction("printf", printfTy);
+
+  for (const auto &testMangledName : testNames) {
+    llvm::Function *targetTest = driver->Module->getFunction(testMangledName);
+    if (targetTest) {
+      // UI Update: Informs terminal which unit block is active
+      std::string runMsg = "[RUN] " + testMangledName + "\n";
+      driver->Builder.CreateCall(printfunc,
+                                 {driver->Builder.CreateGlobalString(runMsg)});
+
+      driver->Builder.CreateCall(targetTest);
+
+      std::string passMsg = "  -> \033[32m[PASS]\033[0m\n";
+      driver->Builder.CreateCall(printfunc,
+                                 {driver->Builder.CreateGlobalString(passMsg)});
+    } else {
+      driver->Builder.CreateCall(printfunc, {driver->Builder.CreateGlobalString(
+                                                "Function " + testMangledName +
+                                                " does not exist \n")});
+    }
+  }
+
+  driver->Builder.CreateRet(driver->Builder.getInt32(0));
 }
 
 // Types
