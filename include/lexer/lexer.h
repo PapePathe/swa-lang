@@ -1,17 +1,28 @@
 #ifndef SWA_LEXER
 #define SWA_LEXER
 
-#include "lexer/tokentype.h"
+#include <lexer/tokentype.h>
+
 #include <assert.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
+struct Location {
+  size_t offset = 0;
+};
+
+struct Span {
+  Location start;
+  Location end;
+
+  static Span merge(Span a, Span b) { return {a.start, b.end}; }
+};
+
 struct Token {
   TokenType type;
   std::string value;
-  int line;
-  int column;
+  Span span;
 };
 
 class Lexer {
