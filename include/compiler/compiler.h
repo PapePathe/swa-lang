@@ -16,3 +16,8 @@ public:
   void Run(const std::string &_source);
   void Test(const std::string &_source);
 };
+
+void link(const std::string &objectFile, const std::string &executableName);
+void dumpModuleToFile(llvm::Module *module, const std::string &filename);
+void emitObjectFile(llvm::Module *TheModule,
+                    llvm::TargetMachine *TargetMachine);
