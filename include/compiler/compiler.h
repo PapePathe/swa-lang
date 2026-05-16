@@ -18,6 +18,7 @@ public:
 };
 
 void link(const std::string &objectFile, const std::string &executableName);
+void verifyModule(llvm::Module *module);
 void dumpModuleToFile(llvm::Module *module, const std::string &filename);
 void emitObjectFile(llvm::Module *TheModule,
                     llvm::TargetMachine *TargetMachine);

@@ -1,3 +1,4 @@
+#include <execution>
 #include <llvm/Bitcode/BitcodeWriter.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/IR/IRBuilder.h>
@@ -43,12 +44,7 @@ void SwaCompiler::Run(const std::string &_source) {
   program->Accept(gen);
   driver = gen.finalize();
   dumpModuleToFile(driver->Module.get(), "run_module.ll");
-
-  if (llvm::verifyModule(*driver->Module, &llvm::errs())) {
-    llvm::errs()
-        << "> Fatal Error: Generated LLVM IR is structurally malformed!\n";
-    std::exit(1);
-  }
+  verifyModule(driver->Module.get());
 
   llvm::ExecutionEngine *engine =
       llvm::EngineBuilder(std::move(driver->Module)).create();
@@ -82,12 +78,7 @@ void SwaCompiler::Build(const std::string &_source) {
   CodeGenVisitor gen = CodeGenVisitor(std::move(driver));
   program->Accept(gen);
   driver = gen.finalize();
-  if (llvm::verifyModule(*driver->Module, &llvm::errs())) {
-    llvm::errs()
-        << "> Fatal Error: Generated LLVM IR is structurally malformed!\n";
-    std::exit(1);
-  }
-
+  verifyModule(driver->Module.get());
   emitObjectFile(driver->Module.get(), TargetMachine);
   link("output.o", "output");
 }
@@ -105,26 +96,12 @@ void SwaCompiler::Test(const std::string &_source) {
   CodeGenVisitor gen = CodeGenVisitor(std::move(driver));
 
   program->Accept(gen);
-
-  std::vector<std::string> testNames;
-  for (const auto &testNode : parser.Tests()) {
-    std::string mangled = "swa_test_" + testNode->Name;
-
-    testNode->Accept(gen);
-
-    std::replace(mangled.begin(), mangled.end(), ' ', '_');
-    testNames.push_back(mangled);
-  }
-
+  auto testNames = gen.visitTestExpressions(std::move(parser.Tests()));
   gen.generateTestEntrypoint(testNames);
 
   driver = gen.finalize();
   dumpModuleToFile(driver->Module.get(), "test_module.ll");
-  if (llvm::verifyModule(*driver->Module, &llvm::errs())) {
-    llvm::errs()
-        << "> Fatal Error: Generated LLVM IR is structurally malformed!\n";
-    std::exit(1);
-  }
+  verifyModule(driver->Module.get());
 
   llvm::ExecutionEngine *engine =
       llvm::EngineBuilder(std::move(driver->Module)).create();
@@ -204,4 +181,12 @@ void link(const std::string &objectFile, const std::string &executableName) {
   }
 
   std::cout << "Successfully generated " << executableName << std::endl;
+}
+
+void verifyModule(llvm::Module *module) {
+  if (llvm::verifyModule(*module, &llvm::errs())) {
+    llvm::errs()
+        << "> Fatal Error: Generated LLVM IR is structurally malformed!\n";
+    std::exit(1);
+  }
 }
