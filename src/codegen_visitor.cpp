@@ -287,6 +287,21 @@ void CodeGenVisitor::Visit(FuncExpr *expr) {
   driver->Symbols = old;
 }
 
+std::vector<std::string> CodeGenVisitor::visitTestExpressions(
+    std::vector<std::unique_ptr<Test_Expr>> tests) {
+  std::vector<std::string> testNames;
+  for (const auto &testNode : tests) {
+    std::string mangled = "swa_test_" + testNode->Name;
+
+    testNode->Accept(*this);
+
+    std::replace(mangled.begin(), mangled.end(), ' ', '_');
+    testNames.push_back(mangled);
+  }
+
+  return testNames;
+}
+
 void CodeGenVisitor::Visit(MainExpr *expr) {
   codegenvisittrace("start main");
 

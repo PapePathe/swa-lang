@@ -9,6 +9,8 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
+#include <string>
+#include <vector>
 
 struct SourceLocation {
   size_t line;
@@ -77,6 +79,9 @@ private:
 
 public:
   CodeGenVisitor(std::unique_ptr<SwaCompilerDriver> d) : driver(std::move(d)) {}
+
+  std::vector<std::string>
+  visitTestExpressions(std::vector<std::unique_ptr<Test_Expr>> tests);
 
   std::unique_ptr<SwaCompilerDriver> finalize() { return std::move(driver); }
   void generateTestEntrypoint(const std::vector<std::string> &testNames);
