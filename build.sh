@@ -2,6 +2,12 @@
 
 set -euxo pipefail
 
+if [[ $# -eq 0 ]]; then
+    echo "Error: No arguments provided."
+    echo "Usage: $0 [argument]"
+    exit 1
+fi
+
  LLVM_INSTALL_DIR=/usr/include/llvm/
 
  cmake -DLLVM_INSTALL_DIR=$LLVM_INSTALL_DIR \
@@ -12,13 +18,13 @@ set -euxo pipefail
        -G Ninja -B build .
 
  cd build
+
+if [[ "$1" == "test" ]]; then
  cmake --build . --target compiler_tests
-
  ./compiler_tests
-
-
+elif [[ "$1" == "swa" ]]; then
  cmake --build . --target swa
-
 ./swa run
 ./swa build
 ./swa test
+fi
