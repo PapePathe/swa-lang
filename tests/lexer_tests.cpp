@@ -323,3 +323,22 @@ TEST_F(LexerTest, FrencDialect) {
   AssertTokenSpan(tokens[23], TokenType::ZERO, "zero", 171, 175);
   AssertTokenSpan(tokens[24], TokenType::END_OF_FILE, "", 175, 175);
 }
+
+TEST(LexerSpanTest, MultilineOffsets) {
+  std::string source = "let a = 1;\nlet b = 2;";
+  Lexer lexer(source, KEYWORDS_ENGLISH);
+  auto tokens = lexer.tokenize();
+
+  ASSERT_GE(tokens.size(), 11);
+  AssertTokenSpan(tokens[0], TokenType::LET, "let", 0, 3);
+  AssertTokenSpan(tokens[1], TokenType::IDENTIFIER, "a", 4, 5);
+  AssertTokenSpan(tokens[2], TokenType::EQUALS, "=", 6, 7);
+  AssertTokenSpan(tokens[3], TokenType::NUMBER, "1", 8, 9);
+  AssertTokenSpan(tokens[4], TokenType::SEMICOLON, ";", 9, 10);
+  AssertTokenSpan(tokens[5], TokenType::LET, "let", 11, 14);
+  AssertTokenSpan(tokens[6], TokenType::IDENTIFIER, "b", 15, 16);
+  AssertTokenSpan(tokens[7], TokenType::EQUALS, "=", 17, 18);
+  AssertTokenSpan(tokens[8], TokenType::NUMBER, "2", 19, 20);
+  AssertTokenSpan(tokens[9], TokenType::SEMICOLON, ";", 20, 21);
+  AssertTokenSpan(tokens[10], TokenType::END_OF_FILE, "", 21, 21);
+}
