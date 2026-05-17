@@ -636,6 +636,70 @@ TEST_F(JITOutputTest, FunctionCalls2) {
   assertSwaOutput(program, "Add 6 \nSub 2 \nMul 8 \nDiv 2 \n");
 }
 
+TEST_F(JITOutputTest, MissingSemiColonVarDecl) {
+  std::string program = R"(
+    dialect:english;
+    start() int {
+      let x int := 10
+      return 0;
+    }
+  )";
+
+  assertSwaOutput(program,
+                  "\x1B[1;31merror\x1B[0m: expected variable declaration to "
+                  "end with a semicolon\n  --> swa_source:4:20\n   |\n 4 |     "
+                  "  let x int := 10\n   |                    "
+                  "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n\n");
+}
+
+TEST_F(JITOutputTest, MissingSemiColonReturnStmt) {
+  std::string program = R"(
+    dialect:english;
+    start() int {
+      let x int := 10;
+      return 0
+    }
+  )";
+
+  assertSwaOutput(
+      program, "\x1B[1;31merror\x1B[0m: return statement must be terminated by "
+               "a semi colon\n  --> swa_source:5:14\n   |\n 5 |       return "
+               "0\n   |              \x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n   "
+               "| \x1B[1;36mhelp\x1B[0m: add ; after the return statement\n\n");
+}
+
+TEST_F(JITOutputTest, MissingSemiColonPrintStmt) {
+  std::string program = R"(
+    dialect:english;
+    start() int {
+      print("test")
+    }
+  )";
+
+  assertSwaOutput(
+      program,
+      "\x1B[1;31merror\x1B[0m: print statement must be terminated by a semi "
+      "colon\n  --> swa_source:4:19\n   |\n 4 |       print(\"test\")\n   |    "
+      "               \x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n   | "
+      "\x1B[1;36mhelp\x1B[0m: add ; after the print statement\n\n");
+}
+
+TEST_F(JITOutputTest, MissingSemiColonPrintfStmt) {
+  std::string program = R"(
+    dialect:english;
+    start() int {
+      print_f("test %d", x)
+    }
+  )";
+
+  assertSwaOutput(
+      program, "\x1B[1;31merror\x1B[0m: formatted print statement must be "
+               "terminated by a semi colon\n  --> swa_source:4:27\n   |\n 4 |  "
+               "     print_f(\"test %d\", x)\n   |                           "
+               "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n   | "
+               "\x1B[1;36mhelp\x1B[0m: add ; after the print_f statement\n\n");
+}
+
 TEST_F(JITOutputTest, FunctionCalls3) {
   std::string program = R"(
     dialect:english;

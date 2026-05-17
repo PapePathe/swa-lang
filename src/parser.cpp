@@ -1,4 +1,5 @@
 #include "ast/node.h"
+#include "lexer/lexer.h"
 #include "lexer/tokentype.h"
 #include <iostream>
 #include <memory>
@@ -15,6 +16,7 @@ Token Parser::current() {
   return tokens[pos];
 }
 
+Token Parser::previous() { return tokens[pos - 1]; }
 Token Parser::expect(TokenType type) {
   if (isAtEnd()) {
     throw std::runtime_error("Unexpected end of file. Expected: " +
@@ -26,6 +28,20 @@ Token Parser::expect(TokenType type) {
   }
 
   throw std::runtime_error("Unexpected token: ```" + current().value + "```");
+}
+Token Parser::expect(
+    TokenType type,
+    std::function<ParserException(Span errorSpan)> errorHandler) {
+  if (isAtEnd()) {
+    throw std::runtime_error("Unexpected end of file. Expected: " +
+                             std::to_string((int)type) + " " + current().value);
+  }
+
+  if (current().type == type) {
+    return tokens[pos++];
+  }
+
+  throw errorHandler(previous().span);
 }
 
 bool Parser::isAtEnd() {
@@ -302,16 +318,20 @@ std::unique_ptr<Expr> Parser::parseIf() {
 }
 
 std::unique_ptr<Expr> Parser::parseReturn() {
-  expect(TokenType::RETURN); // 'print'
+  auto ret = expect(TokenType::RETURN);
 
   auto expr = parseExpression();
 
-  expect(TokenType::SEMICOLON);
+  expect(TokenType::SEMICOLON, [ret](Span s) {
+    return ParserException(
+        "return statement must be terminated by a semi colon", s, "",
+        "add ; after the return statement");
+  });
 
   return std::make_unique<ReturnExpr>(std::move(expr));
 }
 std::unique_ptr<Expr> Parser::parsePrintFormatted() {
-  expect(TokenType::PRINT_F);
+  auto tok = expect(TokenType::PRINT_F);
   expect(TokenType::OPEN_PAREN);
   std::vector<std::unique_ptr<Expr>> values;
 
@@ -325,7 +345,11 @@ std::unique_ptr<Expr> Parser::parsePrintFormatted() {
   }
 
   expect(TokenType::CLOSE_PAREN);
-  expect(TokenType::SEMICOLON);
+  expect(TokenType::SEMICOLON, [tok](Span s) {
+    return ParserException(
+        "formatted print statement must be terminated by a semi colon", s, "",
+        "add ; after the print_f statement");
+  });
 
   if (values.size() == 0) {
     throw std::runtime_error(
@@ -342,7 +366,7 @@ std::unique_ptr<Expr> Parser::parsePrintFormatted() {
 }
 
 std::unique_ptr<Expr> Parser::parsePrint() {
-  expect(TokenType::PRINT); // 'print'
+  auto tok = expect(TokenType::PRINT);
   expect(TokenType::OPEN_PAREN);
   std::vector<std::unique_ptr<Expr>> values;
 
@@ -356,7 +380,10 @@ std::unique_ptr<Expr> Parser::parsePrint() {
   }
 
   expect(TokenType::CLOSE_PAREN);
-  expect(TokenType::SEMICOLON);
+  expect(TokenType::SEMICOLON, [tok](Span s) {
+    return ParserException("print statement must be terminated by a semi colon",
+                           s, "", "add ; after the print statement");
+  });
 
   if (values.size() == 0) {
     throw std::runtime_error(
@@ -529,13 +556,16 @@ std::unique_ptr<BlockExpr> Parser::parseBlock() {
 
 std::unique_ptr<Expr> Parser::parseDeclaration() {
   expect(TokenType::LET); // 'let'
-  std::string name = expect(TokenType::IDENTIFIER).value;
+  auto name = expect(TokenType::IDENTIFIER);
   auto typ = parseType();
   expect(TokenType::ASSIGNMENT);
   auto value = parseExpression();
-  expect(TokenType::SEMICOLON);
+  expect(TokenType::SEMICOLON, [name](Span s) {
+    return ParserException(
+        "expected variable declaration to end with a semicolon", s, "", "");
+  });
 
-  return std::make_unique<DeclarationExpr>(name, std::move(value),
+  return std::make_unique<DeclarationExpr>(name.value, std::move(value),
                                            std::move(typ));
 }
 

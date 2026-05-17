@@ -1,3 +1,4 @@
+#include "lexer/lexer.h"
 #include <execution>
 #include <llvm/Bitcode/BitcodeWriter.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
@@ -34,22 +35,28 @@ void SwaCompiler::Run(const std::string &_source) {
   llvm::InitializeNativeTargetAsmPrinter();
   llvm::InitializeNativeTargetAsmParser();
 
+  SourceManager sm(_source);
+
   Lexer l(_source, KEYWORDS_ENGLISH);
   Parser parser(l.tokenize());
-  auto program = parser.parseProgram();
 
-  auto driver = std::make_unique<SwaCompilerDriver>("swa_module");
-  CodeGenVisitor gen = CodeGenVisitor(std::move(driver));
+  try {
+    auto program = parser.parseProgram();
+    auto driver = std::make_unique<SwaCompilerDriver>("swa_module");
+    CodeGenVisitor gen = CodeGenVisitor(std::move(driver));
 
-  program->Accept(gen);
-  driver = gen.finalize();
-  dumpModuleToFile(driver->Module.get(), "run_module.ll");
-  verifyModule(driver->Module.get());
+    program->Accept(gen);
+    driver = gen.finalize();
+    dumpModuleToFile(driver->Module.get(), "run_module.ll");
+    verifyModule(driver->Module.get());
 
-  llvm::ExecutionEngine *engine =
-      llvm::EngineBuilder(std::move(driver->Module)).create();
-  auto Fn = engine->FindFunctionNamed("main");
-  engine->runFunctionAsMain(Fn, std::vector<std::string>(), nullptr);
+    llvm::ExecutionEngine *engine =
+        llvm::EngineBuilder(std::move(driver->Module)).create();
+    auto Fn = engine->FindFunctionNamed("main");
+    engine->runFunctionAsMain(Fn, std::vector<std::string>(), nullptr);
+  } catch (const ParserException &err) {
+    err.emitDiagnostic(sm);
+  }
 }
 
 void SwaCompiler::Build(const std::string &_source) {
