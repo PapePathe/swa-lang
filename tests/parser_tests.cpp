@@ -73,6 +73,36 @@ public:
 
     return {std::move(program->Exprs), std::move(parser.Tests())};
   }
+  void AssertParserError(const std::string &source,
+                         const std::string &expectedMessage,
+                         const std::string &expectedLabel,
+                         size_t expectedStartOffset, size_t expectedEndOffset) {
+    SourceManager sm(source);
+    Lexer lexer(source, KEYWORDS_ENGLISH);
+    Parser parser(lexer.tokenize());
+
+    try {
+      // Force evaluation of the program execution block
+      auto ast = parser.parseProgram();
+      FAIL() << "Parser unexpectedly succeeded for invalid source: " << source;
+    } catch (const ParserException &err) {
+      // Verify the primary structural message details
+      EXPECT_EQ(err.getMessage(), expectedMessage);
+
+      // Use a getter on your exception to verify the contextual label text
+      EXPECT_EQ(err.getLabelText(), expectedLabel);
+
+      // Verify the span points to the exact problem byte range
+      Span errorSpan = err.getSpan();
+      EXPECT_EQ(errorSpan.start.offset, expectedStartOffset)
+          << "Mismatched start offset for error in: " << source;
+      EXPECT_EQ(errorSpan.end.offset, expectedEndOffset)
+          << "Mismatched end offset for error in: " << source;
+    } catch (...) {
+      FAIL() << "Parser threw an unexpected exception type instead of "
+                "ParserException";
+    }
+  }
 };
 
 TEST_F(ParserTests, ParseMinimalProgram) {
@@ -780,4 +810,12 @@ TEST_F(ParserTests, TestFramework) {
   ASSERT_NE(texpr, nullptr);
   ASSERT_EQ(texpr->Name, "test primitives");
   ASSERT_EQ(texpr->Body->Exprs.size(), 9);
+}
+
+TEST_F(ParserTests, MissingSemiColonAfterVariableDecl) {
+  std::string input = "let x int := 10 let";
+
+  AssertParserError(input,
+                    "expected variable declaration to end with a semicolon", "",
+                    13, 15);
 }
