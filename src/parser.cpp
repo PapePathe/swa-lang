@@ -252,9 +252,9 @@ std::unique_ptr<Expr> Parser::parseFunctionCall(std::unique_ptr<Expr> callee) {
 
   expect(TokenType::CLOSE_PAREN, [tok](Span s) {
     return ParserException(
-        "expected ',' or ')' within function call arguments list", s,
-        "expected argument separator",
-        "add a comma ',' to separate your parameters");
+        "unclosed function call parameter block", s,
+        "expected a closing ')' to match the open parenthesis",
+        "add a closing parenthesis to terminate the call parameters list");
   });
 
   return std::make_unique<CallExpr>(std::move(callee), std::move(args));
@@ -558,7 +558,10 @@ std::unique_ptr<BlockExpr> Parser::parseBlock() {
   expect(TokenType::OPEN_CURLY);
   std::vector<std::unique_ptr<Expr>> stmts;
   while (current().type != TokenType::CLOSE_CURLY) {
-    stmts.push_back(parseStatement());
+    auto stmt = parseStatement();
+    if (stmt != nullptr) {
+      stmts.push_back(std::move(stmt));
+    }
   }
   // FIXME handle missing close curly
   expect(TokenType::CLOSE_CURLY);
