@@ -51,7 +51,11 @@ bool Parser::isAtEnd() {
 std::unique_ptr<BlockExpr> Parser::parseProgram() {
   std::vector<std::unique_ptr<Expr>> stmts;
   while (!isAtEnd()) {
-    stmts.push_back(parseStatement());
+    auto stmt = parseStatement();
+
+    if (stmt != nullptr) {
+      stmts.push_back(std::move(stmt));
+    }
   }
   return std::make_unique<BlockExpr>(std::move(stmts));
 }
@@ -79,14 +83,14 @@ std::unique_ptr<Expr> Parser::parseStatement() {
     return parseReturn();
   if (current().type == TokenType::DIALECT) {
     parseDialect();
-    return parseStatement();
+    return nullptr;
   }
   if (current().type == TokenType::IF) {
     return parseIf();
   }
   if (current().type == TokenType::TEST) {
     parseTest();
-    return parseStatement();
+    return nullptr;
   }
   if (current().type == TokenType::TEST_ASSERT_TRUE ||
       current().type == TokenType::TEST_ASSERT_FALSE ||
@@ -122,6 +126,8 @@ int Parser::getPrecedence(TokenType type) {
   case TokenType::MULTIPLY:
   case TokenType::DIVIDE:
     return 30;
+  case TokenType::OPEN_PAREN:
+    return 40;
   default:
     return -1;
   }
@@ -227,11 +233,15 @@ void Parser::parseTest() {
 }
 
 std::unique_ptr<Expr> Parser::parseFunctionCall(std::unique_ptr<Expr> callee) {
-  expect(TokenType::OPEN_PAREN);
+  auto tok = expect(TokenType::OPEN_PAREN);
 
   std::vector<std::unique_ptr<Expr>> args;
 
-  while (current().type != TokenType::CLOSE_PAREN) {
+  while (current().type != TokenType::CLOSE_PAREN && !isAtEnd()) {
+    if (current().type == TokenType::SEMICOLON ||
+        current().type == TokenType::CLOSE_CURLY) {
+      break;
+    }
     auto arg = parseExpression(0);
     args.push_back(std::move(arg));
 
@@ -240,7 +250,12 @@ std::unique_ptr<Expr> Parser::parseFunctionCall(std::unique_ptr<Expr> callee) {
     }
   }
 
-  expect(TokenType::CLOSE_PAREN);
+  expect(TokenType::CLOSE_PAREN, [tok](Span s) {
+    return ParserException(
+        "expected ',' or ')' within function call arguments list", s,
+        "expected argument separator",
+        "add a comma ',' to separate your parameters");
+  });
 
   return std::make_unique<CallExpr>(std::move(callee), std::move(args));
 }
@@ -261,13 +276,7 @@ std::unique_ptr<Expr> Parser::parsePrimary() {
   if (current().type == TokenType::IDENTIFIER) {
     std::string name = expect(TokenType::IDENTIFIER).value;
     auto expr = std::make_unique<IdExpr>(name);
-
-    switch (current().type) {
-    case TokenType::OPEN_PAREN:
-      return parseFunctionCall(std::move(expr));
-    default:
-      return expr;
-    }
+    return expr;
   }
   if (current().type == TokenType::STRING) {
     std::string name = expect(TokenType::STRING).value;
@@ -330,6 +339,7 @@ std::unique_ptr<Expr> Parser::parseReturn() {
 
   return std::make_unique<ReturnExpr>(std::move(expr));
 }
+
 std::unique_ptr<Expr> Parser::parsePrintFormatted() {
   auto tok = expect(TokenType::PRINT_F);
   expect(TokenType::OPEN_PAREN);
@@ -417,6 +427,7 @@ std::unique_ptr<Expr> Parser::parseStruct() {
   return std::make_unique<StructDefExpr>(name, std::move(args),
                                          std::move(argstypes));
 }
+
 std::unique_ptr<Type> Parser::parseType() {
   auto tok = current();
 
@@ -549,6 +560,7 @@ std::unique_ptr<BlockExpr> Parser::parseBlock() {
   while (current().type != TokenType::CLOSE_CURLY) {
     stmts.push_back(parseStatement());
   }
+  // FIXME handle missing close curly
   expect(TokenType::CLOSE_CURLY);
 
   return std::make_unique<BlockExpr>(std::move(stmts));
@@ -615,6 +627,8 @@ std::unique_ptr<Expr> Parser::parseExpression(int minPrecedence) {
     left = std::make_unique<UnaryMinusExpr>(std::move(right));
     break;
   case TokenType::NOT:
+    expect(TokenType::NOT);
+
     right = parseExpression(40);
     left = std::make_unique<UnaryNotExpr>(std::move(right));
     break;
@@ -634,6 +648,11 @@ std::unique_ptr<Expr> Parser::parseExpression(int minPrecedence) {
 
     if (precedence < minPrecedence) {
       break;
+    }
+
+    if (opType == TokenType::OPEN_PAREN) {
+      left = parseFunctionCall(std::move(left));
+      continue;
     }
 
     expect(opType);
