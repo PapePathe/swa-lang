@@ -284,7 +284,7 @@ std::unique_ptr<Expr> Parser::parsePrimary() {
   }
   if (current().type == TokenType::OPEN_PAREN) {
     expect(TokenType::OPEN_PAREN);
-    auto expr = parseExpression(0); // Recursively parse inner expr
+    auto expr = parseExpression(0);
     expect(TokenType::CLOSE_PAREN);
     return expr;
   }
@@ -345,7 +345,7 @@ std::unique_ptr<Expr> Parser::parsePrintFormatted() {
   expect(TokenType::OPEN_PAREN);
   std::vector<std::unique_ptr<Expr>> values;
 
-  while (current().type != TokenType::CLOSE_PAREN) {
+  while (current().type != TokenType::CLOSE_PAREN && !isAtEnd()) {
     auto v = parseExpression();
     values.push_back(std::move(v));
 
@@ -380,7 +380,7 @@ std::unique_ptr<Expr> Parser::parsePrint() {
   expect(TokenType::OPEN_PAREN);
   std::vector<std::unique_ptr<Expr>> values;
 
-  while (current().type != TokenType::CLOSE_PAREN) {
+  while (current().type != TokenType::CLOSE_PAREN && !isAtEnd()) {
     auto v = parseExpression();
     values.push_back(std::move(v));
 
@@ -411,7 +411,7 @@ std::unique_ptr<Expr> Parser::parseStruct() {
   auto argstypes = std::vector<std::unique_ptr<Type>>();
 
   expect(TokenType::OPEN_CURLY);
-  while (current().type != TokenType::CLOSE_CURLY) {
+  while (current().type != TokenType::CLOSE_CURLY && !isAtEnd()) {
     auto idtok = expect(TokenType::IDENTIFIER);
     args.push_back(idtok.value);
 
@@ -557,7 +557,7 @@ std::unique_ptr<Expr> Parser::parseFunction() {
 std::unique_ptr<BlockExpr> Parser::parseBlock() {
   expect(TokenType::OPEN_CURLY);
   std::vector<std::unique_ptr<Expr>> stmts;
-  while (current().type != TokenType::CLOSE_CURLY) {
+  while (current().type != TokenType::CLOSE_CURLY && !isAtEnd()) {
     auto stmt = parseStatement();
     if (stmt != nullptr) {
       stmts.push_back(std::move(stmt));
