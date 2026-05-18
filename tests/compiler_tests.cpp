@@ -710,11 +710,11 @@ TEST_F(JITOutputTest, MissingCloseParentInFunctionCall) {
 
   assertSwaOutput(
       program,
-      "\x1B[1;31merror\x1B[0m: expected ',' or ')' within function call "
-      "arguments list\n  --> swa_source:4:23\n   |\n 4 |       call(\"test "
-      "%d\", x;\n   |                       "
-      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m expected argument separator\n   | "
-      "\x1B[1;36mhelp\x1B[0m: add a comma ',' to separate your parameters\n\n");
+      "\x1B[1;31merror\x1B[0m: unclosed function call parameter block\n  --> "
+      "swa_source:4:23\n   |\n 4 |       call(\"test %d\", x;\n   |            "
+      "           \x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m expected a closing ')' "
+      "to match the open parenthesis\n   | \x1B[1;36mhelp\x1B[0m: add a "
+      "closing parenthesis to terminate the call parameters list\n\n");
 }
 
 TEST_F(JITOutputTest, FunctionCalls3) {
