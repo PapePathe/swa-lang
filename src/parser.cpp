@@ -136,9 +136,9 @@ int Parser::getPrecedence(TokenType type) {
 std::unique_ptr<Expr> Parser::parseAsserts() {
   switch (current().type) {
   case TokenType::TEST_ASSERT_TRUE: {
-    expect(TokenType::TEST_ASSERT_TRUE);
+    auto firsttok = expect(TokenType::TEST_ASSERT_TRUE);
     auto expr = parseExpression();
-    expect(TokenType::SEMICOLON);
+    auto lasttok = expect(TokenType::SEMICOLON);
 
     return std::make_unique<Assert_True_Expr>(std::move(expr));
   }
