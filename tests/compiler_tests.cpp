@@ -700,6 +700,23 @@ TEST_F(JITOutputTest, MissingSemiColonPrintfStmt) {
                "\x1B[1;36mhelp\x1B[0m: add ; after the print_f statement\n\n");
 }
 
+TEST_F(JITOutputTest, MissingCloseParentInFunctionCall) {
+  std::string program = R"(
+    dialect:english;
+    start() int {
+      call("test %d", x;
+    }
+  )";
+
+  assertSwaOutput(
+      program,
+      "\x1B[1;31merror\x1B[0m: expected ',' or ')' within function call "
+      "arguments list\n  --> swa_source:4:23\n   |\n 4 |       call(\"test "
+      "%d\", x;\n   |                       "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m expected argument separator\n   | "
+      "\x1B[1;36mhelp\x1B[0m: add a comma ',' to separate your parameters\n\n");
+}
+
 TEST_F(JITOutputTest, FunctionCalls3) {
   std::string program = R"(
     dialect:english;

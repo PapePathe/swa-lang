@@ -804,7 +804,7 @@ TEST_F(ParserTests, TestFramework) {
       assert_greater_than_or_equals result, 11;
     }
   )";
-  auto [stmts, tests] = PARSE_TESTABLE_PROGRAM(input, 1);
+  auto [stmts, tests] = PARSE_TESTABLE_PROGRAM(input, 0);
 
   auto texpr = dynamic_cast<Test_Expr *>(tests[0].get());
   ASSERT_NE(texpr, nullptr);
