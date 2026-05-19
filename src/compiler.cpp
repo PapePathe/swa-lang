@@ -1,4 +1,5 @@
 #include "lexer/lexer.h"
+#include <compiler/declaration.h>
 #include <execution>
 #include <llvm/Bitcode/BitcodeWriter.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
@@ -43,6 +44,12 @@ void SwaCompiler::Run(const std::string &_source) {
   try {
     auto program = parser.parseProgram();
     auto driver = std::make_unique<SwaCompilerDriver>("swa_module");
+
+    DeclarationVisitor decl = DeclarationVisitor(std::move(driver));
+    program->Accept(decl);
+    driver = decl.finalize();
+    dumpModuleToFile(driver->Module.get(), "decl_module.ll");
+
     CodeGenVisitor gen = CodeGenVisitor(std::move(driver));
 
     program->Accept(gen);
