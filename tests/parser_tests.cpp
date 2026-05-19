@@ -1,4 +1,5 @@
 #include "ast/node.h"
+#include "lexer/lexer.h"
 #include <exception>
 #include <gtest/gtest.h>
 #include <iostream>
@@ -115,6 +116,8 @@ TEST_F(ParserTests, ParseMinimalProgram) {
   ASSERT_EQ(node->Proto->Args.size(), 0);
   ASSERT_EQ(node->Proto->ArgsTypes.size(), 0);
   ASSERT_EQ(node->Body.get()->Exprs.size(), 1);
+  ASSERT_EQ(node->span.start.offset, 0);
+  ASSERT_EQ(node->span.end.offset, 29);
 }
 
 TEST_F(ParserTests, ParseMinimalProgramWithCommandArgs) {
@@ -128,6 +131,8 @@ TEST_F(ParserTests, ParseMinimalProgramWithCommandArgs) {
   ASSERT_EQ(node->Proto->Args.size(), 2);
   ASSERT_EQ(node->Proto->ArgsTypes.size(), 2);
   ASSERT_EQ(node->Body.get()->Exprs.size(), 1);
+  ASSERT_EQ(node->span.start.offset, 0);
+  ASSERT_EQ(node->span.end.offset, 62);
 }
 
 TEST_F(ParserTests, ParseMinimalProgramWithCommandArgsAndEnv) {
@@ -280,6 +285,8 @@ TEST_F(ParserTests, ParsePrintFStatement) {
   auto printNode = dynamic_cast<Formatted_Print_Expr *>(stmts[0].get());
   ASSERT_NE(printNode, nullptr);
   ASSERT_EQ(printNode->Values.size(), 1);
+  ASSERT_EQ(printNode->span.start.offset, 0);
+  ASSERT_EQ(printNode->span.end.offset, 17);
 
   ASSERT_EXPR_STRING(printNode->Values[0].get(), "Hello");
 }
@@ -291,6 +298,8 @@ TEST_F(ParserTests, ParsePrintStatement) {
   auto printNode = dynamic_cast<PrintExpr *>(stmts[0].get());
   ASSERT_NE(printNode, nullptr);
   ASSERT_EQ(printNode->Values.size(), 1);
+  ASSERT_EQ(printNode->span.start.offset, 0);
+  ASSERT_EQ(printNode->span.end.offset, 15);
 
   ASSERT_EXPR_STRING(printNode->Values[0].get(), "Hello");
 }
