@@ -136,84 +136,92 @@ int Parser::getPrecedence(TokenType type) {
 std::unique_ptr<Expr> Parser::parseAsserts() {
   switch (current().type) {
   case TokenType::TEST_ASSERT_TRUE: {
-    auto firsttok = expect(TokenType::TEST_ASSERT_TRUE);
+    auto span = expect(TokenType::TEST_ASSERT_TRUE).span;
     auto expr = parseExpression();
     auto lasttok = expect(TokenType::SEMICOLON);
+    span.end = lasttok.span.end;
 
-    return std::make_unique<Assert_True_Expr>(std::move(expr));
+    return std::make_unique<Assert_True_Expr>(std::move(expr), span);
   }
   case TokenType::TEST_ASSERT_FALSE: {
-    expect(TokenType::TEST_ASSERT_FALSE);
+    auto span = expect(TokenType::TEST_ASSERT_FALSE).span;
     auto expr = parseExpression();
-    expect(TokenType::SEMICOLON);
+    auto lasttok = expect(TokenType::SEMICOLON);
+    span.end = lasttok.span.end;
 
-    return std::make_unique<Assert_False_Expr>(std::move(expr));
+    return std::make_unique<Assert_False_Expr>(std::move(expr), span);
   }
 
   case TokenType::TEST_ASSERT_EQUAL: {
-    expect(TokenType::TEST_ASSERT_EQUAL);
+    auto span = expect(TokenType::TEST_ASSERT_EQUAL).span;
     auto left = parseExpression();
     expect(TokenType::COMMA);
     auto right = parseExpression();
-    expect(TokenType::SEMICOLON);
+    auto lasttok = expect(TokenType::SEMICOLON);
+    span.end = lasttok.span.end;
 
     return std::make_unique<Assert_Equal_Expr>(std::move(left),
-                                               std::move(right));
+                                               std::move(right), span);
   }
 
   case TokenType::TEST_ASSERT_NOT_EQUAL: {
-    expect(TokenType::TEST_ASSERT_NOT_EQUAL);
+    auto span = expect(TokenType::TEST_ASSERT_NOT_EQUAL).span;
     auto left = parseExpression();
     expect(TokenType::COMMA);
     auto right = parseExpression();
-    expect(TokenType::SEMICOLON);
+    auto lasttok = expect(TokenType::SEMICOLON);
+    span.end = lasttok.span.end;
 
     return std::make_unique<Assert_Not_Equal_Expr>(std::move(left),
-                                                   std::move(right));
+                                                   std::move(right), span);
   }
 
   case TokenType::TEST_ASSERT_GREATER_THAN: {
-    expect(TokenType::TEST_ASSERT_GREATER_THAN);
+    auto span = expect(TokenType::TEST_ASSERT_GREATER_THAN).span;
     auto left = parseExpression();
     expect(TokenType::COMMA);
     auto right = parseExpression();
-    expect(TokenType::SEMICOLON);
+    auto lasttok = expect(TokenType::SEMICOLON);
+    span.end = lasttok.span.end;
 
     return std::make_unique<Assert_Greater_Than_Expr>(std::move(left),
-                                                      std::move(right));
+                                                      std::move(right), span);
   }
 
   case TokenType::TEST_ASSERT_GREATER_THAN_OR_EQUALS: {
-    expect(TokenType::TEST_ASSERT_GREATER_THAN_OR_EQUALS);
+    auto span = expect(TokenType::TEST_ASSERT_GREATER_THAN_OR_EQUALS).span;
     auto left = parseExpression();
     expect(TokenType::COMMA);
     auto right = parseExpression();
-    expect(TokenType::SEMICOLON);
+    auto lasttok = expect(TokenType::SEMICOLON);
+    span.end = lasttok.span.end;
 
-    return std::make_unique<Assert_Greater_Than_Equals_Expr>(std::move(left),
-                                                             std::move(right));
+    return std::make_unique<Assert_Greater_Than_Equals_Expr>(
+        std::move(left), std::move(right), span);
   }
 
   case TokenType::TEST_ASSERT_LESS_THAN: {
-    expect(TokenType::TEST_ASSERT_LESS_THAN);
+    auto span = expect(TokenType::TEST_ASSERT_LESS_THAN).span;
     auto left = parseExpression();
     expect(TokenType::COMMA);
     auto right = parseExpression();
-    expect(TokenType::SEMICOLON);
+    auto lasttok = expect(TokenType::SEMICOLON);
+    span.end = lasttok.span.end;
 
     return std::make_unique<Assert_Less_Than_Expr>(std::move(left),
-                                                   std::move(right));
+                                                   std::move(right), span);
   }
 
   case TokenType::TEST_ASSERT_LESS_THAN_OR_EQUALS: {
-    expect(TokenType::TEST_ASSERT_LESS_THAN_OR_EQUALS);
+    auto span = expect(TokenType::TEST_ASSERT_LESS_THAN_OR_EQUALS).span;
     auto left = parseExpression();
     expect(TokenType::COMMA);
     auto right = parseExpression();
-    expect(TokenType::SEMICOLON);
+    auto lasttok = expect(TokenType::SEMICOLON);
+    span.end = lasttok.span.end;
 
-    return std::make_unique<Assert_Less_Than_Equal_Expr>(std::move(left),
-                                                         std::move(right));
+    return std::make_unique<Assert_Less_Than_Equal_Expr>(
+        std::move(left), std::move(right), span);
   }
 
   default:
@@ -223,17 +231,19 @@ std::unique_ptr<Expr> Parser::parseAsserts() {
 }
 
 void Parser::parseTest() {
-  expect(TokenType::TEST);
+  auto span = expect(TokenType::TEST).span;
   auto name = expect(TokenType::STRING).value;
   auto body = parseBlock();
+  span.end = body->span.end;
 
-  auto t = std::make_unique<Test_Expr>(name, std::move(body));
+  auto t = std::make_unique<Test_Expr>(name, std::move(body), span);
 
   tests.push_back(std::move(t));
 }
 
 std::unique_ptr<Expr> Parser::parseFunctionCall(std::unique_ptr<Expr> callee) {
   auto tok = expect(TokenType::OPEN_PAREN);
+  auto span = tok.span;
 
   std::vector<std::unique_ptr<Expr>> args;
 
@@ -250,42 +260,44 @@ std::unique_ptr<Expr> Parser::parseFunctionCall(std::unique_ptr<Expr> callee) {
     }
   }
 
-  expect(TokenType::CLOSE_PAREN, [tok](Span s) {
+  auto lasttok = expect(TokenType::CLOSE_PAREN, [tok](Span s) {
     return ParserException(
         "unclosed function call parameter block", s,
         "expected a closing ')' to match the open parenthesis",
         "add a closing parenthesis to terminate the call parameters list");
   });
+  span.end = lasttok.span.end;
 
-  return std::make_unique<CallExpr>(std::move(callee), std::move(args));
+  return std::make_unique<CallExpr>(std::move(callee), std::move(args), span);
 }
 
 std::unique_ptr<Expr> Parser::parsePrimary() {
   if (current().type == TokenType::TRUE) {
-    expect(TokenType::TRUE);
-    return std::make_unique<BoolExpr>(true);
+    auto tok = expect(TokenType::TRUE);
+    return std::make_unique<BoolExpr>(true, tok.span);
   }
   if (current().type == TokenType::FALSE) {
-    expect(TokenType::FALSE);
-    return std::make_unique<BoolExpr>(false);
+    auto tok = expect(TokenType::FALSE);
+    return std::make_unique<BoolExpr>(false, tok.span);
   }
   if (current().type == TokenType::NUMBER) {
-    int val = std::stoi(expect(TokenType::NUMBER).value);
-    return std::make_unique<NumberExpr>(val);
+    auto tok = expect(TokenType::NUMBER);
+    int val = std::stoi(tok.value);
+    return std::make_unique<NumberExpr>(val, tok.span);
   }
   if (current().type == TokenType::IDENTIFIER) {
-    std::string name = expect(TokenType::IDENTIFIER).value;
-    auto expr = std::make_unique<IdExpr>(name);
+    auto tok = expect(TokenType::IDENTIFIER);
+    auto expr = std::make_unique<IdExpr>(tok.value, tok.span);
     return expr;
   }
   if (current().type == TokenType::STRING) {
-    std::string name = expect(TokenType::STRING).value;
-    return std::make_unique<StrExpr>(name);
+    auto tok = expect(TokenType::STRING);
+    return std::make_unique<StrExpr>(tok.value, tok.span);
   }
   if (current().type == TokenType::OPEN_PAREN) {
-    expect(TokenType::OPEN_PAREN);
+    auto first = expect(TokenType::OPEN_PAREN).span;
     auto expr = parseExpression(0);
-    expect(TokenType::CLOSE_PAREN);
+    first.end = expect(TokenType::CLOSE_PAREN).span.end;
     return expr;
   }
 
@@ -305,7 +317,7 @@ void Parser::parseDialect() {
 
 std::unique_ptr<Expr> Parser::parseIf() {
   trace("begin parse if\n");
-  expect(TokenType::IF);
+  auto span = expect(TokenType::IF).span;
 
   trace("begin parse if condition\n");
   auto cond = parseExpression();
@@ -314,6 +326,7 @@ std::unique_ptr<Expr> Parser::parseIf() {
   auto b = parseBlock();
 
   trace("end parse if\n");
+  span.end = b->span.end;
 
   std::unique_ptr<BlockExpr> e;
   if (current().type == TokenType::ELSE) {
@@ -321,27 +334,32 @@ std::unique_ptr<Expr> Parser::parseIf() {
     expect(TokenType::ELSE);
     e = parseBlock();
     trace("end parse else condition\n");
+    span.end = e->span.end;
   }
 
-  return std::make_unique<IfExpr>(std::move(cond), std::move(b), std::move(e));
+  return std::make_unique<IfExpr>(std::move(cond), std::move(b), std::move(e),
+                                  span);
 }
 
 std::unique_ptr<Expr> Parser::parseReturn() {
   auto ret = expect(TokenType::RETURN);
+  auto span = ret.span;
 
   auto expr = parseExpression();
 
-  expect(TokenType::SEMICOLON, [ret](Span s) {
+  auto lasttok = expect(TokenType::SEMICOLON, [ret](Span s) {
     return ParserException(
         "return statement must be terminated by a semi colon", s, "",
         "add ; after the return statement");
   });
+  span.end = lasttok.span.end;
 
-  return std::make_unique<ReturnExpr>(std::move(expr));
+  return std::make_unique<ReturnExpr>(std::move(expr), span);
 }
 
 std::unique_ptr<Expr> Parser::parsePrintFormatted() {
   auto tok = expect(TokenType::PRINT_F);
+  auto span = tok.span;
   expect(TokenType::OPEN_PAREN);
   std::vector<std::unique_ptr<Expr>> values;
 
@@ -355,11 +373,12 @@ std::unique_ptr<Expr> Parser::parsePrintFormatted() {
   }
 
   expect(TokenType::CLOSE_PAREN);
-  expect(TokenType::SEMICOLON, [tok](Span s) {
+  auto lasttok = expect(TokenType::SEMICOLON, [tok](Span s) {
     return ParserException(
         "formatted print statement must be terminated by a semi colon", s, "",
         "add ; after the print_f statement");
   });
+  span.end = lasttok.span.end;
 
   if (values.size() == 0) {
     throw std::runtime_error(
@@ -372,11 +391,12 @@ std::unique_ptr<Expr> Parser::parsePrintFormatted() {
         "First arg to formatted print expr should be a string");
   }
 
-  return std::make_unique<Formatted_Print_Expr>(std::move(values));
+  return std::make_unique<Formatted_Print_Expr>(std::move(values), span);
 }
 
 std::unique_ptr<Expr> Parser::parsePrint() {
   auto tok = expect(TokenType::PRINT);
+  auto span = tok.span;
   expect(TokenType::OPEN_PAREN);
   std::vector<std::unique_ptr<Expr>> values;
 
@@ -390,21 +410,22 @@ std::unique_ptr<Expr> Parser::parsePrint() {
   }
 
   expect(TokenType::CLOSE_PAREN);
-  expect(TokenType::SEMICOLON, [tok](Span s) {
+  auto lasttok = expect(TokenType::SEMICOLON, [tok](Span s) {
     return ParserException("print statement must be terminated by a semi colon",
                            s, "", "add ; after the print statement");
   });
+  span.end = lasttok.span.end;
 
   if (values.size() == 0) {
     throw std::runtime_error(
         "formatted print expr should have at least one value");
   }
 
-  return std::make_unique<PrintExpr>(std::move(values));
+  return std::make_unique<PrintExpr>(std::move(values), span);
 }
 
 std::unique_ptr<Expr> Parser::parseStruct() {
-  expect(TokenType::STRUCT);
+  auto span = expect(TokenType::STRUCT).span;
   auto tok = expect(TokenType::IDENTIFIER);
   std::string name = tok.value;
   auto args = std::vector<std::string>();
@@ -422,10 +443,11 @@ std::unique_ptr<Expr> Parser::parseStruct() {
       expect(TokenType::COMMA);
     }
   }
-  expect(TokenType::CLOSE_CURLY);
+  auto lasttok = expect(TokenType::CLOSE_CURLY);
+  span.end = lasttok.span.end;
 
   return std::make_unique<StructDefExpr>(name, std::move(args),
-                                         std::move(argstypes));
+                                         std::move(argstypes), span);
 }
 
 std::unique_ptr<Type> Parser::parseType() {
@@ -482,13 +504,14 @@ std::unique_ptr<Expr> Parser::parseFunction() {
 
   std::string name;
   bool is_main = false;
+  Span span;
 
   if (current().type == TokenType::MAIN) {
-    expect(TokenType::MAIN);
+    span = expect(TokenType::MAIN).span;
     name = "main";
     is_main = true;
   } else {
-    expect(TokenType::FUNCTION);
+    span = expect(TokenType::FUNCTION).span;
     name = expect(TokenType::IDENTIFIER).value;
   }
 
@@ -507,7 +530,8 @@ std::unique_ptr<Expr> Parser::parseFunction() {
         break;
     } while (true);
   }
-  expect(TokenType::CLOSE_PAREN);
+  auto lasttok = expect(TokenType::CLOSE_PAREN);
+  span.end = lasttok.span.end;
 
   auto ret = parseType();
 
@@ -551,11 +575,12 @@ std::unique_ptr<Expr> Parser::parseFunction() {
   auto proto = std::make_unique<ProtoExpr>(name, args, std::move(argsTypes),
                                            std::move(ret));
   auto body = parseBlock();
-  return std::make_unique<FuncExpr>(std::move(proto), std::move(body));
+  span.end = body->span.end;
+  return std::make_unique<FuncExpr>(std::move(proto), std::move(body), span);
 }
 
 std::unique_ptr<BlockExpr> Parser::parseBlock() {
-  expect(TokenType::OPEN_CURLY);
+  auto span = expect(TokenType::OPEN_CURLY).span;
   std::vector<std::unique_ptr<Expr>> stmts;
   while (current().type != TokenType::CLOSE_CURLY && !isAtEnd()) {
     auto stmt = parseStatement();
@@ -564,53 +589,58 @@ std::unique_ptr<BlockExpr> Parser::parseBlock() {
     }
   }
   // FIXME handle missing close curly
-  expect(TokenType::CLOSE_CURLY);
+  auto lasttok = expect(TokenType::CLOSE_CURLY);
+  span.end = lasttok.span.end;
 
-  return std::make_unique<BlockExpr>(std::move(stmts));
+  return std::make_unique<BlockExpr>(std::move(stmts), span);
 }
 
 std::unique_ptr<Expr> Parser::parseDeclaration() {
-  expect(TokenType::LET); // 'let'
+  auto span = expect(TokenType::LET).span;
   auto name = expect(TokenType::IDENTIFIER);
   auto typ = parseType();
   expect(TokenType::ASSIGNMENT);
   auto value = parseExpression();
-  expect(TokenType::SEMICOLON, [name](Span s) {
+  auto lasttok = expect(TokenType::SEMICOLON, [name](Span s) {
     return ParserException(
         "expected variable declaration to end with a semicolon", s, "", "");
   });
+  span.end = lasttok.span.end;
 
   return std::make_unique<DeclarationExpr>(name.value, std::move(value),
-                                           std::move(typ));
+                                           std::move(typ), span);
 }
 
 std::unique_ptr<Expr> Parser::createBinaryNode(TokenType op,
                                                std::unique_ptr<Expr> left,
                                                std::unique_ptr<Expr> right) {
+  auto span = left->span;
+  span.end = right->span.end;
   switch (op) {
   case TokenType::PLUS:
-    return std::make_unique<AddExpr>(std::move(left), std::move(right));
+    return std::make_unique<AddExpr>(std::move(left), std::move(right), span);
   case TokenType::MINUS:
-    return std::make_unique<SubExpr>(std::move(left), std::move(right));
+    return std::make_unique<SubExpr>(std::move(left), std::move(right), span);
   case TokenType::MULTIPLY:
-    return std::make_unique<MulExpr>(std::move(left), std::move(right));
+    return std::make_unique<MulExpr>(std::move(left), std::move(right), span);
   case TokenType::DIVIDE:
-    return std::make_unique<DivExpr>(std::move(left), std::move(right));
+    return std::make_unique<DivExpr>(std::move(left), std::move(right), span);
   case TokenType::EQUALS:
-    return std::make_unique<EqExpr>(std::move(left), std::move(right));
+    return std::make_unique<EqExpr>(std::move(left), std::move(right), span);
   case TokenType::LESS_THAN:
-    return std::make_unique<LTExpr>(std::move(left), std::move(right));
+    return std::make_unique<LTExpr>(std::move(left), std::move(right), span);
   case TokenType::LESS_THAN_EQUALS:
-    return std::make_unique<LTEExpr>(std::move(left), std::move(right));
+    return std::make_unique<LTEExpr>(std::move(left), std::move(right), span);
   case TokenType::GREATER_THAN:
-    return std::make_unique<GTExpr>(std::move(left), std::move(right));
+    return std::make_unique<GTExpr>(std::move(left), std::move(right), span);
   case TokenType::GREATER_THAN_EQUALS:
-    return std::make_unique<GTEExpr>(std::move(left), std::move(right));
+    return std::make_unique<GTEExpr>(std::move(left), std::move(right), span);
   case TokenType::AND:
-    return std::make_unique<Logical_And_Expr>(std::move(left),
-                                              std::move(right));
+    return std::make_unique<Logical_And_Expr>(std::move(left), std::move(right),
+                                              span);
   case TokenType::OR:
-    return std::make_unique<Logical_Or_Expr>(std::move(left), std::move(right));
+    return std::make_unique<Logical_Or_Expr>(std::move(left), std::move(right),
+                                             span);
   default:
     throw std::runtime_error("Unknown operator in expression `" +
                              current().value + "`");
@@ -623,18 +653,21 @@ std::unique_ptr<Expr> Parser::parseExpression(int minPrecedence) {
   std::unique_ptr<Expr> right;
 
   switch (current().type) {
-  case TokenType::MINUS:
-    expect(TokenType::MINUS);
+  case TokenType::MINUS: {
+    auto span = expect(TokenType::MINUS).span;
 
     right = parseExpression(40);
-    left = std::make_unique<UnaryMinusExpr>(std::move(right));
+    span.end = right->span.end;
+    left = std::make_unique<UnaryMinusExpr>(std::move(right), span);
     break;
-  case TokenType::NOT:
-    expect(TokenType::NOT);
-
+  }
+  case TokenType::NOT: {
+    auto span = expect(TokenType::NOT).span;
     right = parseExpression(40);
-    left = std::make_unique<UnaryNotExpr>(std::move(right));
+    span.end = right->span.end;
+    left = std::make_unique<UnaryNotExpr>(std::move(right), span);
     break;
+  }
   default:
     left = parsePrimary();
   }
