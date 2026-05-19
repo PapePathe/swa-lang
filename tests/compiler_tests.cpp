@@ -738,6 +738,56 @@ TEST_F(JITOutputTest, FunctionCalls3) {
   assertSwaOutput(program, "Result 30");
 }
 
+TEST_F(JITOutputTest, Call_Functions_That_Are_Defined_After_Main) {
+  std::string program = R"(
+    dialect:english;
+
+    func add(a int, b int)int {
+      return a + b;
+    }
+
+    func mul_two(a int)int {
+      return 2 * a;
+    }
+    start() int {
+      print("Result", mul_three(mul_two(add(2, 3))));
+      return 0;
+    }
+
+    func mul_three(a int)int {
+      return 3 * a;
+    }
+
+  )";
+
+  assertSwaOutput(program, "Result 30");
+}
+
+// TEST_F(JITOutputTest, Call_Functions_That_Are_Defined_After_Main) {
+//   std::string program = R"(
+//     dialect:english;
+//
+//     func mul_two_add(a int, b int)int {
+//       return 2 * add(a,b);
+//     }
+//
+//     start() int {
+//       print("Result", mul_three(mul_two(2, 3)));
+//       return 0;
+//     }
+//
+//     func mul_three(a int)int {
+//       return 3 * a;
+//     }
+//
+//     func add(a int, b int)int {
+//       return a + b;
+//     }
+//   )";
+//
+//   assertSwaOutput(program, "Result 30");
+// }
+
 TEST_F(JITOutputTest, TestFrameworkAssertEqual) {
   std::string program = R"(
     dialect:english;

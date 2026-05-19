@@ -109,6 +109,7 @@ llvm::Value *CodeGenVisitor::getLastValue() {
   lastValue = nullptr;
   return old;
 }
+// FIXME this should be named getlastType
 llvm::Type *CodeGenVisitor::setLastType() {
   auto old = lastType;
   lastType = nullptr;
