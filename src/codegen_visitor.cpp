@@ -1,8 +1,7 @@
-#include "ast/symboltable.h"
+#include <ast/symboltable.h>
 #include <ast/visitor.h>
 #include <compiler/codegen.h>
 #include <compiler/compiler.h>
-#include <iostream>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
@@ -433,13 +432,20 @@ void CodeGenVisitor::Visit(CallExpr *expr) {
     auto ft = driver->Module->getFunction(s->Name);
 
     if (ft == nullptr) {
-      throw std::runtime_error("Not implemented CallExpr");
+      throw ParserException("Function named " + s->Name + " does not exist",
+                            expr->span);
     }
 
     std::vector<llvm::Value *> args;
 
     for (auto &arg : expr->Args) {
-      args.push_back(evaluate(arg.get()));
+      auto val = evaluate(arg.get());
+
+      if (auto alloca = llvm::dyn_cast<llvm::AllocaInst>(val)) {
+        val = driver->Builder.CreateLoad(alloca->getAllocatedType(), alloca,
+                                         "load_val");
+      }
+      args.push_back(val);
     }
 
     auto c = driver->Builder.CreateCall(ft, args);
