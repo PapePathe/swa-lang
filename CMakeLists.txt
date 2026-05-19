@@ -28,14 +28,15 @@ add_executable(swa
     src/lexer.cpp
     src/parser.cpp
     src/ast/symboltable.cpp
+    src/declaration_visitor.cpp
     src/codegen_visitor.cpp
     src/compiler.cpp
-    src/swa.cpp 
+    src/swa.cpp
 )
 
 llvm_map_components_to_libnames(llvm_libs
-    core 
-    support 
+    core
+    support
     native
 )
 
@@ -46,6 +47,7 @@ add_executable(compiler_tests
   src/ast/symboltable.cpp
   src/lexer.cpp
   src/parser.cpp
+  src/declaration_visitor.cpp
   src/codegen_visitor.cpp
   src/compiler.cpp
   tests/lexer_tests.cpp
