@@ -9,7 +9,6 @@
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 #include <string>
-#include <vector>
 
 struct SourceLocation {
   size_t line;

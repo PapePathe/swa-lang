@@ -12,6 +12,14 @@
 #include <utility>
 
 class DeclarationVisitor : public ASTVisitor {
+private:
+  llvm::Type *lastType;
+  llvm::Function *lastFunc;
+  llvm::Type *evaluate(Type *expr);
+  void setLastFunc(llvm::Function *v);
+  void setLastType(llvm::Type *t);
+  llvm::Type *getLastType();
+
 public:
   std::unique_ptr<SwaCompilerDriver> driver;
   std::unique_ptr<SwaCompilerDriver> finalize() { return std::move(driver); }
@@ -20,7 +28,7 @@ public:
       : driver(std::move(d)) {}
   void Visit(AddExpr *expr) {}
   void Visit(BoolExpr *expr) {}
-  void Visit(BlockExpr *expr) {}
+  void Visit(BlockExpr *expr);
   void Visit(DeclarationExpr *expr) {}
   void Visit(DivExpr *expr) {}
   void Visit(EqExpr *expr) {}
@@ -56,13 +64,13 @@ public:
   void Visit(Assert_Greater_Than_Expr *expr) {}
   void Visit(Assert_Greater_Than_Equals_Expr *expr) {}
 
-  void Visit(TypeSlice *expr) {}
-  void Visit(TypeArray *expr) {}
-  void Visit(TypeInt *expr) {}
-  void Visit(TypeFloat *expr) {}
-  void Visit(TypeString *expr) {}
-  void Visit(TypeVoid *expr) {}
-  void Visit(TypeBool *expr) {}
-  void Visit(TypeByte *expr) {}
-  void Visit(TypeStruct *expr) {}
+  void Visit(TypeSlice *expr);
+  void Visit(TypeArray *expr);
+  void Visit(TypeInt *expr);
+  void Visit(TypeFloat *expr);
+  void Visit(TypeString *expr);
+  void Visit(TypeVoid *expr);
+  void Visit(TypeBool *expr);
+  void Visit(TypeByte *expr);
+  void Visit(TypeStruct *expr);
 };
