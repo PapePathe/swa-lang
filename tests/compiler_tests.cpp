@@ -594,6 +594,22 @@ TEST_F(JITOutputTest, PrintArgc) {
   assertSwaOutput(program, "argc = 0");
 }
 
+TEST_F(JITOutputTest, Call_Function_That_Does_Not_Exist) {
+  std::string program = R"(
+    dialect:english;
+    start() int {
+      print("Result", my_func());
+      return 0;
+    }
+  )";
+
+  assertSwaOutput(
+      program, "\x1B[1;31merror\x1B[0m: Function named my_func does not "
+               "exist\n  --> swa_source:4:30\n   |\n 4 |       "
+               "print(\"Result\", my_func());\n   |                            "
+               "  \x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n\n");
+}
+
 TEST_F(JITOutputTest, FunctionCalls1) {
   std::string program = R"(
     dialect:english;
@@ -763,30 +779,30 @@ TEST_F(JITOutputTest, Call_Functions_That_Are_Defined_After_Main) {
   assertSwaOutput(program, "Result 30");
 }
 
-// TEST_F(JITOutputTest, Call_Functions_That_Are_Defined_After_Main) {
-//   std::string program = R"(
-//     dialect:english;
-//
-//     func mul_two_add(a int, b int)int {
-//       return 2 * add(a,b);
-//     }
-//
-//     start() int {
-//       print("Result", mul_three(mul_two(2, 3)));
-//       return 0;
-//     }
-//
-//     func mul_three(a int)int {
-//       return 3 * a;
-//     }
-//
-//     func add(a int, b int)int {
-//       return a + b;
-//     }
-//   )";
-//
-//   assertSwaOutput(program, "Result 30");
-// }
+TEST_F(JITOutputTest, Call_Inner_Functions_That_Are_Defined_After_Main) {
+  std::string program = R"(
+     dialect:english;
+
+     func mul_two_add(a int, b int)int {
+       return 2 * add(a,b);
+     }
+
+     start() int {
+       print("Result", mul_three(mul_two_add(2, 3)));
+       return 0;
+     }
+
+     func mul_three(a int)int {
+       return 3 * a;
+     }
+
+     func add(a int, b int)int {
+       return a + b;
+     }
+   )";
+
+  assertSwaOutput(program, "Result 30");
+}
 
 TEST_F(JITOutputTest, TestFrameworkAssertEqual) {
   std::string program = R"(
