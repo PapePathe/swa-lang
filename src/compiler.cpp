@@ -1,6 +1,5 @@
 #include "lexer/lexer.h"
 #include <compiler/declaration.h>
-#include <execution>
 #include <llvm/Bitcode/BitcodeWriter.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/IR/IRBuilder.h>
@@ -61,8 +60,10 @@ void SwaCompiler::Run(const std::string &_source) {
         llvm::EngineBuilder(std::move(driver->Module)).create();
     auto Fn = engine->FindFunctionNamed("main");
     engine->runFunctionAsMain(Fn, std::vector<std::string>(), nullptr);
+  } catch (const CodeGenException &err) {
+    err.emitDiagnostic(sm, "code generation error");
   } catch (const ParserException &err) {
-    err.emitDiagnostic(sm);
+    err.emitDiagnostic(sm, "error");
   }
 }
 
