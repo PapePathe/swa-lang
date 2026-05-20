@@ -438,6 +438,15 @@ void CodeGenVisitor::Visit(StructDefExpr *expr) {
   for (size_t i = 0; i < expr->FieldNames.size(); i++) {
 
     auto type = evaluate(expr->FieldTypes.at(i).get());
+    if (type->isStructTy()) {
+      auto t = llvm::dyn_cast<llvm::StructType>(type);
+      if (t->getStructName() == expr->Name) {
+        throw CodeGenException(
+            "Compile Error: Invalid recursive type. Struct '" + expr->Name +
+                "' cannot directly contain itself without a pointer.",
+            expr->span);
+      }
+    }
     types.push_back(type);
   }
 

@@ -851,23 +851,25 @@ TEST_F(JITOutputTest, Self_Referencing_Struct) {
 
   assertSwaOutput(program, "TODO");
 }
-// TEST_F(JITOutputTest, Self_Referencing_Struct_Without_pointer) {
-//   std::string program = R"(
-//     dialect:english;
-//     struct Node {
-//       value int,
-//       prev Node,
-//       next Node,
-//     }
-//     func new_node(value int, left Node, right Node) int {
-//
-//     }
-//     start() int {
-//      let n Node;
-//       return 0;
-//     }
-//   )";
-//
-//   assertSwaOutput(program,
-//                   "Error, please up pointers for self referencing structs");
-// }
+
+TEST_F(JITOutputTest, Self_Referencing_Struct_Without_pointer) {
+  std::string program = R"(
+     dialect:english;
+     struct Node {
+       value int,
+       prev Node,
+       next Node,
+     }
+     start() int {
+      let n Node;
+       return 0;
+     }
+   )";
+
+  assertSwaOutput(
+      program,
+      "\x1B[1;31mcode generation error\x1B[0m: Compile Error: Invalid "
+      "recursive type. Struct 'Node' cannot directly contain itself without a "
+      "pointer.\n  --> swa_source:3:6\n   |\n 3 |      struct Node {\n   |     "
+      " \x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n\n");
+}
