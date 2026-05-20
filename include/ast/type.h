@@ -45,6 +45,15 @@ public:
 
 class TypeStruct : public Type {
 public:
+  std::string Name;
+  explicit TypeStruct(std::string name) : Name(name) {}
+  void Accept(ASTVisitor &v) override { v.Visit(this); };
+};
+
+class TypePointer : public Type {
+public:
+  std::unique_ptr<Type> T;
+  explicit TypePointer(std::unique_ptr<Type> t) : T(std::move(t)) {}
   void Accept(ASTVisitor &v) override { v.Visit(this); };
 };
 

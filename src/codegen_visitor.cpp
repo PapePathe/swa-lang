@@ -2,6 +2,8 @@
 #include <ast/visitor.h>
 #include <compiler/codegen.h>
 #include <compiler/compiler.h>
+#include <cstddef>
+#include <llvm/IR/Constant.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
@@ -187,14 +189,26 @@ void CodeGenVisitor::Visit(BlockExpr *expr) {
 
 void CodeGenVisitor::Visit(DeclarationExpr *expr) {
   auto val = evaluate(expr->Value.get());
+  auto typ = evaluate(expr->T.get());
 
   if (!val) {
-    throw std::runtime_error("Value is nil");
+    if (typ && typ->isStructTy()) {
+      val = llvm::ConstantAggregateZero::get(typ);
+    } else if (typ->isPointerTy()) {
+      val = llvm::Constant::getNullValue(typ);
+    } else {
+      val = llvm::Constant::getNullValue(typ);
+    }
   }
 
   if (driver->Symbols.getParent() != nullptr) {
-    auto alloc = driver->Builder.CreateAlloca(val->getType(), nullptr,
-                                              "alloc-" + expr->Name);
+    auto alloctype = val->getType();
+    if (typ && typ->isStructTy()) {
+      alloctype = typ;
+    }
+
+    auto alloc =
+        driver->Builder.CreateAlloca(alloctype, nullptr, "alloc-" + expr->Name);
     driver->Symbols.define(expr->Name, alloc);
     driver->Builder.CreateStore(val, alloc);
 
@@ -405,7 +419,30 @@ void CodeGenVisitor::Visit(ReturnExpr *expr) {
 void CodeGenVisitor::Visit(StrExpr *expr) {
   setLastValue(driver->Builder.CreateGlobalString(expr->Name));
 }
-void CodeGenVisitor::Visit(StructDefExpr *expr) {}
+void CodeGenVisitor::Visit(StructDefExpr *expr) {
+  llvm::StructType *structDef =
+      llvm::StructType::getTypeByName(driver->Context, expr->Name);
+  if (!structDef) {
+    // Only create a fresh entry if the context doesn't track this name yet
+    // FIXME struct should be defined by DeclarationVisitor
+    structDef = llvm::StructType::create(driver->Context, expr->Name);
+  }
+
+  // Prevent redefining the layout if it has already been processed
+  if (!structDef->isOpaque()) {
+    return;
+  }
+
+  std::vector<llvm::Type *> types;
+
+  for (size_t i = 0; i < expr->FieldNames.size(); i++) {
+
+    auto type = evaluate(expr->FieldTypes.at(i).get());
+    types.push_back(type);
+  }
+
+  structDef->setBody(types);
+}
 void CodeGenVisitor::Visit(SubExpr *expr) {
   auto [l, r] = evaluate_bin_expr(expr->Left.get(), expr->Right.get());
 
@@ -603,13 +640,26 @@ void CodeGenVisitor::Visit(TypeString *expr) {
 }
 void CodeGenVisitor::Visit(TypeVoid *expr) {
   auto t = llvm::Type::getVoidTy(driver->Context);
+  setLastType(t);
 }
 void CodeGenVisitor::Visit(TypeBool *expr) {
   auto t = llvm::Type::getInt1Ty(driver->Context);
+  setLastType(t);
 }
 void CodeGenVisitor::Visit(TypeByte *expr) {
   auto t = llvm::Type::getInt8Ty(driver->Context);
+  setLastType(t);
 }
 void CodeGenVisitor::Visit(TypeStruct *expr) {
-  throw std::runtime_error("Not implemented");
+  llvm::StructType *structDef =
+      llvm::StructType::getTypeByName(driver->Context, expr->Name);
+  if (!structDef) {
+    // FIXME add span info to types so that we can raise CodeGenException
+    throw std::runtime_error("Struct " + expr->Name + " not defined");
+  }
+  setLastType(structDef);
+}
+
+void CodeGenVisitor::Visit(TypePointer *expr) {
+  setLastType(llvm::PointerType::getUnqual(driver->Context));
 }

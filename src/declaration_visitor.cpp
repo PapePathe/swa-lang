@@ -45,7 +45,15 @@ void DeclarationVisitor::Visit(MainExpr *expr) {
   proto->Accept(*this);
 }
 void DeclarationVisitor::Visit(FuncExpr *expr) { expr->Proto->Accept(*this); }
-void DeclarationVisitor::Visit(StructDefExpr *expr) {}
+void DeclarationVisitor::Visit(StructDefExpr *expr) {
+  llvm::StructType *structDef =
+      llvm::StructType::getTypeByName(driver->Context, expr->Name);
+  if (!structDef) {
+    // Only create a fresh entry if the context doesn't track this name yet
+    // FIXME struct should be defined by DeclarationVisitor
+    structDef = llvm::StructType::create(driver->Context, expr->Name);
+  }
+}
 void DeclarationVisitor::Visit(BlockExpr *expr) {
   for (auto &e : expr->Exprs) {
     if (!e) {
@@ -103,13 +111,26 @@ void DeclarationVisitor::Visit(TypeString *expr) {
 }
 void DeclarationVisitor::Visit(TypeVoid *expr) {
   auto t = llvm::Type::getVoidTy(driver->Context);
+  setLastType(t);
 }
 void DeclarationVisitor::Visit(TypeBool *expr) {
   auto t = llvm::Type::getInt1Ty(driver->Context);
+  setLastType(t);
 }
 void DeclarationVisitor::Visit(TypeByte *expr) {
   auto t = llvm::Type::getInt8Ty(driver->Context);
+  setLastType(t);
 }
 void DeclarationVisitor::Visit(TypeStruct *expr) {
-  throw std::runtime_error("Not implemented");
+  llvm::StructType *structDef =
+      llvm::StructType::getTypeByName(driver->Context, expr->Name);
+  if (!structDef) {
+    structDef = llvm::StructType::create(driver->Context, expr->Name);
+  }
+
+  setLastType(structDef);
+}
+
+void DeclarationVisitor::Visit(TypePointer *expr) {
+  setLastType(llvm::PointerType::getUnqual(driver->Context));
 }

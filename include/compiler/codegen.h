@@ -94,5 +94,6 @@ public:
   virtual void Visit(TypeBool *expr);
   virtual void Visit(TypeByte *expr);
   virtual void Visit(TypeStruct *expr);
+  virtual void Visit(TypePointer *expr);
 };
 #endif // INCLUDE_COMPILER_CODEGEN_H_

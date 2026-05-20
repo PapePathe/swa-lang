@@ -1,4 +1,5 @@
 #include "ast/node.h"
+#include "ast/type.h"
 #include "lexer/lexer.h"
 #include "lexer/tokentype.h"
 #include <iostream>
@@ -496,7 +497,20 @@ std::unique_ptr<Type> Parser::parseType() {
     return std::make_unique<TypeArray>(std::move(typ));
   }
 
-  throw std::runtime_error("Unexpected type: ```" + current().value + "```");
+  if (tok.type == TokenType::IDENTIFIER) {
+    expect(TokenType::IDENTIFIER);
+    return std::make_unique<TypeStruct>(tok.value);
+  }
+
+  if (tok.type == TokenType::MULTIPLY) {
+    expect(TokenType::MULTIPLY);
+    auto t = parseType();
+
+    return std::make_unique<TypePointer>(std::move(t));
+  }
+
+  throw ParserException("Unexpected type: ```" + current().value + "```",
+                        tok.span);
 }
 
 std::unique_ptr<Expr> Parser::parseFunction() {
@@ -599,8 +613,13 @@ std::unique_ptr<Expr> Parser::parseDeclaration() {
   auto span = expect(TokenType::LET).span;
   auto name = expect(TokenType::IDENTIFIER);
   auto typ = parseType();
-  expect(TokenType::ASSIGNMENT);
-  auto value = parseExpression();
+  std::unique_ptr<Expr> value;
+
+  if (current().type != TokenType::SEMICOLON) {
+    expect(TokenType::ASSIGNMENT);
+    value = parseExpression();
+  }
+
   auto lasttok = expect(TokenType::SEMICOLON, [name](Span s) {
     return ParserException(
         "expected variable declaration to end with a semicolon", s, "", "");

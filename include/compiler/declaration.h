@@ -73,4 +73,5 @@ public:
   void Visit(TypeBool *expr);
   void Visit(TypeByte *expr);
   void Visit(TypeStruct *expr);
+  void Visit(TypePointer *expr);
 };
