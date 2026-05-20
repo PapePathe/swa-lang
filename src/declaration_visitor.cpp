@@ -1,5 +1,7 @@
 #include "ast/node.h"
+#include "compiler/codegen.h"
 #include "compiler/declaration.h"
+#include "parser/exception.h"
 #include <ast/visitor.h>
 #include <compiler/compiler.h>
 #include <compiler/declaration.h>
@@ -125,7 +127,7 @@ void DeclarationVisitor::Visit(TypeStruct *expr) {
   llvm::StructType *structDef =
       llvm::StructType::getTypeByName(driver->Context, expr->Name);
   if (!structDef) {
-    structDef = llvm::StructType::create(driver->Context, expr->Name);
+    throw CodeGenException("Undefined struct " + expr->Name, Span());
   }
 
   setLastType(structDef);

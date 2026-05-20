@@ -663,8 +663,7 @@ void CodeGenVisitor::Visit(TypeStruct *expr) {
   llvm::StructType *structDef =
       llvm::StructType::getTypeByName(driver->Context, expr->Name);
   if (!structDef) {
-    // FIXME add span info to types so that we can raise CodeGenException
-    throw std::runtime_error("Struct " + expr->Name + " not defined");
+    throw CodeGenException("Undefined struct " + expr->Name, Span());
   }
   setLastType(structDef);
 }
