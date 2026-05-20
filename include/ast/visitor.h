@@ -52,6 +52,7 @@ class TypeVoid;
 class TypeStruct;
 class TypeArray;
 class TypeSlice;
+class TypePointer;
 
 class ASTVisitor {
 public:
@@ -103,6 +104,7 @@ public:
   virtual void Visit(TypeBool *expr) = 0;
   virtual void Visit(TypeByte *expr) = 0;
   virtual void Visit(TypeStruct *expr) = 0;
+  virtual void Visit(TypePointer *expr) = 0;
 };
 
 #endif // INCLUDE_SWA_VISITOR_H_

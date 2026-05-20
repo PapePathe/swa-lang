@@ -830,3 +830,44 @@ TEST_F(JITOutputTest, TestFrameworkAssertEqual) {
       "[RUN] swa_test_assert_equal_success\n  -> \x1B[31m[FAIL]\x1B[0m "
       "Expected 11, but got 10\n  -> \x1B[32m[PASS]\x1B[0m\n");
 }
+
+TEST_F(JITOutputTest, Self_Referencing_Struct) {
+  std::string program = R"(
+    dialect:english;
+    struct Node {
+      value int,
+      prev *Node,
+      next *Node,
+    }
+    func new_node(value int, left Node, right Node) int {
+      return 0;
+    }
+    start() int {
+      let n Node;
+      print("TODO");
+      return 0;
+    }
+  )";
+
+  assertSwaOutput(program, "TODO");
+}
+// TEST_F(JITOutputTest, Self_Referencing_Struct_Without_pointer) {
+//   std::string program = R"(
+//     dialect:english;
+//     struct Node {
+//       value int,
+//       prev Node,
+//       next Node,
+//     }
+//     func new_node(value int, left Node, right Node) int {
+//
+//     }
+//     start() int {
+//      let n Node;
+//       return 0;
+//     }
+//   )";
+//
+//   assertSwaOutput(program,
+//                   "Error, please up pointers for self referencing structs");
+// }
