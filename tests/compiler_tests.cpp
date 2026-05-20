@@ -892,3 +892,22 @@ TEST_F(JITOutputTest, Reference_To_Undefined_Struct) {
       "\x1B[1;31mcode generation error\x1B[0m: Undefined struct Node\n  --> "
       "swa_source:1:1\n   |\n 1 | \n   | \x1B[1;31m^\x1B[0m\n\n");
 }
+
+TEST_F(JITOutputTest, Function_Parameter_Struct_by_Pointer) {
+  std::string program = R"(
+    dialect:english;
+    struct Node {
+      value int,
+    }
+    func new_node(value int, left *Node, right *Node) int {
+      return 0;
+    }
+    start() int {
+      let n Node;
+      print("TODO");
+      return 0;
+    }
+  )";
+
+  assertSwaOutput(program, "TODO");
+}
