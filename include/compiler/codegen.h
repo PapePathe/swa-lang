@@ -1,6 +1,7 @@
 #ifndef INCLUDE_COMPILER_CODEGEN_H_
 #define INCLUDE_COMPILER_CODEGEN_H_
 
+#include "parser/exception.h"
 #include <ast/expr.h>
 #include <ast/symboltable.h>
 #include <ast/visitor.h>
@@ -12,6 +13,10 @@
 #include <llvm/IR/Value.h>
 #include <string>
 #include <vector>
+
+class CodeGenException : public ParserException {
+  using ParserException::ParserException;
+};
 
 class CodeGenVisitor : public ASTVisitor {
 private:

@@ -432,8 +432,8 @@ void CodeGenVisitor::Visit(CallExpr *expr) {
     auto ft = driver->Module->getFunction(s->Name);
 
     if (ft == nullptr) {
-      throw ParserException("Function named " + s->Name + " does not exist",
-                            expr->span);
+      throw CodeGenException("Function named " + s->Name + " does not exist",
+                             expr->span);
     }
 
     std::vector<llvm::Value *> args;
