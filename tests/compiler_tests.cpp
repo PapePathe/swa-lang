@@ -604,10 +604,11 @@ TEST_F(JITOutputTest, Call_Function_That_Does_Not_Exist) {
   )";
 
   assertSwaOutput(
-      program, "\x1B[1;31merror\x1B[0m: Function named my_func does not "
-               "exist\n  --> swa_source:4:30\n   |\n 4 |       "
-               "print(\"Result\", my_func());\n   |                            "
-               "  \x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n\n");
+      program,
+      "\x1B[1;31mcode generation error\x1B[0m: Function named my_func does not "
+      "exist\n  --> swa_source:4:30\n   |\n 4 |       "
+      "print(\"Result\", my_func());\n   |                            "
+      "  \x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n\n");
 }
 
 TEST_F(JITOutputTest, FunctionCalls1) {

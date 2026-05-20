@@ -26,6 +26,7 @@ include_directories(include)
 
 add_executable(swa
     src/lexer.cpp
+    src/exception.cpp
     src/parser.cpp
     src/ast/symboltable.cpp
     src/declaration_visitor.cpp
@@ -47,6 +48,7 @@ add_executable(compiler_tests
   src/ast/symboltable.cpp
   src/lexer.cpp
   src/parser.cpp
+  src/exception.cpp
   src/declaration_visitor.cpp
   src/codegen_visitor.cpp
   src/compiler.cpp
