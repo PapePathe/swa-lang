@@ -127,7 +127,7 @@ void DeclarationVisitor::Visit(TypeStruct *expr) {
   llvm::StructType *structDef =
       llvm::StructType::getTypeByName(driver->Context, expr->Name);
   if (!structDef) {
-    throw CodeGenException("Undefined struct " + expr->Name, Span());
+    throw CodeGenException("Undefined struct " + expr->Name, expr->span);
   }
 
   setLastType(structDef);

@@ -828,3 +828,77 @@ TEST_F(ParserTests, MissingSemiColonAfterVariableDecl) {
                     "expected variable declaration to end with a semicolon", "",
                     13, 15);
 }
+
+TEST_F(ParserTests, Function_Span_Verification) {
+  std::string input = R"(
+    dialect:english;
+    func new_node(value int, left Node, right Node) int {
+      return 0;
+    }
+    start() int {
+      return 0;
+    }
+  )";
+
+  auto stmts = PARSE_PROGRAM(input, 2);
+
+  // 1. Verify Top-Level Function Node "new_node"
+  auto node = dynamic_cast<FuncExpr *>(stmts[0].get());
+  ASSERT_NE(node, nullptr);
+  ASSERT_EQ(node->Proto->Name, "new_node");
+
+  // Entire function layout bounds: from 'f' in func to closing '}'
+  ASSERT_EQ(node->span.start.offset, 26); // "func ..."
+  ASSERT_EQ(node->span.end.offset, 101);  // "... }"
+
+  // 2. Drill Into Parameters & Type Spans (Inside ProtoExpr)
+  ASSERT_EQ(node->Proto->Args.size(), 3);
+  ASSERT_EQ(node->Proto->ArgsTypes.size(), 3);
+
+  // Parameter 1: "value int"
+  // "value" identifier span
+  // "int" primitive type span
+  ASSERT_EQ(node->Proto->ArgsTypes[0]->span.start.offset, 46); // "int"
+  ASSERT_EQ(node->Proto->ArgsTypes[0]->span.end.offset, 49);
+
+  // Parameter 2: "left Node"
+  // "Node" custom struct type span
+  ASSERT_EQ(node->Proto->ArgsTypes[1]->span.start.offset, 56); // "Node"
+  ASSERT_EQ(node->Proto->ArgsTypes[1]->span.end.offset, 60);
+
+  // Parameter 3: "right Node"
+  // "Node" custom struct type span
+  ASSERT_EQ(node->Proto->ArgsTypes[2]->span.start.offset, 68); // "Node"
+  ASSERT_EQ(node->Proto->ArgsTypes[2]->span.end.offset, 72);
+
+  // Return Type Annotation: "int" right before the opening brace
+  ASSERT_EQ(node->Proto->Ret->span.start.offset, 74); // "int"
+  ASSERT_EQ(node->Proto->Ret->span.end.offset, 77);
+
+  // 3. Verify Body Block Spans (BlockExpr)
+  auto body = node->Body.get();
+  ASSERT_NE(body, nullptr);
+  ASSERT_EQ(body->Exprs.size(), 1);
+
+  // The block spans from the opening '{' to the closing '}'
+  ASSERT_EQ(body->span.start.offset, 78); // "{"
+  ASSERT_EQ(body->span.end.offset, 101);  // "}"
+
+  // 4. Verify Internal Statement (ReturnExpr)
+  auto retStmt = dynamic_cast<ReturnExpr *>(body->Exprs[0].get());
+  ASSERT_NE(retStmt, nullptr);
+
+  // The return statement spans from 'r' in return to trailing semicolon ';'
+  ASSERT_EQ(retStmt->span.start.offset, 86); // "return 0;"
+  ASSERT_EQ(retStmt->span.end.offset, 95);   // ";"
+
+  // 5. Verify Second Function Expression "start" to ensure no lookahead
+  // contamination
+  auto startNode = dynamic_cast<FuncExpr *>(stmts[1].get());
+  ASSERT_NE(startNode, nullptr);
+  ASSERT_EQ(startNode->Proto->Name, "main");
+
+  // Enforce true boundary encapsulation for trailing nodes
+  ASSERT_EQ(startNode->span.start.offset, 106); // "start() int ..."
+  ASSERT_EQ(startNode->span.end.offset, 141);   // "}"
+}
