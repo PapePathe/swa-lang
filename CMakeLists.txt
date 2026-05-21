@@ -31,6 +31,7 @@ add_executable(swa
     src/ast/symboltable.cpp
     src/declaration_visitor.cpp
     src/codegen_visitor.cpp
+    src/compiler/typechecker.cpp
     src/compiler.cpp
     src/swa.cpp
 )
@@ -52,6 +53,8 @@ add_executable(compiler_tests
   src/declaration_visitor.cpp
   src/codegen_visitor.cpp
   src/compiler.cpp
+  src/compiler/typechecker.cpp
+
   tests/lexer_tests.cpp
   tests/parser_tests.cpp
   tests/compiler_tests.cpp

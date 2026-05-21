@@ -1,5 +1,8 @@
-#include "lexer/lexer.h"
+#include <compiler/codegen.h>
 #include <compiler/declaration.h>
+#include <compiler/typechecker.h>
+#include <lexer/lexer.h>
+
 #include <llvm/Bitcode/BitcodeWriter.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/IR/IRBuilder.h>
@@ -26,6 +29,7 @@
 #include <iostream>
 
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -49,6 +53,10 @@ void SwaCompiler::Run(const std::string &_source) {
     driver = decl.finalize();
     dumpModuleToFile(driver->Module.get(), "decl_module.ll");
 
+    TypeCheckVisitor check = TypeCheckVisitor(std::move(driver));
+    program->Accept(check);
+    driver = check.finalize();
+
     CodeGenVisitor gen = CodeGenVisitor(std::move(driver));
 
     program->Accept(gen);
@@ -59,6 +67,9 @@ void SwaCompiler::Run(const std::string &_source) {
     llvm::ExecutionEngine *engine =
         llvm::EngineBuilder(std::move(driver->Module)).create();
     auto Fn = engine->FindFunctionNamed("main");
+    if (!Fn) {
+      throw std::runtime_error("Function main not defined");
+    }
     engine->runFunctionAsMain(Fn, std::vector<std::string>(), nullptr);
   } catch (const CodeGenException &err) {
     err.emitDiagnostic(sm, "code generation error");
