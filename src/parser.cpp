@@ -51,6 +51,9 @@ bool Parser::isAtEnd() {
 
 std::unique_ptr<BlockExpr> Parser::parseProgram() {
   std::vector<std::unique_ptr<Expr>> stmts;
+  Span programSpan;
+  programSpan.start = tokens.front().span.start;
+
   while (!isAtEnd()) {
     auto stmt = parseStatement();
 
@@ -58,7 +61,9 @@ std::unique_ptr<BlockExpr> Parser::parseProgram() {
       stmts.push_back(std::move(stmt));
     }
   }
-  return std::make_unique<BlockExpr>(std::move(stmts));
+  programSpan.end = previous().span.end;
+
+  return std::make_unique<BlockExpr>(std::move(stmts), programSpan);
 }
 
 void Parser::trace(std::string msg) {
@@ -299,6 +304,7 @@ std::unique_ptr<Expr> Parser::parsePrimary() {
     auto first = expect(TokenType::OPEN_PAREN).span;
     auto expr = parseExpression(0);
     first.end = expect(TokenType::CLOSE_PAREN).span.end;
+    expr->span = first;
     return expr;
   }
 
@@ -455,33 +461,33 @@ std::unique_ptr<Type> Parser::parseType() {
   auto tok = current();
 
   if (tok.type == TokenType::INT) {
-    expect(TokenType::INT);
-    return std::make_unique<TypeInt>();
+    auto span = expect(TokenType::INT).span;
+    return std::make_unique<TypeInt>(span);
   }
 
   if (tok.type == TokenType::FLOAT) {
-    expect(TokenType::FLOAT);
-    return std::make_unique<TypeFloat>();
+    auto span = expect(TokenType::FLOAT).span;
+    return std::make_unique<TypeFloat>(span);
   }
 
   if (tok.type == TokenType::STRING) {
-    expect(TokenType::STRING);
-    return std::make_unique<TypeString>();
+    auto span = expect(TokenType::STRING).span;
+    return std::make_unique<TypeString>(span);
   }
 
   if (tok.type == TokenType::BOOL) {
-    expect(TokenType::BOOL);
-    return std::make_unique<TypeBool>();
+    auto span = expect(TokenType::BOOL).span;
+    return std::make_unique<TypeBool>(span);
   }
 
   if (tok.type == TokenType::BYTE) {
-    expect(TokenType::BYTE);
-    return std::make_unique<TypeByte>();
+    auto span = expect(TokenType::BYTE).span;
+    return std::make_unique<TypeByte>(span);
   }
 
   if (tok.type == TokenType::OPEN_BRACKET) {
     auto slice = true;
-    expect(TokenType::OPEN_BRACKET);
+    auto span = expect(TokenType::OPEN_BRACKET).span;
     if (current().type == TokenType::NUMBER) {
       auto size = expect(TokenType::NUMBER);
       slice = false;
@@ -489,24 +495,27 @@ std::unique_ptr<Type> Parser::parseType() {
     expect(TokenType::CLOSE_BRACKET);
     auto typ = parseType();
 
+    span.end = typ->span.end;
+
     if (slice) {
-      return std::make_unique<TypeSlice>(std::move(typ));
+      return std::make_unique<TypeSlice>(std::move(typ), span);
     }
 
     // TODO(pathe) add size
-    return std::make_unique<TypeArray>(std::move(typ));
+    return std::make_unique<TypeArray>(std::move(typ), span);
   }
 
   if (tok.type == TokenType::IDENTIFIER) {
     expect(TokenType::IDENTIFIER);
-    return std::make_unique<TypeStruct>(tok.value);
+    return std::make_unique<TypeStruct>(tok.value, tok.span);
   }
 
   if (tok.type == TokenType::MULTIPLY) {
-    expect(TokenType::MULTIPLY);
+    auto span = expect(TokenType::MULTIPLY).span;
     auto t = parseType();
+    span.end = t->span.end;
 
-    return std::make_unique<TypePointer>(std::move(t));
+    return std::make_unique<TypePointer>(std::move(t), span);
   }
 
   throw ParserException("Unexpected type: ```" + current().value + "```",
@@ -545,9 +554,8 @@ std::unique_ptr<Expr> Parser::parseFunction() {
     } while (true);
   }
   auto lasttok = expect(TokenType::CLOSE_PAREN);
-  span.end = lasttok.span.end;
-
   auto ret = parseType();
+  span.end = ret->span.end;
 
   if (is_main) {
     auto retval = dynamic_cast<TypeInt *>(ret.get());
@@ -587,7 +595,7 @@ std::unique_ptr<Expr> Parser::parseFunction() {
   }
 
   auto proto = std::make_unique<ProtoExpr>(name, args, std::move(argsTypes),
-                                           std::move(ret));
+                                           std::move(ret), span);
   auto body = parseBlock();
   span.end = body->span.end;
   return std::make_unique<FuncExpr>(std::move(proto), std::move(body), span);

@@ -874,25 +874,6 @@ TEST_F(JITOutputTest, Self_Referencing_Struct_Without_pointer) {
       " \x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n\n");
 }
 
-TEST_F(JITOutputTest, Reference_To_Undefined_Struct) {
-  std::string program = R"(
-    dialect:english;
-    func new_node(value int, left Node, right Node) int {
-      return 0;
-    }
-    start() int {
-      let n Node;
-      print("TODO");
-      return 0;
-    }
-  )";
-
-  assertSwaOutput(
-      program,
-      "\x1B[1;31mcode generation error\x1B[0m: Undefined struct Node\n  --> "
-      "swa_source:1:1\n   |\n 1 | \n   | \x1B[1;31m^\x1B[0m\n\n");
-}
-
 TEST_F(JITOutputTest, Function_Parameter_Struct_by_Pointer) {
   std::string program = R"(
     dialect:english;
@@ -910,4 +891,24 @@ TEST_F(JITOutputTest, Function_Parameter_Struct_by_Pointer) {
   )";
 
   assertSwaOutput(program, "TODO");
+}
+
+TEST_F(JITOutputTest, Reference_To_Undefined_Struct) {
+  std::string program = R"(
+    dialect:english;
+    func new_node(value int, left Node, right Node) int {
+      return 0;
+    }
+    start() int {
+      return 0;
+    }
+  )";
+
+  std::string expected_diagnostic =
+      "\x1B[1;31mcode generation error\x1B[0m: Undefined struct Node\n  --> "
+      "swa_source:3:35\n   |\n 3 |     func new_node(value int, left Node, "
+      "right Node) int {\n   |                                   "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\n\n";
+  assertSwaOutput(program, expected_diagnostic);
 }
