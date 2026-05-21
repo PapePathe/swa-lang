@@ -1,52 +1,26 @@
-#ifndef INCLUDE_COMPILER_CODEGEN_H_
-#define INCLUDE_COMPILER_CODEGEN_H_
+#pragma once
 
 #include <ast/expr.h>
 #include <ast/symboltable.h>
 #include <ast/visitor.h>
 #include <compiler/driver.h>
+
 #include <llvm/IR/DIBuilder.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 #include <parser/exception.h>
-#include <string>
-#include <vector>
 
-class CodeGenException : public ParserException {
-  using ParserException::ParserException;
-};
-
-class CodeGenVisitor : public ASTVisitor {
+class TypeCheckVisitor : public ASTVisitor {
 private:
   std::unique_ptr<SwaCompilerDriver> driver;
 
-  llvm::Value *lastValue = nullptr;
-  llvm::Function *lastFunc = nullptr;
-  llvm::Type *lastType = nullptr;
-
-  void setLastFunc(llvm::Function *v);
-  void setLastValue(llvm::Value *v);
-  void setLastType(llvm::Type *t);
-  llvm::Type *setLastType();
-  llvm::Value *getLastValue();
-  llvm::Function *getLastFunc();
-  llvm::Value *evaluate(Expr *expr);
-  llvm::Type *evaluate(Type *expr);
-  std::pair<llvm::Value *, llvm::Value *> evaluate_bin_expr(Expr *left,
-                                                            Expr *right);
-  std::pair<std::string, std::vector<llvm::Value *>> buildFormatStringAndArgs(
-      const std::vector<std::unique_ptr<Expr>> &expressions);
-
 public:
-  CodeGenVisitor(std::unique_ptr<SwaCompilerDriver> d) : driver(std::move(d)) {}
-
-  std::vector<std::string>
-  visitTestExpressions(std::vector<std::unique_ptr<Test_Expr>> tests);
+  TypeCheckVisitor(std::unique_ptr<SwaCompilerDriver> d)
+      : driver(std::move(d)) {}
 
   std::unique_ptr<SwaCompilerDriver> finalize() { return std::move(driver); }
-  void generateTestEntrypoint(const std::vector<std::string> &testNames);
   void Visit(AddExpr *expr);
   void Visit(BoolExpr *expr);
   void Visit(BlockExpr *expr);
@@ -96,4 +70,3 @@ public:
   virtual void Visit(TypeStruct *expr);
   virtual void Visit(TypePointer *expr);
 };
-#endif // INCLUDE_COMPILER_CODEGEN_H_

@@ -271,6 +271,7 @@ public:
 class MainExpr : public Expr {
 public:
   std::unique_ptr<BlockExpr> Body = {};
+  std::unique_ptr<ProtoExpr> Proto = {};
   explicit MainExpr(std::unique_ptr<BlockExpr> b) : Body(std::move(b)) {}
   MainExpr(std::unique_ptr<BlockExpr> b, Span s) : Body(std::move(b)) {
     this->span = s;

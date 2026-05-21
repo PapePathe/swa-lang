@@ -912,3 +912,94 @@ TEST_F(JITOutputTest, Reference_To_Undefined_Struct) {
       "0m\x1B[1;31m^\x1B[0m\n\n";
   assertSwaOutput(program, expected_diagnostic);
 }
+
+TEST_F(JITOutputTest, ThrowsErrorOnInvalidMainSignature) {
+  std::string input = R"(dialect:english;
+    start(argc int, argv int) int {
+      return 0;
+    }
+  )";
+  std::string expected_diagnostic =
+      "\x1B[1;31mcode generation error\x1B[0m: second argument of main should "
+      "be a slice of strings\n  --> swa_source:2:26\n   |\n 2 |     start(argc "
+      "int, argv int) int {\n   |                          "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\n\n";
+
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, ThrowsErrorOnInvalidMainSignature2) {
+  std::string input = R"(dialect:english;
+    start(argc string) int {
+      return 0;
+    }
+  )";
+  std::string expected_diagnostic =
+      "\x1B[1;31mcode generation error\x1B[0m: first argument of main should "
+      "be of TypeInt\n  --> swa_source:2:16\n   |\n 2 |     start(argc string) "
+      "int {\n   |                "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n\n";
+
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, ThrowsErrorOnInvalidMainSignature3) {
+  std::string input = R"(dialect:english;
+    start(a int, b []string, c string) int {
+      return 0;
+    }
+  )";
+  std::string expected_diagnostic =
+      "\x1B[1;31mcode generation error\x1B[0m: third argument of main should "
+      "be a slice of strings\n  --> swa_source:2:32\n   |\n 2 |     start(a "
+      "int, b []string, c string) int {\n   |                                "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n\n";
+
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, ThrowsErrorOnInvalidMainSignature4) {
+  std::string input = R"(dialect:english;
+    start(a int, b []string, c []string, d int) int {
+      return 0;
+    }
+  )";
+  std::string expected_diagnostic =
+      "\x1B[1;31mcode generation error\x1B[0m: main should have at most 3 "
+      "arguments\n  --> swa_source:2:5\n   |\n 2 |     start(a int, b "
+      "[]string, c []string, d int) int {\n   |     "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\n\n";
+
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, ThrowsErrorOnInvalidMainSignature5) {
+  std::string input = R"(dialect:english;
+    start() string{
+      return 0;
+    }
+  )";
+  std::string expected_diagnostic =
+      "\x1B[1;31mcode generation error\x1B[0m: return value of main should be "
+      "TypeInt\n  --> swa_source:2:13\n   |\n 2 |     start() string{\n   |    "
+      "         "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n\n";
+
+  assertSwaOutput(input, expected_diagnostic);
+}
