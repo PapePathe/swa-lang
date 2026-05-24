@@ -1,5 +1,6 @@
 #include "ast/type.h"
 #include "compiler/codegen.h"
+#include "parser/exception.h"
 #include <ast/symboltable.h>
 #include <ast/visitor.h>
 #include <compiler/compiler.h>
@@ -39,30 +40,38 @@ void TypeCheckVisitor::Visit(AddExpr *expr) {
   expr->Right->Accept(*this);
 
   if (!expr->Left->datatype->IsEqual(expr->Right->datatype.get())) {
-    auto err = CodeGenException("Addition error", expr->span,
-                                "Datatype " + expr->Left->datatype->GetName() +
-                                    " and " + expr->Right->datatype->GetName() +
-                                    " cannot be used together",
-                                "");
+    auto err = CodeGenException("Type mismatch in declaration", expr->span,
+                                "Cannot initialize variable of type " +
+                                    expr->Left->datatype->GetName() +
+                                    " with a value of type " +
+                                    expr->Right->datatype->GetName() +
+                                    "Try changing the type to 'string' or "
+                                    "parse the string as an integer.");
     errors.push_back(err);
   }
 
   if (expr->Left->datatype->GetKind() == TypeKind::String &&
       expr->Right->datatype->GetKind() == TypeKind::String) {
-    auto err = CodeGenException(
-        "Addition error", expr->span, "Adding strings is not supported",
-        "if you want to concatenate strings use the standard library");
+    std::string msg = "Operator '+' is not supported for types '" +
+                      expr->Left->datatype->GetName() + "' and '" +
+                      expr->Right->datatype->GetName() + "'.";
+
+    auto err = CodeGenException("Invalid Operation", expr->span, msg,
+                                "Check your types or use the appropriate "
+                                "library function for this operation.");
     errors.push_back(err);
   }
 
   if (expr->Left->datatype->GetKind() == TypeKind::Bool &&
       expr->Right->datatype->GetKind() == TypeKind::Bool) {
-    auto err = CodeGenException("Addition error", expr->span,
-                                "Adding booleans is not supported", "");
+    auto err =
+        CodeGenException("Type Error", expr->span,
+                         "The '+' operator cannot be applied to type 'Bool'.",
+                         "Consider using logical operators like '&&' or '||' "
+                         "if you intended to perform a logical operation.");
     errors.push_back(err);
   }
 
-  // FIXME add a symbols table and check type there
   expr->datatype = std::make_unique<TypeInt>(expr->span);
 }
 
@@ -93,7 +102,6 @@ void TypeCheckVisitor::Visit(DeclarationExpr *expr) {
 
   expr->Value->Accept(*this);
 
-  // 1. Guard against Value->datatype being null
   if (expr->Value->datatype == nullptr) {
     auto err = CodeGenException("Datatype failed to infer", expr->Value->span);
     errors.push_back(err);
@@ -102,14 +110,12 @@ void TypeCheckVisitor::Visit(DeclarationExpr *expr) {
     auto err = CodeGenException("Declaration has no type", expr->span);
     errors.push_back(err);
   }
-  // 2. Guard against expr->T being null (The likely crash source)
   if (expr->T == nullptr) {
     auto err =
         CodeGenException("Variable declared without a type", expr->Value->span);
     errors.push_back(err);
   }
 
-  // 3. Guard against the pointer being passed to IsEqual being null
   if (!expr->T->IsEqual(expr->Value->datatype.get())) {
     auto err = CodeGenException("Incompatible type", expr->Value->span,
                                 "Expected " + expr->T->GetName() + " but got " +
@@ -117,6 +123,8 @@ void TypeCheckVisitor::Visit(DeclarationExpr *expr) {
                                 "");
     errors.push_back(err);
   }
+
+  driver->Symbols.define(expr->Name, expr->T.get());
 }
 
 void TypeCheckVisitor::Visit(DivExpr *expr) {
@@ -135,8 +143,17 @@ void TypeCheckVisitor::Visit(DivExpr *expr) {
 }
 void TypeCheckVisitor::Visit(EqExpr *expr) {}
 void TypeCheckVisitor::Visit(IdExpr *expr) {
-  // FIXME add a symbols table and check type there
-  expr->datatype = std::make_unique<TypeInt>(expr->span);
+  auto typ = driver->Symbols.lookupSwaSymbol(expr->Name);
+
+  if (typ == nullptr) {
+    auto err = ParserException("variable " + expr->Name + " does not exist",
+                               expr->span, "", "");
+    errors.push_back(err);
+
+    return;
+  }
+
+  expr->datatype = typ->Clone();
 }
 void TypeCheckVisitor::Visit(IfExpr *expr) {}
 void TypeCheckVisitor::Visit(GTExpr *expr) {}

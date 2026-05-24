@@ -1016,6 +1016,9 @@ TEST_F(
       let b int    := false;
       let c int    := true;
       let d string := true;
+      let e string := b;
+      let f bool:= true;
+      let g string := f;
       return 0;
     }
   )";
@@ -1037,7 +1040,14 @@ TEST_F(
       "error\x1B[0m: Incompatible type\n  --> swa_source:6:23\n   |\n 6 |      "
       " let d string := true;\n   |                       "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Expected String but got Bool\n\n";
+      "0m\x1B[1;31m^\x1B[0m Expected String but got Bool\n\n\x1B[1;31mtype "
+      "check error\x1B[0m: Incompatible type\n  --> swa_source:7:23\n   |\n 7 "
+      "|       let e string := b;\n   |                       "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Expected String but got "
+      "Int\n\n\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  --> "
+      "swa_source:9:23\n   |\n 9 |       let g string := f;\n   |              "
+      "         \x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Expected String but got "
+      "Bool\n\n";
 
   assertSwaOutput(input, expected_diagnostic);
 }
@@ -1053,18 +1063,21 @@ TEST_F(JITOutputTest,
   )";
 
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Addition error\n  --> "
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in declaration\n  --> "
       "swa_source:3:20\n   |\n 3 |       let a int := 2 + \"10\";\n   |        "
       "            "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Datatype Int and String cannot be used "
-      "together\n\n\x1B[1;31mtype check error\x1B[0m: Addition error\n  --> "
-      "swa_source:4:20\n   |\n 4 |       let b int := 2 + true;\n   |          "
-      "          "
+      "0m\x1B[1;31m^\x1B[0m Cannot initialize variable of type Int with a "
+      "value of type StringTry changing the type to 'string' or parse the "
+      "string as an integer.\n\n\x1B[1;31mtype check error\x1B[0m: Type "
+      "mismatch in declaration\n  --> swa_source:4:20\n   |\n 4 |       let b "
+      "int := 2 + true;\n   |                    "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Datatype Int and Bool cannot be used together\n\n";
+      "0m\x1B[1;31m^\x1B[0m Cannot initialize variable of type Int with a "
+      "value of type BoolTry changing the type to 'string' or parse the string "
+      "as an integer.\n\n";
 
   assertSwaOutput(input, expected_diagnostic);
 }
@@ -1081,20 +1094,23 @@ TEST_F(
   )";
 
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Addition error\n  --> "
+      "\x1B[1;31mtype check error\x1B[0m: Invalid Operation\n  --> "
       "swa_source:3:20\n   |\n 3 |       let a int := \"2\" + \"4\";\n   |     "
       "               "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Adding strings is not "
-      "supported\n   | \x1B[1;36mhelp\x1B[0m: if you want to concatenate "
-      "strings use the standard library\n\n\x1B[1;31mtype check error\x1B[0m: "
-      "Addition error\n  --> swa_source:4:20\n   |\n 4 |       let b int := "
-      "false + true;\n   |                    "
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Operator '+' is not supported "
+      "for types 'String' and 'String'.\n   | \x1B[1;36mhelp\x1B[0m: Check "
+      "your types or use the appropriate library function for this "
+      "operation.\n\n\x1B[1;31mtype check error\x1B[0m: Type Error\n  --> "
+      "swa_source:4:20\n   |\n 4 |       let b int := false + true;\n   |      "
+      "              "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Adding booleans is not supported\n\n";
+      "0m\x1B[1;31m^\x1B[0m The '+' operator cannot be applied to type "
+      "'Bool'.\n   | \x1B[1;36mhelp\x1B[0m: Consider using logical operators "
+      "like '&&' or '||' if you intended to perform a logical operation.\n\n";
 
   assertSwaOutput(input, expected_diagnostic);
 }
