@@ -284,52 +284,57 @@ std::unique_ptr<Expr> Parser::parseFunctionCall(std::unique_ptr<Expr> callee) {
 }
 
 std::unique_ptr<Expr> Parser::parsePrimary() {
+  std::unique_ptr<Expr> expr;
   if (current().type == TokenType::TRUE) {
     auto tok = expect(TokenType::TRUE);
-    return std::make_unique<BoolExpr>(true, tok.span);
-  }
-  if (current().type == TokenType::FALSE) {
-    auto tok = expect(TokenType::FALSE);
-    return std::make_unique<BoolExpr>(false, tok.span);
-  }
-  if (current().type == TokenType::NUMBER) {
-    auto tok = expect(TokenType::NUMBER);
-    auto expr = std::make_unique<NumberExpr>(std::stoi(tok.value), tok.span);
+    expr = std::make_unique<BoolExpr>(true, tok.span);
 
-    return expr;
-  }
-  if (current().type == TokenType::NUMBER_FLOAT) {
+  } else if (current().type == TokenType::FALSE) {
+    auto tok = expect(TokenType::FALSE);
+    expr = std::make_unique<BoolExpr>(false, tok.span);
+
+  } else if (current().type == TokenType::NUMBER) {
+    auto tok = expect(TokenType::NUMBER);
+    expr = std::make_unique<NumberExpr>(std::stoi(tok.value), tok.span);
+
+  } else if (current().type == TokenType::NUMBER_FLOAT) {
     auto tok = expect(TokenType::NUMBER_FLOAT);
-    return std::make_unique<FloatExpr>(std::stod(tok.value),
+    expr = std::make_unique<FloatExpr>(std::stod(tok.value),
                                        FloatPrecision::F32, tok.span);
-  }
-  if (current().type == TokenType::IDENTIFIER) {
+  } else if (current().type == TokenType::IDENTIFIER) {
     auto tok = expect(TokenType::IDENTIFIER);
-    auto expr = std::make_unique<IdExpr>(tok.value, tok.span);
-    return expr;
-  }
-  if (current().type == TokenType::STRING) {
+    expr = std::make_unique<IdExpr>(tok.value, tok.span);
+
+  } else if (current().type == TokenType::STRING) {
     auto tok = expect(TokenType::STRING);
-    return std::make_unique<StrExpr>(tok.value, tok.span);
-  }
-  if (current().type == TokenType::OPEN_PAREN) {
+    expr = std::make_unique<StrExpr>(tok.value, tok.span);
+
+  } else if (current().type == TokenType::OPEN_PAREN) {
     auto span = expect(TokenType::OPEN_PAREN).span;
-    auto expr = parseExpression(0);
+    expr = parseExpression(0);
     span.end = expect(TokenType::CLOSE_PAREN).span.end;
     expr->span = span;
-    return expr;
-  }
 
-  if (current().type == TokenType::OPEN_BRACKET) {
+  } else if (current().type == TokenType::OPEN_BRACKET) {
     return parseArrayInitExpr();
   }
 
-  if (isAtEnd()) {
-    return nullptr;
+  if (!expr) {
+    throw ParserException("Expected expression but got " + current().value,
+                          current().span, "", "");
   }
 
-  throw ParserException("Expected expression but got " + current().value,
-                        current().span, "", "");
+  while (current().type == TokenType::OPEN_BRACKET) {
+    auto open = expect(TokenType::OPEN_BRACKET);
+    auto index = parseExpression(0);
+    auto close = expect(TokenType::CLOSE_BRACKET);
+
+    auto span = Span{expr->span.start, close.span.end};
+    expr = std::make_unique<Array_Access_Expr>(std::move(expr),
+                                               std::move(index), span);
+  }
+
+  return expr;
 }
 
 std::unique_ptr<Expr> Parser::parseArrayInitExpr() {

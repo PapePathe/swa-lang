@@ -395,3 +395,14 @@ struct FloatExpr : public Expr {
   FloatExpr(double value, FloatPrecision p, Span s)
       : Value(value), Precision(p), Expr(s) {}
 };
+
+struct Array_Access_Expr : public Expr {
+  std::unique_ptr<Expr> Array;
+  std::unique_ptr<Expr> Index;
+
+  void Accept(ASTVisitor &visitor) override {}
+
+  Array_Access_Expr(std::unique_ptr<Expr> arr, std::unique_ptr<Expr> idx,
+                    Span s)
+      : Array(std::move(arr)), Index(std::move(idx)), Expr(s) {}
+};
