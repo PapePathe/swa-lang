@@ -50,6 +50,13 @@ public:
     EXPECT_EQ(casted->Name, expected);
   }
 
+  void ASSERT_EXPR_BOOL(Expr *node, bool expected) {
+    ASSERT_NE(node, nullptr);
+    auto *casted = dynamic_cast<BoolExpr *>(node);
+    ASSERT_NE(casted, nullptr) << "Node is not a BoolExpr";
+    EXPECT_EQ(casted->Value, expected);
+  }
+
   DeclarationExpr *ASSERT_EXPR_DECL(Expr *node, std::string expected) {
     EXPECT_NE(node, nullptr);
     auto *casted = dynamic_cast<DeclarationExpr *>(node);
@@ -877,8 +884,8 @@ TEST_F(ParserTests, Function_Span_Verification) {
   ASSERT_EQ(startNode->span.end.offset, 141);   // "}"
 }
 
-TEST_F(ParserTests, Array_Init) {
-  std::string input = "let arr [3)int := [1, 2, 3];";
+TEST_F(ParserTests, Array_Init_Int) {
+  std::string input = "let arr [3]int := [1, 2, 3];";
   auto stmts = PARSE_PROGRAM(input, 1);
 
   auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
@@ -888,3 +895,45 @@ TEST_F(ParserTests, Array_Init) {
   ASSERT_EXPR_NUMBER(value->Elements[1].get(), 2);
   ASSERT_EXPR_NUMBER(value->Elements[2].get(), 3);
 }
+
+TEST_F(ParserTests, Array_Init_Bool) {
+  std::string input = "let arr [2]bool := [true, false];";
+  auto stmts = PARSE_PROGRAM(input, 1);
+  auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
+  auto value = ASSERT_EXPR_ARRAY(node->Value.get(), 2);
+  ASSERT_EXPR_BOOL(value->Elements[0].get(), true);
+  ASSERT_EXPR_BOOL(value->Elements[1].get(), false);
+}
+
+TEST_F(ParserTests, Array_Init_String) {
+  std::string input = "let arr [2]string := [\"test\", \"case\"];";
+  auto stmts = PARSE_PROGRAM(input, 1);
+  auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
+  auto value = ASSERT_EXPR_ARRAY(node->Value.get(), 2);
+  ASSERT_EXPR_STRING(value->Elements[0].get(), "test");
+  ASSERT_EXPR_STRING(value->Elements[1].get(), "case");
+}
+
+// Verifies the parser's recursive ability to handle array-of-arrays
+TEST_F(ParserTests, Array_Init_Nested) {
+  std::string input = "let arr [2][2]int := [[1, 2], [3, 4]];";
+  auto stmts = PARSE_PROGRAM(input, 1);
+  auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
+  auto value = ASSERT_EXPR_ARRAY(node->Value.get(), 2);
+  ASSERT_EQ(value->Elements.size(), 2);
+
+  auto first = ASSERT_EXPR_ARRAY(value->Elements[0].get(), 2);
+  ASSERT_EXPR_NUMBER(first->Elements[0].get(), 1);
+  ASSERT_EXPR_NUMBER(first->Elements[1].get(), 2);
+
+  auto last = ASSERT_EXPR_ARRAY(value->Elements[1].get(), 2);
+  ASSERT_EXPR_NUMBER(last->Elements[0].get(), 3);
+  ASSERT_EXPR_NUMBER(last->Elements[1].get(), 4);
+}
+
+// TEST_F(ParserTests, Array_Init_Float) {
+//   std::string input = "let arr [2]float := [1.5, 2.5];";
+//   auto stmts = PARSE_PROGRAM(input, 1);
+//   auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
+//   ASSERT_EXPR_ARRAY(node->Value.get(), 2);
+// }
