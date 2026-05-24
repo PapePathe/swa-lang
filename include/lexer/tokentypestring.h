@@ -1,9 +1,10 @@
-#ifndef SWA_TOKENTYPESTRING
-#define SWA_TOKENTYPESTRING
-#include "tokentype.h"
+#pragma once
 
 #include <string>
-std::string tokenTypeString(TokenType type) {
+
+#include "lexer/tokentype.h"
+
+inline std::string tokenTypeToString(TokenType type) {
   switch (type) {
   case TokenType::LET:
     return "LET";
@@ -134,5 +135,3 @@ std::string tokenTypeString(TokenType type) {
     return "UNKNOWN";
   }
 }
-
-#endif // !SWA_TOKENTYPE

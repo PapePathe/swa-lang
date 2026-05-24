@@ -1,7 +1,5 @@
-#ifndef SWA_TOKENTYPE
-#define SWA_TOKENTYPE
+#pragma once
 
-#include <string>
 enum class TokenType {
   LET,
   CONST,
@@ -76,4 +74,3 @@ enum class TokenType {
   TEST_ASSERT_LESS_THAN_OR_EQUALS,
   TEST_ASSERT_GREATER_THAN_OR_EQUALS
 };
-#endif // !SWA_TOKENTYPE

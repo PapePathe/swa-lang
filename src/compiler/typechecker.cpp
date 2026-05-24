@@ -1,3 +1,4 @@
+#include "ast/type.h"
 #include "compiler/codegen.h"
 #include <ast/symboltable.h>
 #include <ast/visitor.h>
@@ -13,11 +14,61 @@
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 #include <llvm/Support/Casting.h>
+
+#include <memory>
 #include <stdexcept>
+#include <utility>
 
-void TypeCheckVisitor::Visit(AddExpr *expr) {}
+void TypeCheckVisitorException::emitDiagnostic(
+    const SourceManager &sm, std::string error_category) const {
+  for (auto &err : errors) {
+    err.emitDiagnostic(sm, error_category);
+  }
+}
 
-void TypeCheckVisitor::Visit(BoolExpr *expr) {}
+void TypeCheckVisitor::checkErrors() {
+  if (errors.size() == 0) {
+    return;
+  }
+
+  throw TypeCheckVisitorException(std::move(errors));
+}
+
+void TypeCheckVisitor::Visit(AddExpr *expr) {
+  expr->Left->Accept(*this);
+  expr->Right->Accept(*this);
+
+  if (!expr->Left->datatype->IsEqual(expr->Right->datatype.get())) {
+    auto err = CodeGenException("Addition error", expr->span,
+                                "Datatype " + expr->Left->datatype->GetName() +
+                                    " and " + expr->Right->datatype->GetName() +
+                                    " cannot be used together",
+                                "");
+    errors.push_back(err);
+  }
+
+  if (expr->Left->datatype->GetKind() == TypeKind::String &&
+      expr->Right->datatype->GetKind() == TypeKind::String) {
+    auto err = CodeGenException(
+        "Addition error", expr->span, "Adding strings is not supported",
+        "if you want to concatenate strings use the standard library");
+    errors.push_back(err);
+  }
+
+  if (expr->Left->datatype->GetKind() == TypeKind::Bool &&
+      expr->Right->datatype->GetKind() == TypeKind::Bool) {
+    auto err = CodeGenException("Addition error", expr->span,
+                                "Adding booleans is not supported", "");
+    errors.push_back(err);
+  }
+
+  // FIXME add a symbols table and check type there
+  expr->datatype = std::make_unique<TypeInt>(expr->span);
+}
+
+void TypeCheckVisitor::Visit(BoolExpr *expr) {
+  expr->datatype = std::make_unique<TypeBool>(expr->span);
+}
 
 void TypeCheckVisitor::Visit(BlockExpr *expr) {
   auto oldTable = driver->Symbols;
@@ -35,10 +86,58 @@ void TypeCheckVisitor::Visit(BlockExpr *expr) {
   driver->Symbols = oldTable;
 }
 
-void TypeCheckVisitor::Visit(DeclarationExpr *expr) {}
-void TypeCheckVisitor::Visit(DivExpr *expr) {}
+void TypeCheckVisitor::Visit(DeclarationExpr *expr) {
+  if (expr->Value.get() == nullptr) {
+    return;
+  }
+
+  expr->Value->Accept(*this);
+
+  // 1. Guard against Value->datatype being null
+  if (expr->Value->datatype == nullptr) {
+    auto err = CodeGenException("Datatype failed to infer", expr->Value->span);
+    errors.push_back(err);
+  }
+  if (!expr->T) {
+    auto err = CodeGenException("Declaration has no type", expr->span);
+    errors.push_back(err);
+  }
+  // 2. Guard against expr->T being null (The likely crash source)
+  if (expr->T == nullptr) {
+    auto err =
+        CodeGenException("Variable declared without a type", expr->Value->span);
+    errors.push_back(err);
+  }
+
+  // 3. Guard against the pointer being passed to IsEqual being null
+  if (!expr->T->IsEqual(expr->Value->datatype.get())) {
+    auto err = CodeGenException("Incompatible type", expr->Value->span,
+                                "Expected " + expr->T->GetName() + " but got " +
+                                    expr->Value->datatype->GetName(),
+                                "");
+    errors.push_back(err);
+  }
+}
+
+void TypeCheckVisitor::Visit(DivExpr *expr) {
+  expr->Left->Accept(*this);
+  expr->Right->Accept(*this);
+
+  //  if (!expr->Left->datatype->IsEqual(expr->Right->datatype.get())) {
+  //    throw CodeGenException("Substraction error", expr->span,
+  //                           "Datatype " + expr->Right->datatype->GetName() +
+  //                               " and " + expr->Right->datatype->GetName(),
+  //                           "cannot be used together");
+  //  }
+
+  // FIXME add a symbols table and check type there
+  expr->datatype = std::make_unique<TypeInt>(expr->span);
+}
 void TypeCheckVisitor::Visit(EqExpr *expr) {}
-void TypeCheckVisitor::Visit(IdExpr *expr) {}
+void TypeCheckVisitor::Visit(IdExpr *expr) {
+  // FIXME add a symbols table and check type there
+  expr->datatype = std::make_unique<TypeInt>(expr->span);
+}
 void TypeCheckVisitor::Visit(IfExpr *expr) {}
 void TypeCheckVisitor::Visit(GTExpr *expr) {}
 void TypeCheckVisitor::Visit(GTEExpr *expr) {}
@@ -48,21 +147,25 @@ void TypeCheckVisitor::Visit(FuncExpr *expr) {
   if (expr->Proto->Name == "main") {
     auto retval = dynamic_cast<TypeInt *>(expr->Proto->Ret.get());
     if (retval == nullptr) {
-      throw CodeGenException("return value of main should be TypeInt",
-                             expr->Proto->Ret->span);
+      auto err = CodeGenException("return value of main should be TypeInt",
+                                  expr->Proto->Ret->span);
+      errors.push_back(err);
     }
 
     if (expr->Proto->ArgsTypes.size() > 3) {
-      throw CodeGenException("main should have at most 3 arguments",
-                             expr->Proto->span);
+      auto err = CodeGenException("main should have at most 3 arguments",
+                                  expr->Proto->span);
+      errors.push_back(err);
     }
 
     if (expr->Proto->ArgsTypes.size() >= 1) {
       auto arg0 = dynamic_cast<TypeInt *>(expr->Proto->ArgsTypes[0].get());
 
       if (arg0 == nullptr) {
-        throw CodeGenException("first argument of main should be of TypeInt",
-                               expr->Proto->ArgsTypes[0]->span);
+        auto err =
+            CodeGenException("first argument of main should be of TypeInt",
+                             expr->Proto->ArgsTypes[0]->span);
+        errors.push_back(err);
       }
     }
 
@@ -70,9 +173,10 @@ void TypeCheckVisitor::Visit(FuncExpr *expr) {
       auto arg1 = dynamic_cast<TypeSlice *>(expr->Proto->ArgsTypes[1].get());
 
       if (arg1 == nullptr) {
-        throw CodeGenException(
+        auto err = CodeGenException(
             "second argument of main should be a slice of strings",
             expr->Proto->ArgsTypes[1]->span);
+        errors.push_back(err);
       }
     }
 
@@ -80,23 +184,53 @@ void TypeCheckVisitor::Visit(FuncExpr *expr) {
       auto arg1 = dynamic_cast<TypeSlice *>(expr->Proto->ArgsTypes[2].get());
 
       if (arg1 == nullptr) {
-        throw CodeGenException(
+        auto err = CodeGenException(
             "third argument of main should be a slice of strings",
             expr->Proto->ArgsTypes[2]->span);
+        errors.push_back(err);
       }
     }
   }
+
+  expr->Body->Accept(*this);
 }
 void TypeCheckVisitor::Visit(MainExpr *expr) {}
-void TypeCheckVisitor::Visit(MulExpr *expr) {}
+void TypeCheckVisitor::Visit(MulExpr *expr) {
+  expr->Left->Accept(*this);
+  expr->Right->Accept(*this);
+
+  //  if (!expr->Left->datatype->IsEqual(expr->Right->datatype.get())) {
+  //    throw CodeGenException("Multiplication error", expr->span,
+  //                           "Datatype " + expr->Right->datatype->GetName() +
+  //                               " and " + expr->Right->datatype->GetName(),
+  //                           "cannot be multipled together");
+  //  }
+
+  // FIXME add a symbols table and check type there
+  expr->datatype = std::make_unique<TypeInt>(expr->span);
+}
 void TypeCheckVisitor::Visit(PrintExpr *expr) {}
 void TypeCheckVisitor::Visit(Formatted_Print_Expr *expr) {}
 void TypeCheckVisitor::Visit(ProtoExpr *expr) {}
 void TypeCheckVisitor::Visit(ReturnExpr *expr) {}
-void TypeCheckVisitor::Visit(StrExpr *expr) {}
-void TypeCheckVisitor::Visit(NumberExpr *expr) {}
+void TypeCheckVisitor::Visit(StrExpr *expr) {
+  expr->datatype = std::make_unique<TypeString>(expr->span);
+}
+void TypeCheckVisitor::Visit(NumberExpr *expr) {
+  expr->datatype = std::make_unique<TypeInt>(expr->span);
+}
 void TypeCheckVisitor::Visit(StructDefExpr *expr) {}
-void TypeCheckVisitor::Visit(SubExpr *expr) {}
+void TypeCheckVisitor::Visit(SubExpr *expr) {
+  // if (!expr->Left->datatype->IsEqual(expr->Right->datatype.get())) {
+  //   throw CodeGenException("Substraction error", expr->span,
+  //                          "Datatype " + expr->Right->datatype->GetName() +
+  //                              " and " + expr->Right->datatype->GetName(),
+  //                          "cannot be used together");
+  // }
+
+  // FIXME add a symbols table and check type there
+  expr->datatype = std::make_unique<TypeInt>(expr->span);
+}
 void TypeCheckVisitor::Visit(UnaryMinusExpr *expr) {}
 void TypeCheckVisitor::Visit(UnaryNotExpr *expr) {}
 void TypeCheckVisitor::Visit(CallExpr *expr) {}

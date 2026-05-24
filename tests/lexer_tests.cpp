@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <lexer/keywords.h>
 #include <lexer/lexer.h>
+#include <lexer/tokentypestring.h>
 #include <string>
 #include <vector>
 
@@ -14,41 +15,6 @@ protected:
   }
 };
 
-std::string tokenTypeToString(TokenType type) {
-  switch (type) {
-  case TokenType::DIALECT:
-    return "DIALECT";
-  case TokenType::FUNCTION:
-    return "FUNCTION";
-  case TokenType::CONST:
-    return "CONST";
-  case TokenType::OR:
-    return "OR";
-  case TokenType::LET:
-    return "LET";
-  case TokenType::NUMBER:
-    return "NUMBER";
-  case TokenType::IDENTIFIER:
-    return "IDENTIFIER";
-  case TokenType::PLUS:
-    return "PLUS";
-  case TokenType::MINUS:
-    return "MINUS";
-  case TokenType::MULTIPLY:
-    return "MULTIPLY";
-  case TokenType::DIVIDE:
-    return "DIVIDE";
-  case TokenType::COLON:
-    return "COLON";
-  case TokenType::SEMICOLON:
-    return "SEMICOLON";
-  case TokenType::END_OF_FILE:
-    return "EOF";
-  default:
-    return "UNKNOWN";
-  }
-}
-
 void AssertToken(const Token &t, TokenType expectedType,
                  const std::string &expectedValue) {
   EXPECT_EQ(t.type, expectedType)
@@ -60,8 +26,11 @@ void AssertToken(const Token &t, TokenType expectedType,
 void AssertTokenSpan(const Token &token, TokenType expectedType,
                      const std::string &expectedLexeme, size_t expectedStart,
                      size_t expectedEnd) {
-  EXPECT_EQ(token.type, expectedType);
-  EXPECT_EQ(token.value, expectedLexeme);
+  EXPECT_EQ(token.type, expectedType)
+      << "Mismatched token types " << tokenTypeToString(expectedType) << " "
+      << tokenTypeToString(token.type);
+  EXPECT_EQ(token.value, expectedLexeme)
+      << "Mismatched value " << token.value << " " << expectedLexeme;
   EXPECT_EQ(token.span.start.offset, expectedStart)
       << "Mismatched start offset for lexeme: " << expectedLexeme;
   EXPECT_EQ(token.span.end.offset, expectedEnd)
@@ -341,4 +310,44 @@ TEST(LexerSpanTest, MultilineOffsets) {
   AssertTokenSpan(tokens[8], TokenType::NUMBER, "2", 19, 20);
   AssertTokenSpan(tokens[9], TokenType::SEMICOLON, ";", 20, 21);
   AssertTokenSpan(tokens[10], TokenType::END_OF_FILE, "", 21, 21);
+}
+
+TEST(LexerSpanTest, Span_Details) {
+  std::string source = R"(dialect:english;
+    start() int{
+      let x int := 2 + "10";
+      return 0;
+    }
+  )";
+
+  Lexer lexer(source, KEYWORDS_ENGLISH);
+  auto tokens = lexer.tokenize();
+
+  AssertTokenSpan(tokens[0], TokenType::DIALECT, "dialect", 0, 7);
+  AssertTokenSpan(tokens[1], TokenType::COLON, ":", 7, 8);
+  AssertTokenSpan(tokens[2], TokenType::IDENTIFIER, "english", 8, 15);
+  AssertTokenSpan(tokens[3], TokenType::SEMICOLON, ";", 15, 16);
+
+  AssertTokenSpan(tokens[4], TokenType::MAIN, "start", 21, 26);
+  AssertTokenSpan(tokens[5], TokenType::OPEN_PAREN, "(", 26, 27);
+  AssertTokenSpan(tokens[6], TokenType::CLOSE_PAREN, ")", 27, 28);
+  AssertTokenSpan(tokens[7], TokenType::INT, "int", 29, 32);
+  AssertTokenSpan(tokens[8], TokenType::OPEN_CURLY, "{", 32, 33);
+
+  AssertTokenSpan(tokens[9], TokenType::LET, "let", 40, 43);
+  AssertTokenSpan(tokens[10], TokenType::IDENTIFIER, "x", 44, 45);
+  AssertTokenSpan(tokens[11], TokenType::INT, "int", 46, 49);
+  AssertTokenSpan(tokens[12], TokenType::ASSIGNMENT, ":=", 50, 52);
+  AssertTokenSpan(tokens[13], TokenType::NUMBER, "2", 53, 54);
+  AssertTokenSpan(tokens[14], TokenType::PLUS, "+", 55, 56);
+  AssertTokenSpan(tokens[15], TokenType::STRING, "10", 57, 61);
+  AssertTokenSpan(tokens[16], TokenType::SEMICOLON, ";", 61, 62);
+
+  AssertTokenSpan(tokens[17], TokenType::RETURN, "return", 69, 75);
+  AssertTokenSpan(tokens[18], TokenType::NUMBER, "0", 76, 77);
+  AssertTokenSpan(tokens[19], TokenType::SEMICOLON, ";", 77, 78);
+
+  AssertTokenSpan(tokens[20], TokenType::CLOSE_CURLY, "}", 83, 84);
+
+  AssertTokenSpan(tokens[21], TokenType::END_OF_FILE, "", 87, 87);
 }

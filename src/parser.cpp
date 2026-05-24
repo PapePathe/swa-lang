@@ -11,7 +11,7 @@
 
 Token Parser::current() {
   if (pos >= tokens.size()) {
-    return Token{TokenType::END_OF_FILE, ""};
+    return Token{TokenType::END_OF_FILE, "", {0}, {0}};
   }
 
   return tokens[pos];
@@ -248,8 +248,12 @@ void Parser::parseTest() {
 }
 
 std::unique_ptr<Expr> Parser::parseFunctionCall(std::unique_ptr<Expr> callee) {
+  if (callee->span.end.offset == 0) {
+    throw std::runtime_error("Parser Error: parseFunctionCall received a "
+                             "callee with a zero end span!");
+  }
+  auto span = callee->span;
   auto tok = expect(TokenType::OPEN_PAREN);
-  auto span = tok.span;
 
   std::vector<std::unique_ptr<Expr>> args;
 
@@ -288,8 +292,9 @@ std::unique_ptr<Expr> Parser::parsePrimary() {
   }
   if (current().type == TokenType::NUMBER) {
     auto tok = expect(TokenType::NUMBER);
-    int val = std::stoi(tok.value);
-    return std::make_unique<NumberExpr>(val, tok.span);
+    auto expr = std::make_unique<NumberExpr>(std::stoi(tok.value), tok.span);
+
+    return expr;
   }
   if (current().type == TokenType::IDENTIFIER) {
     auto tok = expect(TokenType::IDENTIFIER);
@@ -301,10 +306,10 @@ std::unique_ptr<Expr> Parser::parsePrimary() {
     return std::make_unique<StrExpr>(tok.value, tok.span);
   }
   if (current().type == TokenType::OPEN_PAREN) {
-    auto first = expect(TokenType::OPEN_PAREN).span;
+    auto span = expect(TokenType::OPEN_PAREN).span;
     auto expr = parseExpression(0);
-    first.end = expect(TokenType::CLOSE_PAREN).span.end;
-    expr->span = first;
+    span.end = expect(TokenType::CLOSE_PAREN).span.end;
+    expr->span = span;
     return expr;
   }
 
@@ -604,8 +609,19 @@ std::unique_ptr<Expr> Parser::parseDeclaration() {
 std::unique_ptr<Expr> Parser::createBinaryNode(TokenType op,
                                                std::unique_ptr<Expr> left,
                                                std::unique_ptr<Expr> right) {
-  auto span = left->span;
+  //  auto span = left->span;
+  //  span.end = right->span.end;
+  Span span;
+  span.start = left->span.start;
   span.end = right->span.end;
+
+  // SAFETY CHECK:
+  if (span.end.offset < span.start.offset) {
+    throw std::runtime_error(
+        "INVALID SPAN CREATED: " + std::to_string(span.start.offset) + " to " +
+        std::to_string(span.end.offset));
+  }
+
   switch (op) {
   case TokenType::PLUS:
     return std::make_unique<AddExpr>(std::move(left), std::move(right), span);
@@ -645,9 +661,9 @@ std::unique_ptr<Expr> Parser::parseExpression(int minPrecedence) {
   switch (current().type) {
   case TokenType::MINUS: {
     auto span = expect(TokenType::MINUS).span;
-
     right = parseExpression(40);
     span.end = right->span.end;
+
     left = std::make_unique<UnaryMinusExpr>(std::move(right), span);
     break;
   }
@@ -686,6 +702,13 @@ std::unique_ptr<Expr> Parser::parseExpression(int minPrecedence) {
     auto right = parseExpression(precedence + 1);
 
     left = createBinaryNode(opType, std::move(left), std::move(right));
+    if (right) {
+      left->span.end.offset = right->span.end.offset;
+    }
+  }
+
+  if (!left) {
+    throw std::runtime_error("left is a nullptr " + current().value);
   }
 
   return left;

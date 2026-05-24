@@ -4,21 +4,36 @@
 #include <ast/symboltable.h>
 #include <ast/visitor.h>
 #include <compiler/driver.h>
+#include <parser/exception.h>
 
 #include <llvm/IR/DIBuilder.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
-#include <parser/exception.h>
+
+#include <utility>
+
+class TypeCheckVisitorException : public std::exception {
+  std::vector<ParserException> errors;
+
+public:
+  explicit TypeCheckVisitorException(std::vector<ParserException> errors)
+      : errors(std::move(errors)) {}
+  void emitDiagnostic(const SourceManager &sm,
+                      std::string error_category) const;
+};
 
 class TypeCheckVisitor : public ASTVisitor {
 private:
   std::unique_ptr<SwaCompilerDriver> driver;
+  std::vector<ParserException> errors;
 
 public:
   TypeCheckVisitor(std::unique_ptr<SwaCompilerDriver> d)
       : driver(std::move(d)) {}
+
+  void checkErrors();
 
   std::unique_ptr<SwaCompilerDriver> finalize() { return std::move(driver); }
   void Visit(AddExpr *expr);

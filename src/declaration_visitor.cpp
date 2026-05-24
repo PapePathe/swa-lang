@@ -37,14 +37,15 @@ void DeclarationVisitor::Visit(ProtoExpr *expr) {
   setLastFunc(F);
 }
 void DeclarationVisitor::Visit(MainExpr *expr) {
-  std::string funcName = "main";
-  if (driver->TestMode) {
-    funcName = "user_main";
-  }
-  auto proto = std::make_unique<ProtoExpr>(funcName, std::vector<std::string>(),
-                                           std::vector<std::unique_ptr<Type>>(),
-                                           std::unique_ptr<Type>());
-  proto->Accept(*this);
+  //  std::string funcName = "main";
+  //  if (driver->TestMode) {
+  //    funcName = "user_main";
+  //  }
+  //  auto proto = std::make_unique<ProtoExpr>(funcName,
+  //  std::vector<std::string>(),
+  //                                           std::vector<std::unique_ptr<Type>>(),
+  //                                           std::unique_ptr<Type>());
+  //  proto->Accept(*this);
 }
 void DeclarationVisitor::Visit(FuncExpr *expr) { expr->Proto->Accept(*this); }
 void DeclarationVisitor::Visit(StructDefExpr *expr) {

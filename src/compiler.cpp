@@ -55,6 +55,7 @@ void SwaCompiler::Run(const std::string &_source) {
 
     TypeCheckVisitor check = TypeCheckVisitor(std::move(driver));
     program->Accept(check);
+    check.checkErrors();
     driver = check.finalize();
 
     CodeGenVisitor gen = CodeGenVisitor(std::move(driver));
@@ -75,6 +76,8 @@ void SwaCompiler::Run(const std::string &_source) {
     err.emitDiagnostic(sm, "code generation error");
   } catch (const ParserException &err) {
     err.emitDiagnostic(sm, "error");
+  } catch (const TypeCheckVisitorException &err) {
+    err.emitDiagnostic(sm, "type check error");
   }
 }
 
