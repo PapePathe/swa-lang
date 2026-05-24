@@ -28,6 +28,12 @@ class TypeCheckVisitor : public ASTVisitor {
 private:
   std::unique_ptr<SwaCompilerDriver> driver;
   std::vector<ParserException> errors;
+  void ValidateArithmetic(std::unique_ptr<Expr> &left,
+                          std::unique_ptr<Expr> &right, const Span &span,
+                          const std::string &opName);
+  void ValidateComparison(std::unique_ptr<Expr> &left,
+                          std::unique_ptr<Expr> &right, const Span &span,
+                          const std::string &opName);
 
 public:
   TypeCheckVisitor(std::unique_ptr<SwaCompilerDriver> d)
