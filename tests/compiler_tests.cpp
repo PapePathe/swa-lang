@@ -1010,11 +1010,11 @@ TEST_F(JITOutputTest, ThrowsErrorOnInvalidMainSignature5) {
 TEST_F(JITOutputTest, Error_AddIntString) {
   std::string input = "let a int := 10 + \"10\";";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition\n  --> "
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition \n  --> "
       "swa_source:1:14\n   |\n 1 | let a int := 10 + \"10\";\n   |             "
       " \x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot add variable of type Int "
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot '+' variable of type Int "
       "with a value of type String\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
@@ -1022,13 +1022,13 @@ TEST_F(JITOutputTest, Error_AddIntString) {
 TEST_F(JITOutputTest, Error_NestedMathMismatch) {
   std::string input = "let x int := (10 + (20 + (30 + \"40\")));";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition\n  --> "
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition \n  --> "
       "swa_source:1:26\n   |\n 1 | let x int := (10 + (20 + (30 + \"40\")));\n "
       "  |                          "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m Cannot add variable of type Int with a value of type String\n\n";
+      "0m Cannot '+' variable of type Int with a value of type String\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
 
@@ -1040,7 +1040,7 @@ TEST_F(JITOutputTest, Error_AddBooleans) {
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m The '+' operator cannot be applied to type "
+      "0m\x1B[1;31m^\x1B[0m The '+'  operator cannot be applied to type "
       "'Bool'.\n   | \x1B[1;36mhelp\x1B[0m: Consider using logical operators "
       "like '&&' or '||' if you intended to perform a logical "
       "operation.\n\n\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  "
@@ -1142,7 +1142,7 @@ TEST_F(JITOutputTest, Error_ComplexNestedArithmeticMismatch) {
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m Cannot divide variable of type String with a value of type "
-      "Int\n\n\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition\n  "
+      "Int\n\n\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition \n  "
       "--> swa_source:1:14\n   |\n 1 | let x int := (5 * (10 - 2)) + "
       "(\"invalid\" / 2);\n   |              "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
@@ -1153,7 +1153,7 @@ TEST_F(JITOutputTest, Error_ComplexNestedArithmeticMismatch) {
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Cannot add variable of type Int with a value of "
+      "0m\x1B[1;31m^\x1B[0m Cannot '+' variable of type Int with a value of "
       "type String\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
@@ -1192,12 +1192,12 @@ TEST_F(JITOutputTest, Error_VariableTypeDrift) {
   std::string input =
       "let x int := 10; { let x string := \"hello\"; let y int := x + 5; }";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition\n  --> "
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition \n  --> "
       "swa_source:1:58\n   |\n 1 | let x int := 10; { let x string := "
       "\"hello\"; let y int := x + 5; }\n   |                                  "
       "                        "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot add variable of type "
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot '+' variable of type "
       "String with a value of type Int\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
@@ -1209,14 +1209,14 @@ TEST_F(JITOutputTest, Error_DeepExpressionTypeCollision) {
   std::string input = "let a int := 1; let b int := 2; let c int := (a + (b * "
                       "(10 / (a + \"str\"))));";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition\n  --> "
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition \n  --> "
       "swa_source:1:62\n   |\n 1 | let a int := 1; let b int := 2; let c int "
       ":= (a + (b * (10 / (a + \"str\"))));\n   |                              "
       "                                "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m Cannot add variable of type Int with a value of type String\n\n";
+      "0m Cannot '+' variable of type Int with a value of type String\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
 
@@ -1235,13 +1235,13 @@ TEST_F(JITOutputTest, Error_BooleanNumericMixedOp) {
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m Cannot multiply variable of type Bool with a value "
       "of type Int\n\n\x1B[1;31mtype check error\x1B[0m: Type mismatch in "
-      "addition\n  --> swa_source:1:52\n   |\n 1 | let a int := 5; let b bool "
+      "addition \n  --> swa_source:1:52\n   |\n 1 | let a int := 5; let b bool "
       ":= true; let res int := a + (b * 10);\n   |                             "
       "                       "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Cannot add variable of type Int with a value of "
+      "0m\x1B[1;31m^\x1B[0m Cannot '+' variable of type Int with a value of "
       "type Bool\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
@@ -1252,12 +1252,12 @@ TEST_F(JITOutputTest, Error_BooleanNumericMixedOp) {
 TEST_F(JITOutputTest, Error_StringAdditionAttempt) {
   std::string input = "let a string := \"val\" + 5;";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition\n  --> "
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition \n  --> "
       "swa_source:1:17\n   |\n 1 | let a string := \"val\" + 5;\n   |          "
       "       "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot add variable of type "
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot '+' variable of type "
       "String with a value of type Int\n\n\x1B[1;31mtype check error\x1B[0m: "
       "Incompatible type\n  --> swa_source:1:17\n   |\n 1 | let a string := "
       "\"val\" + 5;\n   |                 "
@@ -1301,12 +1301,12 @@ TEST_F(JITOutputTest, Error_DivideBoolWithBool) {
 TEST_F(JITOutputTest, Error_SubtractIntAndString) {
   std::string input = "let x int := 10 - \"5\";";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in subtraction\n  --> "
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in subtraction \n  --> "
       "swa_source:1:14\n   |\n 1 | let x int := 10 - \"5\";\n   |              "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Cannot subtract variable of type Int with a value "
-      "of type String\n\n";
+      "0m\x1B[1;31m^\x1B[0m Cannot '-' variable of type Int with a value of "
+      "type String\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
 
@@ -1327,7 +1327,7 @@ TEST_F(JITOutputTest, Error_ComplexArithmeticMixingTypes) {
   std::string input =
       "let x int := 10; let y int := 20; let z int := (x + y) - \"string\";";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in subtraction\n  --> "
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in subtraction \n  --> "
       "swa_source:1:48\n   |\n 1 | let x int := 10; let y int := 20; let z int "
       ":= (x + y) - \"string\";\n   |                                          "
       "      "
@@ -1335,8 +1335,8 @@ TEST_F(JITOutputTest, Error_ComplexArithmeticMixingTypes) {
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot "
-      "subtract variable of type Int with a value of type String\n\n";
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot '-' "
+      "variable of type Int with a value of type String\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
 
@@ -1447,10 +1447,10 @@ TEST_F(JITOutputTest, Program_Error_ScopeBoundaryViolation) {
       "swa_source:8:26\n   |\n 8 |             let z int := y + 5;\n   |       "
       "                   "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n\n\x1B[1;31mtype check "
-      "error\x1B[0m: Type mismatch in addition\n  --> swa_source:8:26\n   |\n "
+      "error\x1B[0m: Type mismatch in addition \n  --> swa_source:8:26\n   |\n "
       "8 |             let z int := y + 5;\n   |                          "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot add variable of type Void "
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot '+' variable of type Void "
       "with a value of type Int\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
@@ -1466,11 +1466,11 @@ TEST_F(JITOutputTest, Program_Error_TypeMismatchInExpression) {
         }
     )";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition\n  --> "
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition \n  --> "
       "swa_source:6:26\n   |\n 6 |             let c int := a + b;\n   |       "
       "                   "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot add variable of type Int "
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot '+' variable of type Int "
       "with a value of type String\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
@@ -1486,14 +1486,14 @@ TEST_F(JITOutputTest, Program_Error_ComplexNestedMismatch) {
         }
     )";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in subtraction\n  --> "
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in subtraction \n  --> "
       "swa_source:6:36\n   |\n 6 |             let c int := (a * b) + (a - "
       "\"invalid\");\n   |                                    "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m Cannot subtract variable of type Int with a value of type String\n\n";
+      "0m Cannot '-' variable of type Int with a value of type String\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
 
@@ -1564,10 +1564,10 @@ start() int {
       "\x1B[1;31mtype check error\x1B[0m: variable b does not exist\n  --> "
       "swa_source:8:22\n   |\n 8 |     let c int := a + b;\n   |               "
       "       \x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n\n\x1B[1;31mtype check "
-      "error\x1B[0m: Type mismatch in addition\n  --> swa_source:8:18\n   |\n "
+      "error\x1B[0m: Type mismatch in addition \n  --> swa_source:8:18\n   |\n "
       "8 |     let c int := a + b;\n   |                  "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot add variable of type Int "
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot '+' variable of type Int "
       "with a value of type Void\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }

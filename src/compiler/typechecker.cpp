@@ -36,38 +36,7 @@ void TypeCheckVisitor::checkErrors() {
 }
 
 void TypeCheckVisitor::Visit(AddExpr *expr) {
-  expr->Left->Accept(*this);
-  expr->Right->Accept(*this);
-
-  if (!expr->Left->datatype->IsEqual(expr->Right->datatype.get())) {
-    auto err = CodeGenException(
-        "Type mismatch in addition", expr->span,
-        "Cannot add variable of type " + expr->Left->datatype->GetName() +
-            " with a value of type " + expr->Right->datatype->GetName() + "");
-    errors.push_back(err);
-  }
-
-  if (expr->Left->datatype->GetKind() == TypeKind::String &&
-      expr->Right->datatype->GetKind() == TypeKind::String) {
-    std::string msg = "Operator '+' is not supported for types '" +
-                      expr->Left->datatype->GetName() + "' and '" +
-                      expr->Right->datatype->GetName() + "'.";
-
-    auto err = CodeGenException("Invalid Operation", expr->span, msg,
-                                "Check your types or use the appropriate "
-                                "library function for this operation.");
-    errors.push_back(err);
-  }
-
-  if (expr->Left->datatype->GetKind() == TypeKind::Bool &&
-      expr->Right->datatype->GetKind() == TypeKind::Bool) {
-    auto err =
-        CodeGenException("Type Error", expr->span,
-                         "The '+' operator cannot be applied to type 'Bool'.",
-                         "Consider using logical operators like '&&' or '||' "
-                         "if you intended to perform a logical operation.");
-    errors.push_back(err);
-  }
+  ValidateArithmetic(expr->Left, expr->Right, expr->span, "+");
 
   expr->datatype = std::make_unique<TypeInt>(expr->span);
 }
@@ -94,6 +63,7 @@ void TypeCheckVisitor::Visit(BlockExpr *expr) {
 
 void TypeCheckVisitor::Visit(DeclarationExpr *expr) {
   if (expr->Value.get() == nullptr) {
+    driver->Symbols.define(expr->Name, expr->T.get());
     return;
   }
 
@@ -278,39 +248,7 @@ void TypeCheckVisitor::Visit(NumberExpr *expr) {
 }
 void TypeCheckVisitor::Visit(StructDefExpr *expr) {}
 void TypeCheckVisitor::Visit(SubExpr *expr) {
-  expr->Left->Accept(*this);
-  expr->Right->Accept(*this);
-
-  if (!expr->Left->datatype->IsEqual(expr->Right->datatype.get())) {
-    auto err = CodeGenException(
-        "Type mismatch in subtraction", expr->span,
-        "Cannot subtract variable of type " + expr->Left->datatype->GetName() +
-            " with a value of type " + expr->Right->datatype->GetName(),
-        "");
-    errors.push_back(err);
-  }
-
-  if (expr->Left->datatype->GetKind() == TypeKind::String &&
-      expr->Right->datatype->GetKind() == TypeKind::String) {
-    std::string msg = "Operator '-' is not supported for types '" +
-                      expr->Left->datatype->GetName() + "' and '" +
-                      expr->Right->datatype->GetName() + "'.";
-
-    auto err = CodeGenException("Invalid Operation", expr->span, msg,
-                                "Check your types or use the appropriate "
-                                "library function for this operation.");
-    errors.push_back(err);
-  }
-
-  if (expr->Left->datatype->GetKind() == TypeKind::Bool &&
-      expr->Right->datatype->GetKind() == TypeKind::Bool) {
-    auto err =
-        CodeGenException("Type Error", expr->span,
-                         "The '-' operator cannot be applied to type 'Bool'.",
-                         "Consider using logical operators like '&&' or '||' "
-                         "if you intended to perform a logical operation.");
-    errors.push_back(err);
-  }
+  ValidateArithmetic(expr->Left, expr->Right, expr->span, "-");
 
   expr->datatype = expr->Left->datatype->Clone();
 }
@@ -378,3 +316,79 @@ void TypeCheckVisitor::Visit(TypeBool *expr) {}
 void TypeCheckVisitor::Visit(TypeByte *expr) {}
 void TypeCheckVisitor::Visit(TypeStruct *expr) {}
 void TypeCheckVisitor::Visit(TypePointer *expr) {}
+
+void TypeCheckVisitor::ValidateArithmetic(std::unique_ptr<Expr> &left,
+                                          std::unique_ptr<Expr> &right,
+                                          const Span &span,
+                                          const std::string &opName) {
+  left->Accept(*this);
+  right->Accept(*this);
+
+  std::string opTitle;
+
+  if (opName == "+") {
+    opTitle = "addition";
+  } else if (opName == "-") {
+    opTitle = "subtraction";
+  } else if (opName == "*") {
+    opTitle = "division";
+  } else if (opName == "-") {
+    opTitle = "multiplication";
+  }
+
+  if (!left->datatype->IsEqual(right->datatype.get())) {
+    auto err = CodeGenException("Type mismatch in " + opTitle + " ", span,
+                                "Cannot '" + opName + "' variable of type " +
+                                    left->datatype->GetName() +
+                                    " with a value of type " +
+                                    right->datatype->GetName(),
+                                "");
+    errors.push_back(err);
+  }
+
+  if (left->datatype->GetKind() == TypeKind::String &&
+      right->datatype->GetKind() == TypeKind::String) {
+    std::string msg = "Operator '" + opName + "' is not supported for types '" +
+                      left->datatype->GetName() + "' and '" +
+                      right->datatype->GetName() + "'.";
+
+    auto err = CodeGenException("Invalid Operation", span, msg,
+                                "Check your types or use the appropriate "
+                                "library function for this operation.");
+    errors.push_back(err);
+  }
+
+  if (left->datatype->GetKind() == TypeKind::Bool &&
+      right->datatype->GetKind() == TypeKind::Bool) {
+    auto err = CodeGenException(
+        "Type Error", span,
+        "The '" + opName + "'  operator cannot be applied to type 'Bool'.",
+        "Consider using logical operators like '&&' or '||' "
+        "if you intended to perform a logical operation.");
+    errors.push_back(err);
+  }
+}
+
+void TypeCheckVisitor::ValidateComparison(std::unique_ptr<Expr> &left,
+                                          std::unique_ptr<Expr> &right,
+                                          const Span &span,
+                                          const std::string &opName) {
+  left->Accept(*this);
+  right->Accept(*this);
+
+  if (!left->datatype->IsEqual(right->datatype.get())) {
+    errors.push_back(CodeGenException("Type mismatch in comparison", span,
+                                      "Cannot compare " +
+                                          left->datatype->GetName() + " with " +
+                                          right->datatype->GetName()));
+    return;
+  }
+
+  auto kind = left->datatype->GetKind();
+  if (kind == TypeKind::Bool || kind == TypeKind::String) {
+    errors.push_back(CodeGenException(
+        "Invalid Comparison", span,
+        "The '" + opName + "' operator is not supported for type '" +
+            left->datatype->GetName() + "'"));
+  }
+}
