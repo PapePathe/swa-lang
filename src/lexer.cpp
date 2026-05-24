@@ -88,7 +88,7 @@ std::vector<Token> Lexer::tokenize() {
           hasDot = true;
         num += get();
       }
-      auto tok = Token({hasDot ? TokenType::FLOAT : TokenType::NUMBER,
+      auto tok = Token({hasDot ? TokenType::NUMBER_FLOAT : TokenType::NUMBER,
                         num,
                         {savedStart},
                         {pos}});
