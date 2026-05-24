@@ -22,7 +22,6 @@ public:
   std::string getLabelText() const { return labelText; }
   Span getSpan() const { return span; }
 
-  // This method handles the entire Rust-style visual layout internally
   void emitDiagnostic(const SourceManager &sm,
                       std::string error_category) const;
 };
