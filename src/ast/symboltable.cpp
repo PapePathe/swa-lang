@@ -3,6 +3,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
+#include <stdexcept>
 #include <string>
 
 void SymbolTable::define(const std::string &name, llvm::Value *val) {
@@ -20,7 +21,8 @@ Type *SymbolTable::lookupSwaSymbol(const std::string &name) {
   if (Parent) {
     return Parent->lookupSwaSymbol(name);
   }
-  return nullptr;
+
+  throw std::runtime_error("variable (" + name + ") does not exist");
 }
 
 llvm::Value *SymbolTable::lookup(const std::string &name) {

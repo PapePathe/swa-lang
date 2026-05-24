@@ -1007,126 +1007,736 @@ TEST_F(JITOutputTest, ThrowsErrorOnInvalidMainSignature5) {
   assertSwaOutput(input, expected_diagnostic);
 }
 
-TEST_F(
-    JITOutputTest,
-    Declaration_Expression_Throws_When_Value_Type_And_Data_Type_Are_Not_Equal) {
-  std::string input = R"(dialect:english;
-    start() int{
-      let a int    := "10";
-      let b int    := false;
-      let c int    := true;
-      let d string := true;
-      let e string := b;
-      let f bool:= true;
-      let g string := f;
-      return 0;
-    }
-  )";
+TEST_F(JITOutputTest, Error_AddIntString) {
+  std::string input = "let a int := 10 + \"10\";";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  --> "
-      "swa_source:3:23\n   |\n 3 |       let a int    := \"10\";\n   |         "
-      "              "
-      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Expected Int but got String\n\n\x1B[1;31mtype "
-      "check error\x1B[0m: Incompatible type\n  --> swa_source:4:23\n   |\n 4 "
-      "|       let b int    := false;\n   |                       "
-      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Expected Int but got "
-      "Bool\n\n\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  --> "
-      "swa_source:5:23\n   |\n 5 |       let c int    := true;\n   |           "
-      "            "
-      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Expected Int but got Bool\n\n\x1B[1;31mtype check "
-      "error\x1B[0m: Incompatible type\n  --> swa_source:6:23\n   |\n 6 |      "
-      " let d string := true;\n   |                       "
-      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Expected String but got Bool\n\n\x1B[1;31mtype "
-      "check error\x1B[0m: Incompatible type\n  --> swa_source:7:23\n   |\n 7 "
-      "|       let e string := b;\n   |                       "
-      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Expected String but got "
-      "Int\n\n\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  --> "
-      "swa_source:9:23\n   |\n 9 |       let g string := f;\n   |              "
-      "         \x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Expected String but got "
-      "Bool\n\n";
-
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition\n  --> "
+      "swa_source:1:14\n   |\n 1 | let a int := 10 + \"10\";\n   |             "
+      " \x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot add variable of type Int "
+      "with a value of type String\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
 
-TEST_F(JITOutputTest,
-       Declaration_Expression_Throws_Cannot_Add_Different_Types) {
-  std::string input = R"(dialect:english;
-    start() int{
-      let a int := 2 + "10";
-      let b int := 2 + true;
-      return 0;
-    }
-  )";
-
+TEST_F(JITOutputTest, Error_NestedMathMismatch) {
+  std::string input = "let x int := (10 + (20 + (30 + \"40\")));";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in declaration\n  --> "
-      "swa_source:3:20\n   |\n 3 |       let a int := 2 + \"10\";\n   |        "
-      "            "
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition\n  --> "
+      "swa_source:1:26\n   |\n 1 | let x int := (10 + (20 + (30 + \"40\")));\n "
+      "  |                          "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Cannot initialize variable of type Int with a "
-      "value of type StringTry changing the type to 'string' or parse the "
-      "string as an integer.\n\n\x1B[1;31mtype check error\x1B[0m: Type "
-      "mismatch in declaration\n  --> swa_source:4:20\n   |\n 4 |       let b "
-      "int := 2 + true;\n   |                    "
-      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Cannot initialize variable of type Int with a "
-      "value of type BoolTry changing the type to 'string' or parse the string "
-      "as an integer.\n\n";
-
+      "0m Cannot add variable of type Int with a value of type String\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
 
-TEST_F(
-    JITOutputTest,
-    Declaration_Expression_Throws_Cannot_Add_Types_That_Do_Not_support_addition) {
-  std::string input = R"(dialect:english;
-    start() int{
-      let a int := "2" + "4";
-      let b int := false + true;
-      return 0;
-    }
-  )";
-
+TEST_F(JITOutputTest, Error_AddBooleans) {
+  std::string input = "let a bool := true + false;";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Invalid Operation\n  --> "
-      "swa_source:3:20\n   |\n 3 |       let a int := \"2\" + \"4\";\n   |     "
-      "               "
-      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Operator '+' is not supported "
-      "for types 'String' and 'String'.\n   | \x1B[1;36mhelp\x1B[0m: Check "
-      "your types or use the appropriate library function for this "
-      "operation.\n\n\x1B[1;31mtype check error\x1B[0m: Type Error\n  --> "
-      "swa_source:4:20\n   |\n 4 |       let b int := false + true;\n   |      "
-      "              "
+      "\x1B[1;31mtype check error\x1B[0m: Type Error\n  --> swa_source:1:15\n  "
+      " |\n 1 | let a bool := true + false;\n   |               "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m The '+' operator cannot be applied to type "
       "'Bool'.\n   | \x1B[1;36mhelp\x1B[0m: Consider using logical operators "
-      "like '&&' or '||' if you intended to perform a logical operation.\n\n";
-
+      "like '&&' or '||' if you intended to perform a logical "
+      "operation.\n\n\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  "
+      "--> swa_source:1:15\n   |\n 1 | let a bool := true + false;\n   |       "
+      "        "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Expected Bool but got Int\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
 
-// TEST_F(
-//     JITOutputTest,
-//     Declaration_Expression_Throws_When_Value_Type_And_Data_Type_Are_Not_Equal_1)
-//     {
-//   std::string input = R"(dialect:english;
-//     start() int{
-//       let x int := true;
-//      return 0;
-//     }
-//   )";
-//
+TEST_F(JITOutputTest, Error_AssignStringToInt) {
+  std::string input = "let a int := \"hello world\";";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  --> "
+      "swa_source:1:14\n   |\n 1 | let a int := \"hello world\";\n   |         "
+      "     "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Expected Int but got String\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Error_AddStringsNotSupported) {
+  std::string input = "let a string := \"hello\" + \"world\";";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Invalid Operation\n  --> "
+      "swa_source:1:17\n   |\n 1 | let a string := \"hello\" + \"world\";\n   "
+      "|                 "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Operator '+' is not supported "
+      "for types 'String' and 'String'.\n   | \x1B[1;36mhelp\x1B[0m: Check "
+      "your types or use the appropriate library function for this "
+      "operation.\n\n\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  "
+      "--> swa_source:1:17\n   |\n 1 | let a string := \"hello\" + "
+      "\"world\";\n   |                 "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Expected String but got Int\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Error_VariableTypeMismatch) {
+  std::string input = "let x int := 10; let y string := x + 5;";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  --> "
+      "swa_source:1:34\n   |\n 1 | let x int := 10; let y string := x + 5;\n   "
+      "|                                  "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Expected String but got Int\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Error_IntMultiplyString) {
+  std::string input = "let x int := 10 * \"5\";";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in multiplication\n  "
+      "--> swa_source:1:14\n   |\n 1 | let x int := 10 * \"5\";\n   |          "
+      "    "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Cannot multiply variable of type Int with a value "
+      "of type String\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Error_BoolDivideInt) {
+  std::string input = "let x int := true / 2;";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in division\n  --> "
+      "swa_source:1:14\n   |\n 1 | let x int := true / 2;\n   |              "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Cannot divide variable of type Bool with a value "
+      "of type Int\n\n\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  "
+      "--> swa_source:1:14\n   |\n 1 | let x int := true / 2;\n   |            "
+      "  "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Expected Int but got Bool\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Error_ComplexNestedArithmeticMismatch) {
+  std::string input = "let x int := (5 * (10 - 2)) + (\"invalid\" / 2);";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in division\n  --> "
+      "swa_source:1:31\n   |\n 1 | let x int := (5 * (10 - 2)) + (\"invalid\" "
+      "/ 2);\n   |                               "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m Cannot divide variable of type String with a value of type "
+      "Int\n\n\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition\n  "
+      "--> swa_source:1:14\n   |\n 1 | let x int := (5 * (10 - 2)) + "
+      "(\"invalid\" / 2);\n   |              "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Cannot add variable of type Int with a value of "
+      "type String\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Error_AssignBoolToString) {
+  std::string input = "let x string := true;";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  --> "
+      "swa_source:1:17\n   |\n 1 | let x string := true;\n   |                 "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Expected String but got Bool\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+// 1. Operator Precedence/Grouping Errors
+// Tests if the compiler correctly types the intermediate result of a
+// sub-expression
+TEST_F(JITOutputTest, Error_OperatorPrecedenceMismatch) {
+  // Programmer expects 10 + 20 then * "3", compiler should catch String type in
+  // multiplication
+  std::string input = "let x int := 10 + 20 * \"3\";";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in multiplication\n  "
+      "--> swa_source:1:19\n   |\n 1 | let x int := 10 + 20 * \"3\";\n   |     "
+      "              "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Cannot multiply variable of type Int with a value "
+      "of type String\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+// 2. Type "Shadowing" / Variable Drift
+// Tests if the compiler resolves the type of a variable correctly within a
+// nested scope
+TEST_F(JITOutputTest, Error_VariableTypeDrift) {
+  std::string input =
+      "let x int := 10; { let x string := \"hello\"; let y int := x + 5; }";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition\n  --> "
+      "swa_source:1:58\n   |\n 1 | let x int := 10; { let x string := "
+      "\"hello\"; let y int := x + 5; }\n   |                                  "
+      "                        "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot add variable of type "
+      "String with a value of type Int\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+// 3. Chain of Operation Failure
+// Errors often occur at the "leaf" of a complex tree; this ensures the error
+// bubbles up
+TEST_F(JITOutputTest, Error_DeepExpressionTypeCollision) {
+  std::string input = "let a int := 1; let b int := 2; let c int := (a + (b * "
+                      "(10 / (a + \"str\"))));";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition\n  --> "
+      "swa_source:1:62\n   |\n 1 | let a int := 1; let b int := 2; let c int "
+      ":= (a + (b * (10 / (a + \"str\"))));\n   |                              "
+      "                                "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m Cannot add variable of type Int with a value of type String\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+// 5. Mixed Arithmetic/Boolean Logic
+// A classic "logical error" where a user mixes up numeric comparison and
+// boolean logic
+TEST_F(JITOutputTest, Error_BooleanNumericMixedOp) {
+  std::string input =
+      "let a int := 5; let b bool := true; let res int := a + (b * 10);";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in multiplication\n  "
+      "--> swa_source:1:56\n   |\n 1 | let a int := 5; let b bool := true; let "
+      "res int := a + (b * 10);\n   |                                          "
+      "              "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Cannot multiply variable of type Bool with a value "
+      "of type Int\n\n\x1B[1;31mtype check error\x1B[0m: Type mismatch in "
+      "addition\n  --> swa_source:1:52\n   |\n 1 | let a int := 5; let b bool "
+      ":= true; let res int := a + (b * 10);\n   |                             "
+      "                       "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Cannot add variable of type Int with a value of "
+      "type Bool\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+// 6. Implicit Type Conversion Attempt
+// Modern compilers are strict; this tests the rejection of "loose" coding
+// styles
+TEST_F(JITOutputTest, Error_StringAdditionAttempt) {
+  std::string input = "let a string := \"val\" + 5;";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition\n  --> "
+      "swa_source:1:17\n   |\n 1 | let a string := \"val\" + 5;\n   |          "
+      "       "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot add variable of type "
+      "String with a value of type Int\n\n\x1B[1;31mtype check error\x1B[0m: "
+      "Incompatible type\n  --> swa_source:1:17\n   |\n 1 | let a string := "
+      "\"val\" + 5;\n   |                 "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Expected String but got Int\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Error_MultiplyStringWithInt) {
+  std::string input = "let x string := \"hello\"; let y int := x * 5;";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in multiplication\n  "
+      "--> swa_source:1:39\n   |\n 1 | let x string := \"hello\"; let y int := "
+      "x * 5;\n   |                                       "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot multiply variable of type "
+      "String with a value of type Int\n\n\x1B[1;31mtype check error\x1B[0m: "
+      "Incompatible type\n  --> swa_source:1:39\n   |\n 1 | let x string := "
+      "\"hello\"; let y int := x * 5;\n   |                                    "
+      "   "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Expected Int but got String\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Error_DivideBoolWithBool) {
+  std::string input = "let x bool := true / false;";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Type Error\n  --> swa_source:1:15\n  "
+      " |\n 1 | let x bool := true / false;\n   |               "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m The '/' operator cannot be applied to type "
+      "'Bool'.\n   | \x1B[1;36mhelp\x1B[0m: Consider using logical operators "
+      "like '&&' or '||' if you intended to perform a logical operation.\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Error_SubtractIntAndString) {
+  std::string input = "let x int := 10 - \"5\";";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in subtraction\n  --> "
+      "swa_source:1:14\n   |\n 1 | let x int := 10 - \"5\";\n   |              "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Cannot subtract variable of type Int with a value "
+      "of type String\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Error_DeclarationMismatch) {
+  std::string input = "let x int := \"not an int\";";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  --> "
+      "swa_source:1:14\n   |\n 1 | let x int := \"not an int\";\n   |          "
+      "    "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Expected Int but got String\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Error_ComplexArithmeticMixingTypes) {
+  std::string input =
+      "let x int := 10; let y int := 20; let z int := (x + y) - \"string\";";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in subtraction\n  --> "
+      "swa_source:1:48\n   |\n 1 | let x int := 10; let y int := 20; let z int "
+      ":= (x + y) - \"string\";\n   |                                          "
+      "      "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot "
+      "subtract variable of type Int with a value of type String\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Valid_BasicArithmetic) {
+  std::string input =
+      "dialect:english; start() int{let x int := 10 + 20 * 5;return 0;}";
+  std::string expected_diagnostic = "";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Valid_NestedArithmetic) {
+  std::string input = "dialect:english; start() int{let x int := (10 + 20) * "
+                      "(30 - 5);return 0;}";
+  std::string expected_diagnostic = "";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Valid_VariableReassignmentInBlock) {
+  // Tests that scoping works and doesn't trigger false error on shadowing
+  std::string input = "dialect:english; start() int{let x int := 10; { let x "
+                      "int := 20; let y int := x + 5; }return 0;}";
+  std::string expected_diagnostic = "";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Valid_ComplexArithmeticWithVariables) {
+  std::string input = "dialect:english; start() int{let a int := 1; let b int "
+                      ":= 2; let c int := 3; "
+                      "let res int := a + (b * c) - (a / b);return 0;}";
+  std::string expected_diagnostic = "";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Valid_DeeplyNestedValidArithmetic) {
+  std::string input = "dialect:english; start() int{let res int := (1 + (2 * "
+                      "(3 - (4 / 2))));return 0;}";
+  std::string expected_diagnostic = "";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Valid_MultipleDeclarations) {
+  std::string input = "dialect:english; start() int{let a int := 10; let b int "
+                      ":= a + 5; let c int := b * 2;return 0;}";
+  std::string expected_diagnostic = "";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Program_Valid_ScopeIsolation) {
+  std::string input = R"(
+        dialect:english;
+        start() int {
+            let x int := 10;
+            {
+                let x int := 20;
+                let y int := x + 5;
+            }
+            let z int := x + 5;
+            return 0;
+        }
+    )";
+  std::string expected_diagnostic = "";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Program_Valid_OperatorPrecedence) {
+  std::string input = R"(
+        dialect:english;
+        start() int {
+            let a int := 10 + 5 * 2;
+            let b int := (10 + 5) * 2;
+            let c int := a + b * 0;
+            return 0;
+        }
+    )";
+  std::string expected_diagnostic = "";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Program_Valid_DeeplyNestedArithmetic) {
+  std::string input = R"(
+        dialect:english;
+        start() int {
+            let a int := 1;
+            let b int := 2;
+            let c int := 3;
+            let d int := (a + (b * (c - (a + b))));
+            return 0;
+        }
+    )";
+  std::string expected_diagnostic = "";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Program_Error_ScopeBoundaryViolation) {
+  std::string input = R"(
+        dialect:english;
+        start() int {
+            let x int := 10;
+            {
+                let y int := 20;
+            }
+            let z int := y + 5;
+            return 0;
+        }
+    )";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: variable y does not exist\n  --> "
+      "swa_source:8:26\n   |\n 8 |             let z int := y + 5;\n   |       "
+      "                   "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n\n\x1B[1;31mtype check "
+      "error\x1B[0m: Type mismatch in addition\n  --> swa_source:8:26\n   |\n "
+      "8 |             let z int := y + 5;\n   |                          "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot add variable of type Void "
+      "with a value of type Int\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Program_Error_TypeMismatchInExpression) {
+  std::string input = R"(
+        dialect:english;
+        start() int {
+            let a int := 10;
+            let b string := "20";
+            let c int := a + b;
+            return 0;
+        }
+    )";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition\n  --> "
+      "swa_source:6:26\n   |\n 6 |             let c int := a + b;\n   |       "
+      "                   "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot add variable of type Int "
+      "with a value of type String\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Program_Error_ComplexNestedMismatch) {
+  std::string input = R"(
+        dialect:english;
+        start() int {
+            let a int := 1;
+            let b int := 2;
+            let c int := (a * b) + (a - "invalid");
+            return 0;
+        }
+    )";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in subtraction\n  --> "
+      "swa_source:6:36\n   |\n 6 |             let c int := (a * b) + (a - "
+      "\"invalid\");\n   |                                    "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m Cannot subtract variable of type Int with a value of type String\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+// Ensures that shadowing a variable in an inner block does not break the
+// outer variable's integrity once the block scope is popped.
+TEST_F(JITOutputTest, Program_Scope_ShadowingIntegrity) {
+  std::string input = R"(
+dialect:english;
+start() int {
+    let x int := 10;
+    {
+        let x int := 20;
+        let y int := x + 5;
+    }
+    let z int := x + 5;
+    return 0;
+}
+    )";
+  std::string expected_diagnostic = "";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+// Tests if the TypeChecker correctly evaluates types based on tree structure
+// rather than linear order. 10 + 5 * 2 should be parsed as 10 + (5 * 2).
+TEST_F(JITOutputTest, Program_Precedence_StandardOrder) {
+  std::string input = R"(
+dialect:english;
+start() int {
+    let val int := 10 + 5 * 2;
+    let check int := 20;
+    return 0;
+}
+    )";
+  std::string expected_diagnostic = "";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+// Stress-tests the Visitor's ability to propagate types up from a deep leaf
+// to a root node without dropping or mislabeling the datatype.
+TEST_F(JITOutputTest, Program_Boundary_DeepArithmeticLeaf) {
+  std::string input = R"(
+dialect:english;
+start() int {
+    let a int := 1;
+    let b int := (a + (a + (a + (a + (a + (a + (a + (a + 1))))))));
+    return 0;
+}
+    )";
+  std::string expected_diagnostic = "";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+// A common real-world bug: attempting to access a variable initialized only
+// within an inner block scope.
+TEST_F(JITOutputTest, Program_Error_ScopeLeakage) {
+  std::string input = R"(
+dialect:english;
+start() int {
+    let a int := 10;
+    {
+        let b int := 20;
+    }
+    let c int := a + b;
+    return 0;
+}
+    )";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: variable b does not exist\n  --> "
+      "swa_source:8:22\n   |\n 8 |     let c int := a + b;\n   |               "
+      "       \x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n\n\x1B[1;31mtype check "
+      "error\x1B[0m: Type mismatch in addition\n  --> swa_source:8:18\n   |\n "
+      "8 |     let c int := a + b;\n   |                  "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot add variable of type Int "
+      "with a value of type Void\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+// Explicitly forces the parser to ignore standard precedence, checking if the
+// visitor correctly respects the AST node priority.
+TEST_F(JITOutputTest, Program_Precedence_GroupingOverride) {
+  std::string input = R"(
+dialect:english;
+start() int {
+    let result int := (10 + 5) * 2;
+    return 0;
+}
+    )";
+  std::string expected_diagnostic = "";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+// 1. Error: Comparing String and Int
+// A classic error: programmers often forget to parse a string before comparing
+// it to an int.
+TEST_F(JITOutputTest, Error_CompareStringAndInt) {
+  std::string input = R"(
+        dialect:english;
+        start() int {
+            let x int := 10;
+            let y string := "10";
+            if (x = y) { return 1; }
+            return 0;
+        }
+    )";
+  std::string expected_diagnostic = "";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+// 2. Error: Using comparison operators on Booleans
+// While some languages allow this (false < true), strict compilers often
+// prevent it.
+TEST_F(JITOutputTest, Error_CompareBooleansWithOperators) {
+  std::string input = R"(
+        dialect:english;
+        start() int {
+            let a bool := true;
+            let b bool := false;
+            if (a > b) { return 1; }
+            return 0;
+        }
+    )";
+  std::string expected_diagnostic = "";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+// 4. Error: Comparing result of a math expression to a String
+TEST_F(JITOutputTest, Error_CompareMathResultToString) {
+  std::string input = R"(
+        dialect:english;
+        start() int {
+            let x int := 5 + 5;
+            if (x < "10") { return 1; }
+            return 0;
+        }
+    )";
+  std::string expected_diagnostic = "";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+// 3. Error: String inequality check
+// Ensure that the compiler rejects comparison between incompatible types even
+// in inequality.
+// TEST_F(JITOutputTest, Error_InequalityStringBool) {
+//   std::string input = R"(
+//         dialect:english;
+//         start() int {
+//             let a string := "hello";
+//             let b bool := true;
+//             if (a != b) { return 1; }
+//             return 0;
+//         }
+//     )";
 //   std::string expected_diagnostic = "";
+//   assertSwaOutput(input, expected_diagnostic);
+// }
+
+// FIXME
+// TEST_F(JITOutputTest, Error_AndBoolInt) {
+//  std::string input = "let a bool := true && 1;";
+//  std::string expected_diagnostic = "Type Error: The '&&' operator cannot be "
+//                                    "applied to types 'Bool' and 'Int'.";
+//  assertSwaOutput(input, expected_diagnostic);
+//}
+// FIXME
+// TEST_F(JITOutputTest, Error_CompareIntString) {
+//   std::string input = "let a bool := (10 + 20) < \"30\";";
+//   std::string expected_diagnostic = "Type Error: The '<' operator cannot be "
+//                                     "applied to types 'Int' and 'String'.";
+//   assertSwaOutput(input, expected_diagnostic);
+// }
+
+// FIXME
+// TEST_F(JITOutputTest, Error_ComplexLogicMismatch) {
+//   std::string input = "let x bool := (10 < 20) + (true && false);";
+//   std::string expected_diagnostic = "Type Error: The '+' operator cannot be "
+//                                     "applied to types 'Bool' and 'Bool'.";
+//   assertSwaOutput(input, expected_diagnostic);
+// }
+
+// FIXME
+// TEST_F(JITOutputTest, Error_StringModuloInt) {
+//   std::string input = "let x int := \"abc\" % 3;";
+//   std::string expected_diagnostic = "";
+//   assertSwaOutput(input, expected_diagnostic);
+// }
+
+// FIXME
+// TEST_F(JITOutputTest, Error_OrStringBool) {
+//   std::string input = "let x bool := \"true\" || true;";
+//   std::string expected_diagnostic = "";
+//   assertSwaOutput(input, expected_diagnostic);
+// }
+
+// TEST_F(JITOutputTest, Error_GreaterEqualStringInt) {
+//   std::string input = "let x bool := \"10\" >= 10;";
+//   std::string expected_diagnostic = "Type Error: The '>=' operator cannot be
+//   "
+//                                     "applied to types 'String' and 'Int'.";
+//   assertSwaOutput(input, expected_diagnostic);
+// }
+
+// TEST_F(JITOutputTest, Error_NotString) {
+//   std::string input = "let x bool := !\"hello\";";
+//   std::string expected_diagnostic =
+//       "Type Error: The '!' operator cannot be applied to type 'String'.";
+//   assertSwaOutput(input, expected_diagnostic);
+// }
+
+// TEST_F(JITOutputTest, Error_MixedComparisonChain) {
+//   std::string input = "let x bool := 10 == \"10\";";
+//   std::string expected_diagnostic = "Type Error: The '==' operator cannot be
+//   "
+//                                     "applied to types 'Int' and 'String'.";
+//   assertSwaOutput(input, expected_diagnostic);
+// }
+
+// 4. Invalid Identity/Self-Assignment
+// Ensuring the compiler prevents operating on an uninitialized or wrong-type
+// self-reference
+// TEST_F(JITOutputTest, Error_CircularTypeDependency) {
+//   std::string input = "let x int := x + 1;";
+//   std::string expected_diagnostic = "";
+//   assertSwaOutput(input, expected_diagnostic);
+// }
+
+// TEST_F(JITOutputTest, Error_UndefinedVariable) {
+//   std::string input = "let a int := b + 10;";
+//   std::string expected_diagnostic = "";
+//   assertSwaOutput(input, expected_diagnostic);
+// }
 //
+// Tests the boundary between the SymbolTable declaration phase and
+// the type-checking phase for re-assignment.
+// TEST_F(JITOutputTest, Program_Boundary_SelfAssignment) {
+//   std::string input = R"(
+// dialect:english;
+// start() int {
+//     let x int := 10;
+//     x := x + 10;
+//     return 0;
+// }
+//     )";
+//   std::string expected_diagnostic = "";
 //   assertSwaOutput(input, expected_diagnostic);
 // }

@@ -40,13 +40,10 @@ void TypeCheckVisitor::Visit(AddExpr *expr) {
   expr->Right->Accept(*this);
 
   if (!expr->Left->datatype->IsEqual(expr->Right->datatype.get())) {
-    auto err = CodeGenException("Type mismatch in declaration", expr->span,
-                                "Cannot initialize variable of type " +
-                                    expr->Left->datatype->GetName() +
-                                    " with a value of type " +
-                                    expr->Right->datatype->GetName() +
-                                    "Try changing the type to 'string' or "
-                                    "parse the string as an integer.");
+    auto err = CodeGenException(
+        "Type mismatch in addition", expr->span,
+        "Cannot add variable of type " + expr->Left->datatype->GetName() +
+            " with a value of type " + expr->Right->datatype->GetName() + "");
     errors.push_back(err);
   }
 
@@ -131,29 +128,49 @@ void TypeCheckVisitor::Visit(DivExpr *expr) {
   expr->Left->Accept(*this);
   expr->Right->Accept(*this);
 
-  //  if (!expr->Left->datatype->IsEqual(expr->Right->datatype.get())) {
-  //    throw CodeGenException("Substraction error", expr->span,
-  //                           "Datatype " + expr->Right->datatype->GetName() +
-  //                               " and " + expr->Right->datatype->GetName(),
-  //                           "cannot be used together");
-  //  }
+  if (!expr->Left->datatype->IsEqual(expr->Right->datatype.get())) {
+    auto err = CodeGenException(
+        "Type mismatch in division", expr->span,
+        "Cannot divide variable of type " + expr->Left->datatype->GetName() +
+            " with a value of type " + expr->Right->datatype->GetName() + "");
+    errors.push_back(err);
+  }
 
-  // FIXME add a symbols table and check type there
-  expr->datatype = std::make_unique<TypeInt>(expr->span);
+  if (expr->Left->datatype->GetKind() == TypeKind::String &&
+      expr->Right->datatype->GetKind() == TypeKind::String) {
+    std::string msg = "Operator '/' is not supported for types '" +
+                      expr->Left->datatype->GetName() + "' and '" +
+                      expr->Right->datatype->GetName() + "'.";
+
+    auto err = CodeGenException("Invalid Operation", expr->span, msg,
+                                "Check your types or use the appropriate "
+                                "library function for this operation.");
+    errors.push_back(err);
+  }
+
+  if (expr->Left->datatype->GetKind() == TypeKind::Bool &&
+      expr->Right->datatype->GetKind() == TypeKind::Bool) {
+    auto err =
+        CodeGenException("Type Error", expr->span,
+                         "The '/' operator cannot be applied to type 'Bool'.",
+                         "Consider using logical operators like '&&' or '||' "
+                         "if you intended to perform a logical operation.");
+    errors.push_back(err);
+  }
+
+  expr->datatype = expr->Left->datatype->Clone();
 }
 void TypeCheckVisitor::Visit(EqExpr *expr) {}
 void TypeCheckVisitor::Visit(IdExpr *expr) {
-  auto typ = driver->Symbols.lookupSwaSymbol(expr->Name);
-
-  if (typ == nullptr) {
+  try {
+    auto typ = driver->Symbols.lookupSwaSymbol(expr->Name);
+    expr->datatype = typ->Clone();
+  } catch (...) {
     auto err = ParserException("variable " + expr->Name + " does not exist",
                                expr->span, "", "");
     errors.push_back(err);
-
-    return;
+    expr->datatype = std::make_unique<TypeVoid>(expr->span);
   }
-
-  expr->datatype = typ->Clone();
 }
 void TypeCheckVisitor::Visit(IfExpr *expr) {}
 void TypeCheckVisitor::Visit(GTExpr *expr) {}
@@ -216,15 +233,38 @@ void TypeCheckVisitor::Visit(MulExpr *expr) {
   expr->Left->Accept(*this);
   expr->Right->Accept(*this);
 
-  //  if (!expr->Left->datatype->IsEqual(expr->Right->datatype.get())) {
-  //    throw CodeGenException("Multiplication error", expr->span,
-  //                           "Datatype " + expr->Right->datatype->GetName() +
-  //                               " and " + expr->Right->datatype->GetName(),
-  //                           "cannot be multipled together");
-  //  }
+  if (!expr->Left->datatype->IsEqual(expr->Right->datatype.get())) {
+    auto err = CodeGenException(
+        "Type mismatch in multiplication", expr->span,
+        "Cannot multiply variable of type " + expr->Left->datatype->GetName() +
+            " with a value of type " + expr->Right->datatype->GetName(),
+        "");
+    errors.push_back(err);
+  }
 
-  // FIXME add a symbols table and check type there
-  expr->datatype = std::make_unique<TypeInt>(expr->span);
+  if (expr->Left->datatype->GetKind() == TypeKind::String &&
+      expr->Right->datatype->GetKind() == TypeKind::String) {
+    std::string msg = "Operator '*' is not supported for types '" +
+                      expr->Left->datatype->GetName() + "' and '" +
+                      expr->Right->datatype->GetName() + "'.";
+
+    auto err = CodeGenException("Invalid Operation", expr->span, msg,
+                                "Check your types or use the appropriate "
+                                "library function for this operation.");
+    errors.push_back(err);
+  }
+
+  if (expr->Left->datatype->GetKind() == TypeKind::Bool &&
+      expr->Right->datatype->GetKind() == TypeKind::Bool) {
+    auto err =
+        CodeGenException("Type Error", expr->span,
+                         "The '*' operator cannot be applied to type 'Bool'.",
+                         "Consider using logical operators like '&&' or '||' "
+                         "if you intended to perform a logical operation.");
+    errors.push_back(err);
+  }
+
+  expr->datatype = expr->Left->datatype->Clone();
 }
 void TypeCheckVisitor::Visit(PrintExpr *expr) {}
 void TypeCheckVisitor::Visit(Formatted_Print_Expr *expr) {}
@@ -238,21 +278,70 @@ void TypeCheckVisitor::Visit(NumberExpr *expr) {
 }
 void TypeCheckVisitor::Visit(StructDefExpr *expr) {}
 void TypeCheckVisitor::Visit(SubExpr *expr) {
-  // if (!expr->Left->datatype->IsEqual(expr->Right->datatype.get())) {
-  //   throw CodeGenException("Substraction error", expr->span,
-  //                          "Datatype " + expr->Right->datatype->GetName() +
-  //                              " and " + expr->Right->datatype->GetName(),
-  //                          "cannot be used together");
-  // }
+  expr->Left->Accept(*this);
+  expr->Right->Accept(*this);
 
-  // FIXME add a symbols table and check type there
-  expr->datatype = std::make_unique<TypeInt>(expr->span);
+  if (!expr->Left->datatype->IsEqual(expr->Right->datatype.get())) {
+    auto err = CodeGenException(
+        "Type mismatch in subtraction", expr->span,
+        "Cannot subtract variable of type " + expr->Left->datatype->GetName() +
+            " with a value of type " + expr->Right->datatype->GetName(),
+        "");
+    errors.push_back(err);
+  }
+
+  if (expr->Left->datatype->GetKind() == TypeKind::String &&
+      expr->Right->datatype->GetKind() == TypeKind::String) {
+    std::string msg = "Operator '-' is not supported for types '" +
+                      expr->Left->datatype->GetName() + "' and '" +
+                      expr->Right->datatype->GetName() + "'.";
+
+    auto err = CodeGenException("Invalid Operation", expr->span, msg,
+                                "Check your types or use the appropriate "
+                                "library function for this operation.");
+    errors.push_back(err);
+  }
+
+  if (expr->Left->datatype->GetKind() == TypeKind::Bool &&
+      expr->Right->datatype->GetKind() == TypeKind::Bool) {
+    auto err =
+        CodeGenException("Type Error", expr->span,
+                         "The '-' operator cannot be applied to type 'Bool'.",
+                         "Consider using logical operators like '&&' or '||' "
+                         "if you intended to perform a logical operation.");
+    errors.push_back(err);
+  }
+
+  expr->datatype = expr->Left->datatype->Clone();
 }
 void TypeCheckVisitor::Visit(UnaryMinusExpr *expr) {}
-void TypeCheckVisitor::Visit(UnaryNotExpr *expr) {}
+void TypeCheckVisitor::Visit(UnaryNotExpr *expr) {
+  expr->Right->Accept(*this);
+
+  auto btyp = std::make_unique<TypeBool>(expr->span);
+
+  if (!expr->datatype->IsEqual(btyp.get())) {
+    CodeGenException("Type Error", expr->span,
+                     "The '!' operator cannot be applied to type 'Bool'.",
+                     ""
+                     "");
+  }
+
+  expr->datatype = std::move(btyp);
+}
 void TypeCheckVisitor::Visit(CallExpr *expr) {}
-void TypeCheckVisitor::Visit(Logical_Or_Expr *expr) {}
-void TypeCheckVisitor::Visit(Logical_And_Expr *expr) {}
+void TypeCheckVisitor::Visit(Logical_Or_Expr *expr) {
+  expr->Left->Accept(*this);
+  expr->Right->Accept(*this);
+
+  expr->datatype = std::make_unique<TypeBool>(expr->span);
+}
+void TypeCheckVisitor::Visit(Logical_And_Expr *expr) {
+  expr->Left->Accept(*this);
+  expr->Right->Accept(*this);
+
+  expr->datatype = std::make_unique<TypeBool>(expr->span);
+}
 void TypeCheckVisitor::Visit(Test_Expr *expr) {}
 void TypeCheckVisitor::Visit(Assert_Equal_Expr *expr) {}
 void TypeCheckVisitor::Visit(Assert_Not_Equal_Expr *expr) {
