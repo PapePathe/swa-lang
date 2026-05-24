@@ -298,6 +298,11 @@ std::unique_ptr<Expr> Parser::parsePrimary() {
 
     return expr;
   }
+  if (current().type == TokenType::NUMBER_FLOAT) {
+    auto tok = expect(TokenType::NUMBER_FLOAT);
+    return std::make_unique<FloatExpr>(std::stod(tok.value),
+                                       FloatPrecision::F32, tok.span);
+  }
   if (current().type == TokenType::IDENTIFIER) {
     auto tok = expect(TokenType::IDENTIFIER);
     auto expr = std::make_unique<IdExpr>(tok.value, tok.span);

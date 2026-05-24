@@ -24,6 +24,7 @@ enum class TokenType {
   FALSE,
   IDENTIFIER,
   NUMBER,
+  NUMBER_FLOAT,
   CHARACTER,
   ASSIGNMENT,
   COLON,

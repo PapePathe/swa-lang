@@ -36,6 +36,13 @@ public:
     EXPECT_EQ(casted->Value, expected);
   }
 
+  void ASSERT_EXPR_FLOAT(Expr *node, double expected) {
+    ASSERT_NE(node, nullptr);
+    auto *casted = dynamic_cast<FloatExpr *>(node);
+    ASSERT_NE(casted, nullptr) << "Node is not a FloatExpr";
+    EXPECT_EQ(casted->Value, expected);
+  }
+
   void ASSERT_EXPR_ID(Expr *node, std::string expected) {
     ASSERT_NE(node, nullptr);
     auto *casted = dynamic_cast<IdExpr *>(node);
@@ -931,9 +938,11 @@ TEST_F(ParserTests, Array_Init_Nested) {
   ASSERT_EXPR_NUMBER(last->Elements[1].get(), 4);
 }
 
-// TEST_F(ParserTests, Array_Init_Float) {
-//   std::string input = "let arr [2]float := [1.5, 2.5];";
-//   auto stmts = PARSE_PROGRAM(input, 1);
-//   auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
-//   ASSERT_EXPR_ARRAY(node->Value.get(), 2);
-// }
+TEST_F(ParserTests, Array_Init_Float) {
+  std::string input = "let arr [2]float := [1.5, 2.5];";
+  auto stmts = PARSE_PROGRAM(input, 1);
+  auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
+  auto values = ASSERT_EXPR_ARRAY(node->Value.get(), 2);
+  ASSERT_EXPR_FLOAT(values->Elements[0].get(), 1.5);
+  ASSERT_EXPR_FLOAT(values->Elements[1].get(), 2.5);
+}

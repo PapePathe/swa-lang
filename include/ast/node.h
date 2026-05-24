@@ -383,3 +383,15 @@ struct Array_Init_Expr : public Expr {
   Array_Init_Expr(std::vector<std::unique_ptr<Expr>> e, Span s)
       : Elements(std::move(e)), Expr(s) {}
 };
+
+enum class FloatPrecision { F16, F32, F64 };
+
+struct FloatExpr : public Expr {
+  double Value;
+  FloatPrecision Precision;
+
+  void Accept(ASTVisitor &visitor) override {}
+
+  FloatExpr(double value, FloatPrecision p, Span s)
+      : Value(value), Precision(p), Expr(s) {}
+};
