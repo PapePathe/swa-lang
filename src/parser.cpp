@@ -28,7 +28,8 @@ Token Parser::expect(TokenType type) {
     return tokens[pos++];
   }
 
-  throw std::runtime_error("Unexpected token: ```" + current().value + "```");
+  throw ParserException("Unexpected token: ```" + current().value + "```",
+                        current().span);
 }
 Token Parser::expect(
     TokenType type,
@@ -107,6 +108,10 @@ std::unique_ptr<Expr> Parser::parseStatement() {
       current().type == TokenType::TEST_ASSERT_LESS_THAN_OR_EQUALS ||
       current().type == TokenType::TEST_ASSERT_GREATER_THAN_OR_EQUALS) {
     return parseAsserts();
+  }
+
+  if (current().type == TokenType::OPEN_CURLY) {
+    return parseBlock();
   }
 
   trace("end parse statement\n");
@@ -317,7 +322,8 @@ std::unique_ptr<Expr> Parser::parsePrimary() {
     return nullptr;
   }
 
-  throw std::runtime_error("Expected expression but got " + current().value);
+  throw ParserException("Expected expression but got " + current().value,
+                        current().span, "", "");
 }
 
 void Parser::parseDialect() {
