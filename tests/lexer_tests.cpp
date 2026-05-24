@@ -82,8 +82,8 @@ TEST_F(LexerTest, NumberLiterals) {
 
   ASSERT_EQ(tokens.size(), 4);
   AssertTokenSpan(tokens[0], TokenType::NUMBER, "123", 0, 3);
-  AssertTokenSpan(tokens[1], TokenType::FLOAT, "45.67", 4, 9);
-  AssertTokenSpan(tokens[2], TokenType::FLOAT, "0.001", 10, 15);
+  AssertTokenSpan(tokens[1], TokenType::NUMBER_FLOAT, "45.67", 4, 9);
+  AssertTokenSpan(tokens[2], TokenType::NUMBER_FLOAT, "0.001", 10, 15);
   AssertTokenSpan(tokens[3], TokenType::END_OF_FILE, "", 15, 15);
 }
 
