@@ -69,18 +69,18 @@ std::vector<Token> Lexer::tokenize() {
       }
 
       if (pos >= src.length()) {
-        // You might want a specific error for unterminated strings
-        tokens.push_back(
-            {TokenType::UNKNOWN, literal, {{startPosition}, {pos}}});
+        auto tok = Token(TokenType::UNKNOWN, literal, {startPosition}, {pos});
+        tokens.push_back(tok);
       } else {
         get(); // Consume closing quote
-        tokens.push_back(
-            {TokenType::STRING, literal, {{startPosition}, {pos}}});
+        auto tok = Token(TokenType::STRING, literal, {startPosition}, {pos});
+        tokens.push_back(tok);
       }
       continue;
     }
 
     if (isdigit(static_cast<unsigned char>(c))) {
+      size_t savedStart = pos;
       std::string num;
       bool hasDot = false;
       while (isdigit(peek()) || (peek() == '.' && !hasDot)) {
@@ -88,13 +88,14 @@ std::vector<Token> Lexer::tokenize() {
           hasDot = true;
         num += get();
       }
-      tokens.push_back({hasDot ? TokenType::FLOAT : TokenType::NUMBER,
+      auto tok = Token({hasDot ? TokenType::FLOAT : TokenType::NUMBER,
                         num,
-                        {{startPosition}, {pos}}});
-    }
+                        {savedStart},
+                        {pos}});
 
-    else if (isalpha(static_cast<unsigned char>(c)) || c == '_' ||
-             static_cast<unsigned char>(c) > 127) {
+      tokens.push_back(tok);
+    } else if (isalpha(static_cast<unsigned char>(c)) || c == '_' ||
+               static_cast<unsigned char>(c) > 127) {
       std::string ident;
       while (isalnum(static_cast<unsigned char>(peek())) || peek() == '_' ||
              static_cast<unsigned char>(peek()) > 127) {
@@ -102,158 +103,200 @@ std::vector<Token> Lexer::tokenize() {
       }
 
       if (keywords.count(ident)) {
-        tokens.push_back({keywords.at(ident), ident, {{startPosition}, {pos}}});
+        auto tok = Token({keywords.at(ident), ident, {startPosition}, {pos}});
+        tokens.push_back(tok);
       } else {
-        tokens.push_back(
-            {TokenType::IDENTIFIER, ident, {{startPosition}, {pos}}});
+        auto tok = Token(TokenType::IDENTIFIER, ident, {startPosition}, {pos});
+        tokens.push_back(tok);
       }
-    }
-
-    else {
+    } else {
       char current = get();
       switch (current) {
-      case '!':
+      case '!': {
         if (peek() == '=') {
           get();
-          tokens.push_back(
-              {TokenType::NOT_EQUALS, "!=", {{startPosition}, {pos}}});
+          auto tok = Token(TokenType::NOT_EQUALS, "!=", {startPosition}, {pos});
+          tokens.push_back(tok);
         } else {
-          tokens.push_back({TokenType::NOT, "!", {{startPosition}, {pos}}});
+          auto tok = Token(TokenType::NOT, "!", {startPosition}, {pos});
+          tokens.push_back(tok);
         }
         break;
-      case '<':
+      }
+      case '<': {
         if (peek() == '=') {
           get();
-          tokens.push_back(
-              {TokenType::LESS_THAN_EQUALS, "<=", {{startPosition}, {pos}}});
+          auto tok =
+              Token(TokenType::LESS_THAN_EQUALS, "<=", {startPosition}, {pos});
+          tokens.push_back(tok);
         } else {
-          tokens.push_back(
-              {TokenType::LESS_THAN, "<", {{startPosition}, {pos}}});
+          auto tok = Token(TokenType::LESS_THAN, "<", {startPosition}, {pos});
+          tokens.push_back(tok);
         }
         break;
-      case '>':
+      }
+
+      case '>': {
         if (peek() == '=') {
           get();
-          tokens.push_back(
-              {TokenType::GREATER_THAN_EQUALS, ">=", {{startPosition}, {pos}}});
+          auto tok = Token(TokenType::GREATER_THAN_EQUALS,
+                           ">=", {startPosition}, {pos});
+          tokens.push_back(tok);
         } else {
-          tokens.push_back(
-              {TokenType::GREATER_THAN, ">", {{startPosition}, {pos}}});
+          auto tok =
+              Token(TokenType::GREATER_THAN, ">", {startPosition}, {pos});
+          tokens.push_back(tok);
         }
         break;
-      case '+':
+      }
+
+      case '+': {
         if (peek() == '=') {
           get();
-          tokens.push_back(
-              {TokenType::PLUS_EQUALS, "+=", {{startPosition}, {pos}}});
+          auto tok =
+              Token(TokenType::PLUS_EQUALS, "+=", {startPosition}, {pos});
+          tokens.push_back(tok);
         } else {
-          tokens.push_back({TokenType::PLUS, "+", {{startPosition}, {pos}}});
+          auto tok = Token(TokenType::PLUS, "+", {startPosition}, {pos});
+          tokens.push_back(tok);
         }
         break;
-      case '-':
+      }
+
+      case '-': {
         if (peek() == '=') {
           get();
-          tokens.push_back(
-              {TokenType::MINUS_EQUALS, "-=", {{startPosition}, {pos}}});
+          auto tok =
+              Token(TokenType::MINUS_EQUALS, "-=", {startPosition}, {pos});
+          tokens.push_back(tok);
         } else {
-          tokens.push_back({TokenType::MINUS, "-", {{startPosition}, {pos}}});
+          auto tok = Token(TokenType::MINUS, "-", {startPosition}, {pos});
+          tokens.push_back(tok);
         }
         break;
-      case '/':
-        tokens.push_back({TokenType::DIVIDE, "/", {{startPosition}, {pos}}});
+      }
+
+      case '/': {
+        auto tok = Token(TokenType::DIVIDE, "/", {startPosition}, {pos});
+        tokens.push_back(tok);
         break;
-      case '*':
+      }
+      case '*': {
         if (peek() == '*') {
           get();
-          tokens.push_back(
-              {TokenType::DOUBLE_STAR, "**", {{startPosition}, {pos}}});
+          auto tok =
+              Token(TokenType::DOUBLE_STAR, "**", {startPosition}, {pos});
+          tokens.push_back(tok);
         } else if (peek() == '=') {
           get();
-          tokens.push_back(
-              {TokenType::STAR_EQUALS, "*=", {{startPosition}, {pos}}});
+          auto tok =
+              Token(TokenType::STAR_EQUALS, "*=", {startPosition}, {pos});
+          tokens.push_back(tok);
         } else {
-          tokens.push_back(
-              {TokenType::MULTIPLY, "*", {{startPosition}, {pos}}});
+          auto tok = Token(TokenType::MULTIPLY, "*", {startPosition}, {pos});
+          tokens.push_back(tok);
         }
         break;
-      case '=':
-        tokens.push_back({TokenType::EQUALS, "=", {{startPosition}, {pos}}});
+      }
+      case '=': {
+        auto tok = Token(TokenType::EQUALS, "=", {startPosition}, {pos});
+        tokens.push_back(tok);
         break;
-      case '&':
+      }
+      case '&': {
         if (peek() == '&') {
           get();
-          tokens.push_back({TokenType::AND, "&&", {{startPosition}, {pos}}});
+          auto tok = Token(TokenType::AND, "&&", {startPosition}, {pos});
+          tokens.push_back(tok);
         } else {
-          tokens.push_back(
-              {TokenType::AMPERSAND, "&", {{startPosition}, {pos}}});
+          auto tok = Token(TokenType::AMPERSAND, "&", {startPosition}, {pos});
+          tokens.push_back(tok);
         }
         break;
-      case '|':
+      }
+      case '|': {
         if (peek() == '|') {
           get();
-          tokens.push_back({TokenType::OR, "||", {{startPosition}, {pos}}});
+          auto tok = Token(TokenType::OR, "||", {startPosition}, {pos});
+          tokens.push_back(tok);
         }
         break;
-      case '.':
+      }
+      case '.': {
         if (peek() == '.') {
           get(); // consume second .
           if (peek() == '.') {
             get();
-            tokens.push_back(
-                {TokenType::VARIADIC, "...", {{startPosition}, {pos}}});
+            auto tok =
+                Token(TokenType::VARIADIC, "...", {startPosition}, {pos});
+            tokens.push_back(tok);
           }
         } else {
-          tokens.push_back({TokenType::DOT, ".", {{startPosition}, {pos}}});
+          auto tok = Token(TokenType::DOT, ".", {startPosition}, {pos});
+          tokens.push_back(tok);
         }
         break;
-      case '(':
-        tokens.push_back(
-            {TokenType::OPEN_PAREN, "(", {{startPosition}, {pos}}});
+      }
+      case '(': {
+        auto tok = Token(TokenType::OPEN_PAREN, "(", {startPosition}, {pos});
+        tokens.push_back(tok);
         break;
-      case ')':
-        tokens.push_back(
-            {TokenType::CLOSE_PAREN, ")", {{startPosition}, {pos}}});
+      }
+      case ')': {
+        auto tok = Token(TokenType::CLOSE_PAREN, ")", {startPosition}, {pos});
+        tokens.push_back(tok);
         break;
-      case '{':
-        tokens.push_back(
-            {TokenType::OPEN_CURLY, "{", {{startPosition}, {pos}}});
+      }
+      case '{': {
+        auto tok = Token(TokenType::OPEN_CURLY, "{", {startPosition}, {pos});
+        tokens.push_back(tok);
         break;
-      case '}':
-        tokens.push_back(
-            {TokenType::CLOSE_CURLY, "}", {{startPosition}, {pos}}});
+      }
+      case '}': {
+        auto tok = Token(TokenType::CLOSE_CURLY, "}", {startPosition}, {pos});
+        tokens.push_back(tok);
         break;
-      case '[':
-        tokens.push_back(
-            {TokenType::OPEN_BRACKET, "[", {{startPosition}, {pos}}});
+      }
+
+      case '[': {
+        auto tok = Token(TokenType::OPEN_BRACKET, "[", {startPosition}, {pos});
+        tokens.push_back(tok);
         break;
-      case ']':
-        tokens.push_back(
-            {TokenType::CLOSE_BRACKET, "]", {{startPosition}, {pos}}});
+      }
+      case ']': {
+        auto tok = Token(TokenType::CLOSE_BRACKET, "]", {startPosition}, {pos});
+        tokens.push_back(tok);
         break;
-      case ':':
+      }
+      case ':': {
         if (peek() == '=') {
           get();
-          tokens.push_back(
-              {TokenType::ASSIGNMENT, ":=", {{startPosition}, {pos}}});
+          auto tok = Token(TokenType::ASSIGNMENT, ":=", {startPosition}, {pos});
+          tokens.push_back(tok);
           break;
         }
-        tokens.push_back({TokenType::COLON, ":", {{startPosition}, {pos}}});
+
+        auto tok = Token(TokenType::COLON, ":", {startPosition}, {pos});
+        tokens.push_back(tok);
         break;
+      }
+
       case ';':
-        tokens.push_back({TokenType::SEMICOLON, ";", {{startPosition}, {pos}}});
+        tokens.push_back(
+            Token(TokenType::SEMICOLON, ";", {startPosition}, {pos}));
         break;
       case ',':
-        tokens.push_back({TokenType::COMMA, ",", {{startPosition}, {pos}}});
+        tokens.push_back(Token(TokenType::COMMA, ",", {startPosition}, {pos}));
         break;
       default:
-        tokens.push_back({TokenType::UNKNOWN,
-                          std::string(1, current),
-                          {{startPosition}, {pos}}});
+        tokens.push_back(Token(TokenType::UNKNOWN, std::string(1, current),
+                               {startPosition}, {pos}));
         break;
       }
     }
   }
 
-  tokens.push_back({TokenType::END_OF_FILE, "", {{pos}, {pos}}});
+  auto tok = Token(TokenType::END_OF_FILE, "", {pos}, {pos});
+  tokens.push_back(tok);
   return tokens;
 }

@@ -603,12 +603,15 @@ TEST_F(JITOutputTest, Call_Function_That_Does_Not_Exist) {
     }
   )";
 
-  assertSwaOutput(
-      program,
+  std::string expected_diagnostic =
       "\x1B[1;31mcode generation error\x1B[0m: Function named my_func does not "
-      "exist\n  --> swa_source:4:30\n   |\n 4 |       "
-      "print(\"Result\", my_func());\n   |                            "
-      "  \x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n\n");
+      "exist\n  --> swa_source:4:23\n   |\n 4 |       print(\"Result\", "
+      "my_func());\n   |                       "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n\n";
+
+  assertSwaOutput(program, expected_diagnostic);
 }
 
 TEST_F(JITOutputTest, FunctionCalls1) {
@@ -920,7 +923,7 @@ TEST_F(JITOutputTest, ThrowsErrorOnInvalidMainSignature) {
     }
   )";
   std::string expected_diagnostic =
-      "\x1B[1;31mcode generation error\x1B[0m: second argument of main should "
+      "\x1B[1;31mtype check error\x1B[0m: second argument of main should "
       "be a slice of strings\n  --> swa_source:2:26\n   |\n 2 |     start(argc "
       "int, argv int) int {\n   |                          "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
@@ -936,7 +939,7 @@ TEST_F(JITOutputTest, ThrowsErrorOnInvalidMainSignature2) {
     }
   )";
   std::string expected_diagnostic =
-      "\x1B[1;31mcode generation error\x1B[0m: first argument of main should "
+      "\x1B[1;31mtype check error\x1B[0m: first argument of main should "
       "be of TypeInt\n  --> swa_source:2:16\n   |\n 2 |     start(argc string) "
       "int {\n   |                "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
@@ -952,7 +955,7 @@ TEST_F(JITOutputTest, ThrowsErrorOnInvalidMainSignature3) {
     }
   )";
   std::string expected_diagnostic =
-      "\x1B[1;31mcode generation error\x1B[0m: third argument of main should "
+      "\x1B[1;31mtype check error\x1B[0m: third argument of main should "
       "be a slice of strings\n  --> swa_source:2:32\n   |\n 2 |     start(a "
       "int, b []string, c string) int {\n   |                                "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
@@ -968,7 +971,7 @@ TEST_F(JITOutputTest, ThrowsErrorOnInvalidMainSignature4) {
     }
   )";
   std::string expected_diagnostic =
-      "\x1B[1;31mcode generation error\x1B[0m: main should have at most 3 "
+      "\x1B[1;31mtype check error\x1B[0m: main should have at most 3 "
       "arguments\n  --> swa_source:2:5\n   |\n 2 |     start(a int, b "
       "[]string, c []string, d int) int {\n   |     "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
@@ -995,7 +998,7 @@ TEST_F(JITOutputTest, ThrowsErrorOnInvalidMainSignature5) {
     }
   )";
   std::string expected_diagnostic =
-      "\x1B[1;31mcode generation error\x1B[0m: return value of main should be "
+      "\x1B[1;31mtype check error\x1B[0m: return value of main should be "
       "TypeInt\n  --> swa_source:2:13\n   |\n 2 |     start() string{\n   |    "
       "         "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
@@ -1003,3 +1006,138 @@ TEST_F(JITOutputTest, ThrowsErrorOnInvalidMainSignature5) {
 
   assertSwaOutput(input, expected_diagnostic);
 }
+
+TEST_F(
+    JITOutputTest,
+    Declaration_Expression_Throws_When_Value_Type_And_Data_Type_Are_Not_Equal) {
+  std::string input = R"(dialect:english;
+    start() int{
+      let x int := "10";
+      return 0;
+    }
+  )";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  --> "
+      "swa_source:3:20\n   |\n 3 |       let x int := \"10\";\n   |            "
+      "        "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Expected Int but got String\n\n";
+
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(
+    JITOutputTest,
+    Declaration_Expression_Throws_When_Value_Type_And_Data_Type_Are_Not_Equal_1) {
+  std::string input = R"(dialect:english;
+    start() int{
+      let x int := true;
+      return 0;
+    }
+  )";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  --> "
+      "swa_source:3:20\n   |\n 3 |       let x int := true;\n   |              "
+      "      "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Expected Int but got Bool\n\n";
+
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest,
+       Declaration_Expression_Throws_Cannot_Add_Number_And_String) {
+  std::string input = R"(dialect:english;
+    start() int{
+      let x int := 2 + "10";
+      return 0;
+    }
+  )";
+
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Addition error\n  --> "
+      "swa_source:3:20\n   |\n 3 |       let x int := 2 + \"10\";\n   |        "
+      "            "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Datatype Int and String cannot be used "
+      "together\n\n";
+
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest,
+       Declaration_Expression_Throws_Cannot_Add_Number_And_Boolean) {
+  std::string input = R"(dialect:english;
+    start() int{
+      let x int := 2 + true;
+      return 0;
+    }
+  )";
+
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Addition error\n  --> "
+      "swa_source:3:20\n   |\n 3 |       let x int := 2 + true;\n   |          "
+      "          "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Datatype Int and Bool cannot be used together\n\n";
+
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Declaration_Expression_Throws_Cannot_Add_Two_Strings) {
+  std::string input = R"(dialect:english;
+    start() int{
+      let x int := "2" + "4";
+      return 0;
+    }
+  )";
+
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Addition error\n  --> "
+      "swa_source:3:20\n   |\n 3 |       let x int := \"2\" + \"4\";\n   |     "
+      "               "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Adding strings is not "
+      "supported\n   | \x1B[1;36mhelp\x1B[0m: if you want to concatenate "
+      "strings use the standard library\n\n";
+
+  assertSwaOutput(input, expected_diagnostic);
+}
+TEST_F(JITOutputTest, Declaration_Expression_Throws_Cannot_Add_Two_Booleans) {
+  std::string input = R"(dialect:english;
+    start() int{
+      let x int := false + true;
+      return 0;
+    }
+  )";
+
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Addition error\n  --> "
+      "swa_source:3:20\n   |\n 3 |       let x int := false + true;\n   |      "
+      "              "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Adding booleans is not supported\n\n";
+
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+// TEST_F(
+//     JITOutputTest,
+//     Declaration_Expression_Throws_When_Value_Type_And_Data_Type_Are_Not_Equal_1)
+//     {
+//   std::string input = R"(dialect:english;
+//     start() int{
+//       let x int := true;
+//      return 0;
+//     }
+//   )";
+//
+//   std::string expected_diagnostic = "";
+//
+//   assertSwaOutput(input, expected_diagnostic);
+// }

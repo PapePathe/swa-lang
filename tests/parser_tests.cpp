@@ -18,7 +18,9 @@ std::vector<Token> getTokens(const std::string &source) {
 
 void debugTokens(std::vector<Token> tokens) {
   for (auto tok : tokens) {
-    std::cout << "TOKEN " << tok.value << " " << tokenTypeString(tok.type)
+    std::cout << "TOKEN " << tok.value << " " << tokenTypeToString(tok.type)
+              << "(" << tok.span.start.offset << "," << tok.span.end.offset
+              << ")"
               << "\n";
   }
 }
@@ -49,6 +51,7 @@ public:
   std::vector<std::unique_ptr<Expr>> PARSE_PROGRAM(const std::string &input,
                                                    size_t expectedCount) {
     auto tokens = getTokens(input);
+    // debugTokens(tokens);
     Parser parser(tokens);
     auto program = parser.parseProgram();
 
@@ -738,6 +741,45 @@ TEST_F(ParserTests, MissingSemiColonAfterVariableDecl) {
   AssertParserError(input,
                     "expected variable declaration to end with a semicolon", "",
                     13, 15);
+}
+
+TEST_F(ParserTests, Add_Expr_Span) {
+  std::string input = R"(2 + "10")";
+  auto stmts = PARSE_PROGRAM(input, 1);
+
+  auto decl = dynamic_cast<AddExpr *>(stmts[0].get());
+  ASSERT_NE(decl, nullptr);
+
+  EXPECT_EQ(decl->span.start.offset, 0);
+  EXPECT_EQ(decl->span.end.offset, 8);
+}
+
+TEST_F(ParserTests, Declaration_Expr_Span) {
+  std::string input = R"(
+dialect:english;
+start() int{
+  let x int := 2 + "10";
+  return 0;
+}
+  )";
+
+  auto stmts = PARSE_PROGRAM(input, 1);
+  auto *func = dynamic_cast<FuncExpr *>(stmts[0].get());
+  auto *decl = dynamic_cast<DeclarationExpr *>(func->Body->Exprs[0].get());
+  auto *add = dynamic_cast<AddExpr *>(decl->Value.get());
+
+  ASSERT_NE(func, nullptr);
+  ASSERT_NE(decl, nullptr);
+  ASSERT_NE(add, nullptr);
+
+  EXPECT_EQ(func->span.start.offset, 18);
+  EXPECT_EQ(func->span.end.offset, 69);
+
+  EXPECT_EQ(decl->span.start.offset, 33);
+  EXPECT_EQ(decl->span.end.offset, 55);
+
+  EXPECT_EQ(add->span.start.offset, 46);
+  EXPECT_EQ(add->span.end.offset, 54);
 }
 
 TEST_F(ParserTests, Function_Span_Verification) {

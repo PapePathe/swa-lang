@@ -316,22 +316,25 @@ std::vector<std::string> CodeGenVisitor::visitTestExpressions(
   return testNames;
 }
 
+// FIXME we should remove MainExpr
 void CodeGenVisitor::Visit(MainExpr *expr) {
-  codegenvisittrace("start main");
-
-  std::string funcName = "main";
-  if (driver->TestMode) {
-    funcName = "user_main";
-  }
-
-  auto proto = std::make_unique<ProtoExpr>(funcName, std::vector<std::string>(),
-                                           std::vector<std::unique_ptr<Type>>(),
-                                           std::unique_ptr<Type>());
-  auto fn = std::make_unique<FuncExpr>(std::move(proto), std::move(expr->Body));
-
-  fn->Accept(*this);
-
-  codegenvisittrace("finish main");
+  //  codegenvisittrace("start main");
+  //
+  //  std::string funcName = "main";
+  //  if (driver->TestMode) {
+  //    funcName = "user_main";
+  //  }
+  //
+  //  auto proto = std::make_unique<ProtoExpr>(funcName,
+  //  std::vector<std::string>(),
+  //                                           std::vector<std::unique_ptr<Type>>(),
+  //                                           std::unique_ptr<Type>());
+  //  auto fn = std::make_unique<FuncExpr>(std::move(proto),
+  //  std::move(expr->Body));
+  //
+  //  fn->Accept(*this);
+  //
+  //  codegenvisittrace("finish main");
 }
 
 void CodeGenVisitor::Visit(MulExpr *expr) {
