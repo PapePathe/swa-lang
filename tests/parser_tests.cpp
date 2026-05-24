@@ -1,5 +1,7 @@
 #include "ast/node.h"
 #include "lexer/lexer.h"
+#include "parser/exception.h"
+#include <cstddef>
 #include <exception>
 #include <gtest/gtest.h>
 #include <iostream>
@@ -173,7 +175,7 @@ TEST_F(ParserTests, ParseEmptyPrintStatement) {
   auto tokens = getTokens(input);
   Parser parser(tokens);
 
-  ASSERT_THROW(parser.parseProgram(), std::runtime_error);
+  ASSERT_THROW(parser.parseProgram(), ParserException);
 }
 
 TEST_F(ParserTests, ParseEmptyPrintFStatement) {
@@ -181,7 +183,7 @@ TEST_F(ParserTests, ParseEmptyPrintFStatement) {
   auto tokens = getTokens(input);
   Parser parser(tokens);
 
-  ASSERT_THROW(parser.parseProgram(), std::runtime_error);
+  ASSERT_THROW(parser.parseProgram(), ParserException);
 }
 
 TEST_F(ParserTests, ParseInvalidPrintFStatement) {
@@ -189,7 +191,7 @@ TEST_F(ParserTests, ParseInvalidPrintFStatement) {
   auto tokens = getTokens(input);
   Parser parser(tokens);
 
-  ASSERT_THROW(parser.parseProgram(), std::runtime_error);
+  ASSERT_THROW(parser.parseProgram(), ParserException);
 }
 
 TEST_F(ParserTests, ParsePrintFStatement) {

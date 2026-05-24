@@ -20,8 +20,9 @@ Token Parser::current() {
 Token Parser::previous() { return tokens[pos - 1]; }
 Token Parser::expect(TokenType type) {
   if (isAtEnd()) {
-    throw std::runtime_error("Unexpected end of file. Expected: " +
-                             std::to_string((int)type) + " " + current().value);
+    throw ParserException("Unexpected end of file. Expected: " +
+                              std::to_string((int)type) + " " + current().value,
+                          current().span);
   }
 
   if (current().type == type) {
@@ -35,8 +36,9 @@ Token Parser::expect(
     TokenType type,
     std::function<ParserException(Span errorSpan)> errorHandler) {
   if (isAtEnd()) {
-    throw std::runtime_error("Unexpected end of file. Expected: " +
-                             std::to_string((int)type) + " " + current().value);
+    throw ParserException("Unexpected end of file. Expected: " +
+                              std::to_string((int)type) + " " + current().value,
+                          current().span);
   }
 
   if (current().type == type) {
@@ -236,9 +238,8 @@ std::unique_ptr<Expr> Parser::parseAsserts() {
   }
 
   default:
-    throw std::runtime_error("unknown assertion for token ");
+    throw ParserException("unknown assertion for token ", current().span);
   }
-  throw std::runtime_error("unknown assertion for token ");
 }
 
 void Parser::parseTest() {
@@ -253,10 +254,6 @@ void Parser::parseTest() {
 }
 
 std::unique_ptr<Expr> Parser::parseFunctionCall(std::unique_ptr<Expr> callee) {
-  if (callee->span.end.offset == 0) {
-    throw std::runtime_error("Parser Error: parseFunctionCall received a "
-                             "callee with a zero end span!");
-  }
   auto span = callee->span;
   auto tok = expect(TokenType::OPEN_PAREN);
 
@@ -399,14 +396,14 @@ std::unique_ptr<Expr> Parser::parsePrintFormatted() {
   span.end = lasttok.span.end;
 
   if (values.size() == 0) {
-    throw std::runtime_error(
-        "formatted print expr should have at least one value");
+    throw ParserException("formatted print expr should have at least one value",
+                          span);
   }
 
   auto format = dynamic_cast<StrExpr *>(values[0].get());
   if (format == nullptr) {
-    throw std::runtime_error(
-        "First arg to formatted print expr should be a string");
+    throw ParserException(
+        "First arg to formatted print expr should be a string", span);
   }
 
   return std::make_unique<Formatted_Print_Expr>(std::move(values), span);
@@ -435,8 +432,8 @@ std::unique_ptr<Expr> Parser::parsePrint() {
   span.end = lasttok.span.end;
 
   if (values.size() == 0) {
-    throw std::runtime_error(
-        "formatted print expr should have at least one value");
+    throw ParserException("formatted print expr should have at least one value",
+                          span);
   }
 
   return std::make_unique<PrintExpr>(std::move(values), span);
@@ -615,18 +612,9 @@ std::unique_ptr<Expr> Parser::parseDeclaration() {
 std::unique_ptr<Expr> Parser::createBinaryNode(TokenType op,
                                                std::unique_ptr<Expr> left,
                                                std::unique_ptr<Expr> right) {
-  //  auto span = left->span;
-  //  span.end = right->span.end;
   Span span;
   span.start = left->span.start;
   span.end = right->span.end;
-
-  // SAFETY CHECK:
-  if (span.end.offset < span.start.offset) {
-    throw std::runtime_error(
-        "INVALID SPAN CREATED: " + std::to_string(span.start.offset) + " to " +
-        std::to_string(span.end.offset));
-  }
 
   switch (op) {
   case TokenType::PLUS:
@@ -654,8 +642,9 @@ std::unique_ptr<Expr> Parser::createBinaryNode(TokenType op,
     return std::make_unique<Logical_Or_Expr>(std::move(left), std::move(right),
                                              span);
   default:
-    throw std::runtime_error("Unknown operator in expression `" +
-                             current().value + "`");
+    throw ParserException("Unknown operator in expression `" + current().value +
+                              "`",
+                          current().span);
   }
 }
 
@@ -714,7 +703,8 @@ std::unique_ptr<Expr> Parser::parseExpression(int minPrecedence) {
   }
 
   if (!left) {
-    throw std::runtime_error("left is a nullptr " + current().value);
+    throw ParserException("left is a nullptr " + current().value,
+                          current().span);
   }
 
   return left;
