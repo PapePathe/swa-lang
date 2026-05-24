@@ -376,3 +376,10 @@ public:
 
   void Accept(ASTVisitor &visitor) override { visitor.Visit(this); }
 };
+
+struct Array_Init_Expr : public Expr {
+  std::vector<std::unique_ptr<Expr>> Elements;
+  void Accept(ASTVisitor &visitor) override {}
+  Array_Init_Expr(std::vector<std::unique_ptr<Expr>> e, Span s)
+      : Elements(std::move(e)), Expr(s) {}
+};

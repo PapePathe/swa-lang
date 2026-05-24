@@ -315,12 +315,38 @@ std::unique_ptr<Expr> Parser::parsePrimary() {
     return expr;
   }
 
+  if (current().type == TokenType::OPEN_BRACKET) {
+    return parseArrayInitExpr();
+  }
+
   if (isAtEnd()) {
     return nullptr;
   }
 
   throw ParserException("Expected expression but got " + current().value,
                         current().span, "", "");
+}
+
+std::unique_ptr<Expr> Parser::parseArrayInitExpr() {
+  auto span = expect(TokenType::OPEN_BRACKET).span;
+  std::vector<std::unique_ptr<Expr>> elements;
+
+  while (current().type != TokenType::CLOSE_BRACKET && !isAtEnd()) {
+    auto element = parseExpression(0);
+    elements.push_back(std::move(element));
+
+    if (current().type == TokenType::COMMA) {
+      expect(TokenType::COMMA);
+    } else if (current().type != TokenType::CLOSE_BRACKET) {
+      throw ParserException("Expected comma or ']' in array initializer",
+                            current().span);
+    }
+  }
+
+  auto lasttok = expect(TokenType::CLOSE_BRACKET);
+  span.end = lasttok.span.end;
+
+  return std::make_unique<Array_Init_Expr>(std::move(elements), span);
 }
 
 void Parser::parseDialect() {
