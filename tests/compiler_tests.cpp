@@ -1104,27 +1104,25 @@ TEST_F(JITOutputTest, Error_VariableTypeMismatch) {
 TEST_F(JITOutputTest, Error_IntMultiplyString) {
   std::string input = "let x int := 10 * \"5\";";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in multiplication\n  "
-      "--> swa_source:1:14\n   |\n 1 | let x int := 10 * \"5\";\n   |          "
-      "    "
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in division \n  --> "
+      "swa_source:1:14\n   |\n 1 | let x int := 10 * \"5\";\n   |              "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Cannot multiply variable of type Int with a value "
-      "of type String\n\n";
+      "0m\x1B[1;31m^\x1B[0m Cannot '*' variable of type Int with a value of "
+      "type String\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
 
 TEST_F(JITOutputTest, Error_BoolDivideInt) {
   std::string input = "let x int := true / 2;";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in division\n  --> "
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in  \n  --> "
       "swa_source:1:14\n   |\n 1 | let x int := true / 2;\n   |              "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Cannot divide variable of type Bool with a value "
-      "of type Int\n\n\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  "
-      "--> swa_source:1:14\n   |\n 1 | let x int := true / 2;\n   |            "
-      "  "
+      "0m\x1B[1;31m^\x1B[0m Cannot '/' variable of type Bool with a value of "
+      "type Int\n\n\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  --> "
+      "swa_source:1:14\n   |\n 1 | let x int := true / 2;\n   |              "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m Expected Int but got Bool\n\n";
@@ -1134,14 +1132,14 @@ TEST_F(JITOutputTest, Error_BoolDivideInt) {
 TEST_F(JITOutputTest, Error_ComplexNestedArithmeticMismatch) {
   std::string input = "let x int := (5 * (10 - 2)) + (\"invalid\" / 2);";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in division\n  --> "
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in  \n  --> "
       "swa_source:1:31\n   |\n 1 | let x int := (5 * (10 - 2)) + (\"invalid\" "
       "/ 2);\n   |                               "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m Cannot divide variable of type String with a value of type "
+      "0m Cannot '/' variable of type String with a value of type "
       "Int\n\n\x1B[1;31mtype check error\x1B[0m: Type mismatch in addition \n  "
       "--> swa_source:1:14\n   |\n 1 | let x int := (5 * (10 - 2)) + "
       "(\"invalid\" / 2);\n   |              "
@@ -1167,7 +1165,7 @@ TEST_F(JITOutputTest, Error_AssignBoolToString) {
       "0m\x1B[1;31m^\x1B[0m Expected String but got Bool\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
-// 1. Operator Precedence/Grouping Errors
+// Operator Precedence/Grouping Errors
 // Tests if the compiler correctly types the intermediate result of a
 // sub-expression
 TEST_F(JITOutputTest, Error_OperatorPrecedenceMismatch) {
@@ -1175,17 +1173,17 @@ TEST_F(JITOutputTest, Error_OperatorPrecedenceMismatch) {
   // multiplication
   std::string input = "let x int := 10 + 20 * \"3\";";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in multiplication\n  "
-      "--> swa_source:1:19\n   |\n 1 | let x int := 10 + 20 * \"3\";\n   |     "
-      "              "
-      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Cannot multiply variable of type Int with a value "
-      "of type String\n\n";
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in division "
+      "\n  --> swa_source:1:19\n   |\n 1 | let x int := 10 + 20 * "
+      "\"3\";\n   |                   "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;"
+      "31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^"
+      "\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot '*' "
+      "variable of type Int with a value of type String\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
 
-// 2. Type "Shadowing" / Variable Drift
+// Type "Shadowing" / Variable Drift
 // Tests if the compiler resolves the type of a variable correctly within a
 // nested scope
 TEST_F(JITOutputTest, Error_VariableTypeDrift) {
@@ -1202,7 +1200,7 @@ TEST_F(JITOutputTest, Error_VariableTypeDrift) {
   assertSwaOutput(input, expected_diagnostic);
 }
 
-// 3. Chain of Operation Failure
+// Chain of Operation Failure
 // Errors often occur at the "leaf" of a complex tree; this ensures the error
 // bubbles up
 TEST_F(JITOutputTest, Error_DeepExpressionTypeCollision) {
@@ -1220,21 +1218,21 @@ TEST_F(JITOutputTest, Error_DeepExpressionTypeCollision) {
   assertSwaOutput(input, expected_diagnostic);
 }
 
-// 5. Mixed Arithmetic/Boolean Logic
+// Mixed Arithmetic/Boolean Logic
 // A classic "logical error" where a user mixes up numeric comparison and
 // boolean logic
 TEST_F(JITOutputTest, Error_BooleanNumericMixedOp) {
   std::string input =
       "let a int := 5; let b bool := true; let res int := a + (b * 10);";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in multiplication\n  "
-      "--> swa_source:1:56\n   |\n 1 | let a int := 5; let b bool := true; let "
-      "res int := a + (b * 10);\n   |                                          "
-      "              "
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in division \n  --> "
+      "swa_source:1:56\n   |\n 1 | let a int := 5; let b bool := true; let res "
+      "int := a + (b * 10);\n   |                                              "
+      "          "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Cannot multiply variable of type Bool with a value "
-      "of type Int\n\n\x1B[1;31mtype check error\x1B[0m: Type mismatch in "
+      "0m\x1B[1;31m^\x1B[0m Cannot '*' variable of type Bool with a value of "
+      "type Int\n\n\x1B[1;31mtype check error\x1B[0m: Type mismatch in "
       "addition \n  --> swa_source:1:52\n   |\n 1 | let a int := 5; let b bool "
       ":= true; let res int := a + (b * 10);\n   |                             "
       "                       "
@@ -1246,7 +1244,7 @@ TEST_F(JITOutputTest, Error_BooleanNumericMixedOp) {
   assertSwaOutput(input, expected_diagnostic);
 }
 
-// 6. Implicit Type Conversion Attempt
+//  Implicit Type Conversion Attempt
 // Modern compilers are strict; this tests the rejection of "loose" coding
 // styles
 TEST_F(JITOutputTest, Error_StringAdditionAttempt) {
@@ -1270,11 +1268,11 @@ TEST_F(JITOutputTest, Error_StringAdditionAttempt) {
 TEST_F(JITOutputTest, Error_MultiplyStringWithInt) {
   std::string input = "let x string := \"hello\"; let y int := x * 5;";
   std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in multiplication\n  "
-      "--> swa_source:1:39\n   |\n 1 | let x string := \"hello\"; let y int := "
-      "x * 5;\n   |                                       "
+      "\x1B[1;31mtype check error\x1B[0m: Type mismatch in division \n  --> "
+      "swa_source:1:39\n   |\n 1 | let x string := \"hello\"; let y int := x * "
+      "5;\n   |                                       "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot multiply variable of type "
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Cannot '*' variable of type "
       "String with a value of type Int\n\n\x1B[1;31mtype check error\x1B[0m: "
       "Incompatible type\n  --> swa_source:1:39\n   |\n 1 | let x string := "
       "\"hello\"; let y int := x * 5;\n   |                                    "
@@ -1292,7 +1290,7 @@ TEST_F(JITOutputTest, Error_DivideBoolWithBool) {
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m The '/' operator cannot be applied to type "
+      "0m\x1B[1;31m^\x1B[0m The '/'  operator cannot be applied to type "
       "'Bool'.\n   | \x1B[1;36mhelp\x1B[0m: Consider using logical operators "
       "like '&&' or '||' if you intended to perform a logical operation.\n\n";
   assertSwaOutput(input, expected_diagnostic);
@@ -1586,7 +1584,7 @@ start() int {
   assertSwaOutput(input, expected_diagnostic);
 }
 
-// 1. Error: Comparing String and Int
+//  Error: Comparing String and Int
 // A classic error: programmers often forget to parse a string before comparing
 // it to an int.
 TEST_F(JITOutputTest, Error_CompareStringAndInt) {
@@ -1603,7 +1601,7 @@ TEST_F(JITOutputTest, Error_CompareStringAndInt) {
   assertSwaOutput(input, expected_diagnostic);
 }
 
-// 2. Error: Using comparison operators on Booleans
+//  Error: Using comparison operators on Booleans
 // While some languages allow this (false < true), strict compilers often
 // prevent it.
 TEST_F(JITOutputTest, Error_CompareBooleansWithOperators) {
@@ -1620,7 +1618,7 @@ TEST_F(JITOutputTest, Error_CompareBooleansWithOperators) {
   assertSwaOutput(input, expected_diagnostic);
 }
 
-// 4. Error: Comparing result of a math expression to a String
+//  Error: Comparing result of a math expression to a String
 TEST_F(JITOutputTest, Error_CompareMathResultToString) {
   std::string input = R"(
         dialect:english;
@@ -1634,7 +1632,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
   assertSwaOutput(input, expected_diagnostic);
 }
 
-// 3. Error: String inequality check
+//  Error: String inequality check
 // Ensure that the compiler rejects comparison between incompatible types even
 // in inequality.
 // TEST_F(JITOutputTest, Error_InequalityStringBool) {
@@ -1703,7 +1701,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, expected_diagnostic);
 // }
 
-// 4. Invalid Identity/Self-Assignment
+//  Invalid Identity/Self-Assignment
 // Ensuring the compiler prevents operating on an uninitialized or wrong-type
 // self-reference
 // TEST_F(JITOutputTest, Error_CircularTypeDependency) {
@@ -1795,7 +1793,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, expected_diagnostic);
 // }
 
-// // 2. Error: Argument count mismatch (too few)
+// //  Error: Argument count mismatch (too few)
 // TEST_F(JITOutputTest, Error_Call_TooFewArguments) {
 //   std::string input = R"(
 //         dialect:english;
@@ -1809,7 +1807,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, expected_diagnostic);
 // }
 //
-// // 3. Error: Argument count mismatch (too many)
+// //  Error: Argument count mismatch (too many)
 // TEST_F(JITOutputTest, Error_Call_TooManyArguments) {
 //   std::string input = R"(
 //         dialect:english;
@@ -1822,7 +1820,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, "Error: Argument count mismatch for 'calculate'");
 // }
 //
-// // 4. Error: Argument type mismatch
+// //  Error: Argument type mismatch
 // TEST_F(JITOutputTest, Error_Call_ArgumentTypeMismatch) {
 //   std::string input = R"(
 //         dialect:english;
@@ -1835,7 +1833,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, "Error: Type mismatch in argument for 'log'");
 // }
 //
-// // 5. Error: Type mismatch in nested function call
+// //  Error: Type mismatch in nested function call
 // TEST_F(JITOutputTest, Error_Call_NestedArgumentMismatch) {
 //   std::string input = R"(
 //         dialect:english;
@@ -1849,7 +1847,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, "Error: Type mismatch in argument for 'process'");
 // }
 //
-// // 6. Error: Function return type mismatch in assignment
+// //  Error: Function return type mismatch in assignment
 // TEST_F(JITOutputTest, Error_Call_AssignmentTypeMismatch) {
 //   std::string input = R"(
 //         dialect:english;
@@ -1875,7 +1873,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //     )";
 //   assertSwaOutput(input, "Error: Cannot perform '+' on String and Int");
 // }
-// // 1. Error: Function call on a non-callable identifier
+// //  Error: Function call on a non-callable identifier
 // // Prevents treating a variable as a function (common in languages with
 // // first-class functions)
 // TEST_F(JITOutputTest, Error_Call_IdentifierIsNotFunction) {
@@ -1890,7 +1888,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, "Error: Identifier 'x' is not a function");
 // }
 //
-// // 2. Error: Shadowing an existing function with a variable
+// //  Error: Shadowing an existing function with a variable
 // // Ensures the compiler detects name collisions between scopes and function
 // // tables
 // TEST_F(JITOutputTest, Error_Call_ShadowedFunction) {
@@ -1906,7 +1904,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //                   "Error: Identifier 'foo' is a variable, not a function");
 // }
 //
-// // 3. Error: Recursive call with incorrect return type propagation
+// //  Error: Recursive call with incorrect return type propagation
 // // Validates that the return type is checked against the *declaration*, not
 // the
 // // incomplete body
@@ -1922,7 +1920,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, "Error: Cannot perform '+' on Int and String");
 // }
 //
-// // 4. Error: Argument expression with side effects/type drift
+// //  Error: Argument expression with side effects/type drift
 // // Verifies that type inference doesn't drift when multiple operations are
 // // involved
 // TEST_F(JITOutputTest, Error_Call_ComplexTypeDrift) {
@@ -1937,7 +1935,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, "Error: Cannot perform '+' on Int and String");
 // }
 //
-// // 5. Error: Attempting to call a function defined in a deeper scope
+// //  Error: Attempting to call a function defined in a deeper scope
 // // Validates that lexical scoping prevents calling functions defined inside
 // // other blocks
 // TEST_F(JITOutputTest, Error_Call_ScopeVisibility) {
@@ -1954,7 +1952,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, "Error: Function 'hidden' is undefined");
 // }
 //
-// // 6. Error: Recursive depth/Invalid base case logic
+// //  Error: Recursive depth/Invalid base case logic
 // // Verifies that the compiler enforces return type consistency across all
 // // branches
 // TEST_F(JITOutputTest, Error_Call_InconsistentReturnTypes) {
@@ -1970,7 +1968,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   Int");
 // }
 //
-// // 1. Error: Identifier name collision between parameter and function
+//  Error: Identifier name collision between parameter and function
 // // Validates that parameter names do not accidentally "hijack" function
 // // resolution.
 // TEST_F(JITOutputTest, Error_Call_ParameterShadowsFunction) {
@@ -1988,7 +1986,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //       input, "Error: Identifier 'calculate' is a variable, not a function");
 // }
 //
-// // 2. Error: Void-like function return value assignment
+// //  Error: Void-like function return value assignment
 // // If your language supports functions that don't return values (or you plan
 // // to), ensure you cannot assign a 'void' result to a typed variable.
 // TEST_F(JITOutputTest, Error_Call_AssignVoidToVariable) {
@@ -2004,7 +2002,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   value");
 // }
 //
-// // 3. Error: Circular dependency in type inference
+// //  Error: Circular dependency in type inference
 // // This checks for the "infinite loop" potential when an argument's type
 // depends
 // // on the function call itself, which in turn depends on the argument.
@@ -2021,7 +2019,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //                   "Error: Recursive dependency in type inference for 'x'");
 // }
 //
-// // 4. Error: Calling a function within its own default parameter (if you
+// //  Error: Calling a function within its own default parameter (if you
 // expand
 // // syntax) Or simply passing an uninitialized variable into a function.
 // TEST_F(JITOutputTest, Error_Call_UninitializedArgument) {
@@ -2036,7 +2034,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, "Error: Variable 'x' used before initialization");
 // }
 //
-// // 5. Error: Expression result as function name
+// //  Error: Expression result as function name
 // // Modern parsers should prevent an expression (like a variable or logic)
 // from
 // // being evaluated as a function pointer unless the language explicitly
@@ -2054,7 +2052,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, "Error: 'op' is not a callable function");
 // }
 //
-// // 6. Error: Argument count mismatch with variadic-like signatures
+// //  Error: Argument count mismatch with variadic-like signatures
 // // If your language doesn't support them, ensure it explicitly rejects
 // trailing
 // // commas or extra arguments that mimic variadic calls.
@@ -2070,7 +2068,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, "Error: Unexpected token in argument list");
 // }
 //
-// // 1. Error: Function call on a primitive literal
+//  Error: Function call on a primitive literal
 // // Prevents treating a literal value as a function, similar to GCC's
 // diagnostic
 // // when someone writes 10(5) instead of 10 * 5.
@@ -2085,7 +2083,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, "Error: '10' is not a function");
 // }
 //
-// // 2. Error: Argument expression is a function that returns void
+// //  Error: Argument expression is a function that returns void
 // // Ensures that you cannot use the return value of a void function in an
 // // argument expression.
 // TEST_F(JITOutputTest, Error_Call_PassingVoidResult) {
@@ -2101,7 +2099,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, "Error: Cannot pass void result to function");
 // }
 //
-// // 3. Error: Function call name collision with built-in or keyword (if
+// //  Error: Function call name collision with built-in or keyword (if
 // // applicable) Tests if your scope resolution correctly prioritizes
 // user-defined
 // // functions over local variables that share names.
@@ -2118,7 +2116,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input,
 //                   "Error: Identifier 'test' is a variable, not a function");
 // }
-// // 5. Error: Type mismatch via implicit narrowing (if you support Float/Int)
+// //  Error: Type mismatch via implicit narrowing (if you support Float/Int)
 // // If you eventually support multiple numeric types, ensure you don't allow
 // // implicit narrowing if your language policy is strict.
 // TEST_F(JITOutputTest, Error_Call_NarrowingConversion) {
@@ -2134,7 +2132,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, "Error: Cannot pass Float to function expecting
 //   Int");
 // }
-// // 6. Error: Recursive call in global scope (if prohibited)
+// //  Error: Recursive call in global scope (if prohibited)
 // // Some compilers strictly enforce that global-level expressions must be
 // // constants.
 // TEST_F(JITOutputTest, Error_Call_IllegalGlobalCall) {
@@ -2146,7 +2144,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //     )";
 //   assertSwaOutput(input, "Error: Global initializers must be constant");
 // }
-// // 1. Error: Function call as an L-Value
+// // Error: Function call as an L-Value
 // // Prevents the compiler from trying to assign a value to the *result* of a
 // // function call.
 // TEST_F(JITOutputTest, Error_Call_AssignmentToResult) {
@@ -2161,7 +2159,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, "Error: Expression is not assignable");
 // }
 //
-// // 2. Error: Type mismatch with unary negation inside call
+// //  Error: Type mismatch with unary negation inside call
 // // Ensures the visitor correctly resolves the unary operator's type before
 // // passing it to the function.
 // TEST_F(JITOutputTest, Error_Call_NegatedTypeMismatch) {
@@ -2178,7 +2176,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   'String'");
 // }
 //
-// // 3. Error: Function identifier conflict with keyword
+// //  Error: Function identifier conflict with keyword
 // // Prevents naming functions after internal keywords or reserved symbols.
 // TEST_F(JITOutputTest, Error_Call_KeywordAsFunctionName) {
 //   std::string input = R"(
@@ -2191,7 +2189,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //                   identifier");
 // }
 //
-// // 4. Error: Argument count with potential "default" value ambiguity
+// //  Error: Argument count with potential "default" value ambiguity
 // // Tests if your parser/checker incorrectly assumes existence of default
 // params. TEST_F(JITOutputTest, Error_Call_ExplicitArityViolation) {
 //   std::string input = R"(
@@ -2205,7 +2203,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //   assertSwaOutput(input, "Error: Argument count mismatch for 'add'");
 // }
 //
-// // 5. Error: Call within a condition expression of an `if` block
+// //  Error: Call within a condition expression of an `if` block
 // // Ensures that the boolean-only requirement for `if` conditions propagates
 // // through the function's return type.
 // TEST_F(JITOutputTest, Error_Call_InvalidReturnTypeInIf) {
@@ -2222,7 +2220,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //                   'Int'");
 // }
 //
-// // 6. Error: Recursive call exceeding scope definition
+// //  Error: Recursive call exceeding scope definition
 // // Validates that the return type of a recursive function is fixed by the
 // // *first* declaration, and mismatches in the body are caught.
 // TEST_F(JITOutputTest, Error_Call_RecursiveBodyMismatch) {
@@ -2236,7 +2234,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //     )";
 //   assertSwaOutput(input, "Error: Cannot perform '+' on Int and String");
 // }
-// // 2. Error: Argument-Dependent Resolution Failure
+// //  Error: Argument-Dependent Resolution Failure
 // // Tests that your lookup doesn't accidentally pick up a function from a
 // child
 // // scope when the function is called in the parent scope.
@@ -2253,7 +2251,7 @@ TEST_F(JITOutputTest, Error_CompareMathResultToString) {
 //     )";
 //   assertSwaOutput(input, "Error: Function 'local_func' is undefined");
 // }
-// // 6. Error: Recursive Call with Mismatched Argument Count
+// //  Error: Recursive Call with Mismatched Argument Count
 // // Ensures that the recursive call is checked against the prototype, not the
 // // call site.
 // TEST_F(JITOutputTest, Error_Call_RecursiveArity) {

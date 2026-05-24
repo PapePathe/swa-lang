@@ -1,10 +1,10 @@
-#include "ast/type.h"
-#include "compiler/codegen.h"
-#include "parser/exception.h"
 #include <ast/symboltable.h>
+#include <ast/type.h>
 #include <ast/visitor.h>
+#include <compiler/codegen.h>
 #include <compiler/compiler.h>
 #include <compiler/typechecker.h>
+#include <parser/exception.h>
 
 #include <llvm/IR/Constant.h>
 #include <llvm/IR/Constants.h>
@@ -95,38 +95,7 @@ void TypeCheckVisitor::Visit(DeclarationExpr *expr) {
 }
 
 void TypeCheckVisitor::Visit(DivExpr *expr) {
-  expr->Left->Accept(*this);
-  expr->Right->Accept(*this);
-
-  if (!expr->Left->datatype->IsEqual(expr->Right->datatype.get())) {
-    auto err = CodeGenException(
-        "Type mismatch in division", expr->span,
-        "Cannot divide variable of type " + expr->Left->datatype->GetName() +
-            " with a value of type " + expr->Right->datatype->GetName() + "");
-    errors.push_back(err);
-  }
-
-  if (expr->Left->datatype->GetKind() == TypeKind::String &&
-      expr->Right->datatype->GetKind() == TypeKind::String) {
-    std::string msg = "Operator '/' is not supported for types '" +
-                      expr->Left->datatype->GetName() + "' and '" +
-                      expr->Right->datatype->GetName() + "'.";
-
-    auto err = CodeGenException("Invalid Operation", expr->span, msg,
-                                "Check your types or use the appropriate "
-                                "library function for this operation.");
-    errors.push_back(err);
-  }
-
-  if (expr->Left->datatype->GetKind() == TypeKind::Bool &&
-      expr->Right->datatype->GetKind() == TypeKind::Bool) {
-    auto err =
-        CodeGenException("Type Error", expr->span,
-                         "The '/' operator cannot be applied to type 'Bool'.",
-                         "Consider using logical operators like '&&' or '||' "
-                         "if you intended to perform a logical operation.");
-    errors.push_back(err);
-  }
+  ValidateArithmetic(expr->Left, expr->Right, expr->span, "/");
 
   expr->datatype = expr->Left->datatype->Clone();
 }
@@ -200,39 +169,7 @@ void TypeCheckVisitor::Visit(FuncExpr *expr) {
 }
 void TypeCheckVisitor::Visit(MainExpr *expr) {}
 void TypeCheckVisitor::Visit(MulExpr *expr) {
-  expr->Left->Accept(*this);
-  expr->Right->Accept(*this);
-
-  if (!expr->Left->datatype->IsEqual(expr->Right->datatype.get())) {
-    auto err = CodeGenException(
-        "Type mismatch in multiplication", expr->span,
-        "Cannot multiply variable of type " + expr->Left->datatype->GetName() +
-            " with a value of type " + expr->Right->datatype->GetName(),
-        "");
-    errors.push_back(err);
-  }
-
-  if (expr->Left->datatype->GetKind() == TypeKind::String &&
-      expr->Right->datatype->GetKind() == TypeKind::String) {
-    std::string msg = "Operator '*' is not supported for types '" +
-                      expr->Left->datatype->GetName() + "' and '" +
-                      expr->Right->datatype->GetName() + "'.";
-
-    auto err = CodeGenException("Invalid Operation", expr->span, msg,
-                                "Check your types or use the appropriate "
-                                "library function for this operation.");
-    errors.push_back(err);
-  }
-
-  if (expr->Left->datatype->GetKind() == TypeKind::Bool &&
-      expr->Right->datatype->GetKind() == TypeKind::Bool) {
-    auto err =
-        CodeGenException("Type Error", expr->span,
-                         "The '*' operator cannot be applied to type 'Bool'.",
-                         "Consider using logical operators like '&&' or '||' "
-                         "if you intended to perform a logical operation.");
-    errors.push_back(err);
-  }
+  ValidateArithmetic(expr->Left, expr->Right, expr->span, "*");
 
   expr->datatype = expr->Left->datatype->Clone();
 }
