@@ -1,3 +1,4 @@
+#include "ast/type.h"
 #include <ast/symboltable.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
@@ -6,6 +7,20 @@
 
 void SymbolTable::define(const std::string &name, llvm::Value *val) {
   Symbols[name] = val;
+}
+
+void SymbolTable::define(const std::string &name, Type *val) {
+  SwaSymbols[name] = val;
+}
+
+Type *SymbolTable::lookupSwaSymbol(const std::string &name) {
+  if (SwaSymbols.count(name)) {
+    return SwaSymbols[name];
+  }
+  if (Parent) {
+    return Parent->lookupSwaSymbol(name);
+  }
+  return nullptr;
 }
 
 llvm::Value *SymbolTable::lookup(const std::string &name) {
