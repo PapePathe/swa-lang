@@ -50,6 +50,24 @@ public:
     EXPECT_EQ(casted->Name, expected);
   }
 
+  DeclarationExpr *ASSERT_EXPR_DECL(Expr *node, std::string expected) {
+    EXPECT_NE(node, nullptr);
+    auto *casted = dynamic_cast<DeclarationExpr *>(node);
+    EXPECT_NE(casted, nullptr) << "Node is not a DeclarationExpr";
+    EXPECT_EQ(casted->Name, expected);
+
+    return casted;
+  }
+
+  Array_Init_Expr *ASSERT_EXPR_ARRAY(Expr *node, size_t elementsCount) {
+    EXPECT_NE(node, nullptr);
+    auto *casted = dynamic_cast<Array_Init_Expr *>(node);
+    EXPECT_NE(casted, nullptr) << "Node is not a Array_Init_Expr";
+    EXPECT_EQ(casted->Elements.size(), elementsCount);
+
+    return casted;
+  }
+
   std::vector<std::unique_ptr<Expr>> PARSE_PROGRAM(const std::string &input,
                                                    size_t expectedCount) {
     auto tokens = getTokens(input);
@@ -857,4 +875,16 @@ TEST_F(ParserTests, Function_Span_Verification) {
   // Enforce true boundary encapsulation for trailing nodes
   ASSERT_EQ(startNode->span.start.offset, 106); // "start() int ..."
   ASSERT_EQ(startNode->span.end.offset, 141);   // "}"
+}
+
+TEST_F(ParserTests, Array_Init) {
+  std::string input = "let arr [3)int := [1, 2, 3];";
+  auto stmts = PARSE_PROGRAM(input, 1);
+
+  auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
+  auto value = ASSERT_EXPR_ARRAY(node->Value.get(), 3);
+
+  ASSERT_EXPR_NUMBER(value->Elements[0].get(), 1);
+  ASSERT_EXPR_NUMBER(value->Elements[1].get(), 2);
+  ASSERT_EXPR_NUMBER(value->Elements[2].get(), 3);
 }

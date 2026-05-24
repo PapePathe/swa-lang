@@ -28,9 +28,11 @@ public:
 
 private:
   std::vector<std::unique_ptr<Test_Expr>> tests;
+
   void trace(std::string msg);
   void debug(std::string msg);
   void parseDialect();
+  std::unique_ptr<Expr> parseArrayInitExpr();
   std::unique_ptr<Expr> parseStatement();
   std::unique_ptr<Expr> parsePrimary();
   std::unique_ptr<Expr> parseIf();
