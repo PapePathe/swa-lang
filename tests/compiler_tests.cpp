@@ -1012,72 +1012,55 @@ TEST_F(
     Declaration_Expression_Throws_When_Value_Type_And_Data_Type_Are_Not_Equal) {
   std::string input = R"(dialect:english;
     start() int{
-      let x int := "10";
+      let a int    := "10";
+      let b int    := false;
+      let c int    := true;
+      let d string := true;
       return 0;
     }
   )";
   std::string expected_diagnostic =
       "\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  --> "
-      "swa_source:3:20\n   |\n 3 |       let x int := \"10\";\n   |            "
-      "        "
+      "swa_source:3:23\n   |\n 3 |       let a int    := \"10\";\n   |         "
+      "              "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Expected Int but got String\n\n";
-
-  assertSwaOutput(input, expected_diagnostic);
-}
-
-TEST_F(
-    JITOutputTest,
-    Declaration_Expression_Throws_When_Value_Type_And_Data_Type_Are_Not_Equal_1) {
-  std::string input = R"(dialect:english;
-    start() int{
-      let x int := true;
-      return 0;
-    }
-  )";
-  std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  --> "
-      "swa_source:3:20\n   |\n 3 |       let x int := true;\n   |              "
-      "      "
+      "0m\x1B[1;31m^\x1B[0m Expected Int but got String\n\n\x1B[1;31mtype "
+      "check error\x1B[0m: Incompatible type\n  --> swa_source:4:23\n   |\n 4 "
+      "|       let b int    := false;\n   |                       "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m Expected Int but got Bool\n\n";
+      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Expected Int but got "
+      "Bool\n\n\x1B[1;31mtype check error\x1B[0m: Incompatible type\n  --> "
+      "swa_source:5:23\n   |\n 5 |       let c int    := true;\n   |           "
+      "            "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Expected Int but got Bool\n\n\x1B[1;31mtype check "
+      "error\x1B[0m: Incompatible type\n  --> swa_source:6:23\n   |\n 6 |      "
+      " let d string := true;\n   |                       "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m\x1B[1;31m^\x1B[0m Expected String but got Bool\n\n";
 
   assertSwaOutput(input, expected_diagnostic);
 }
 
 TEST_F(JITOutputTest,
-       Declaration_Expression_Throws_Cannot_Add_Number_And_String) {
+       Declaration_Expression_Throws_Cannot_Add_Different_Types) {
   std::string input = R"(dialect:english;
     start() int{
-      let x int := 2 + "10";
+      let a int := 2 + "10";
+      let b int := 2 + true;
       return 0;
     }
   )";
 
   std::string expected_diagnostic =
       "\x1B[1;31mtype check error\x1B[0m: Addition error\n  --> "
-      "swa_source:3:20\n   |\n 3 |       let x int := 2 + \"10\";\n   |        "
+      "swa_source:3:20\n   |\n 3 |       let a int := 2 + \"10\";\n   |        "
       "            "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m Datatype Int and String cannot be used "
-      "together\n\n";
-
-  assertSwaOutput(input, expected_diagnostic);
-}
-
-TEST_F(JITOutputTest,
-       Declaration_Expression_Throws_Cannot_Add_Number_And_Boolean) {
-  std::string input = R"(dialect:english;
-    start() int{
-      let x int := 2 + true;
-      return 0;
-    }
-  )";
-
-  std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Addition error\n  --> "
-      "swa_source:3:20\n   |\n 3 |       let x int := 2 + true;\n   |          "
+      "together\n\n\x1B[1;31mtype check error\x1B[0m: Addition error\n  --> "
+      "swa_source:4:20\n   |\n 4 |       let b int := 2 + true;\n   |          "
       "          "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
@@ -1086,38 +1069,28 @@ TEST_F(JITOutputTest,
   assertSwaOutput(input, expected_diagnostic);
 }
 
-TEST_F(JITOutputTest, Declaration_Expression_Throws_Cannot_Add_Two_Strings) {
+TEST_F(
+    JITOutputTest,
+    Declaration_Expression_Throws_Cannot_Add_Types_That_Do_Not_support_addition) {
   std::string input = R"(dialect:english;
     start() int{
-      let x int := "2" + "4";
+      let a int := "2" + "4";
+      let b int := false + true;
       return 0;
     }
   )";
 
   std::string expected_diagnostic =
       "\x1B[1;31mtype check error\x1B[0m: Addition error\n  --> "
-      "swa_source:3:20\n   |\n 3 |       let x int := \"2\" + \"4\";\n   |     "
+      "swa_source:3:20\n   |\n 3 |       let a int := \"2\" + \"4\";\n   |     "
       "               "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Adding strings is not "
       "supported\n   | \x1B[1;36mhelp\x1B[0m: if you want to concatenate "
-      "strings use the standard library\n\n";
-
-  assertSwaOutput(input, expected_diagnostic);
-}
-TEST_F(JITOutputTest, Declaration_Expression_Throws_Cannot_Add_Two_Booleans) {
-  std::string input = R"(dialect:english;
-    start() int{
-      let x int := false + true;
-      return 0;
-    }
-  )";
-
-  std::string expected_diagnostic =
-      "\x1B[1;31mtype check error\x1B[0m: Addition error\n  --> "
-      "swa_source:3:20\n   |\n 3 |       let x int := false + true;\n   |      "
-      "              "
+      "strings use the standard library\n\n\x1B[1;31mtype check error\x1B[0m: "
+      "Addition error\n  --> swa_source:4:20\n   |\n 4 |       let b int := "
+      "false + true;\n   |                    "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
