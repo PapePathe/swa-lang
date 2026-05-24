@@ -82,6 +82,14 @@ public:
     return casted;
   }
 
+  Array_Access_Expr *ASSERT_EXPR_ARRAY_ACCESS(Expr *node) {
+    EXPECT_NE(node, nullptr);
+    auto *casted = dynamic_cast<Array_Access_Expr *>(node);
+    EXPECT_NE(casted, nullptr) << "Node is not a Array_Access_Expr";
+
+    return casted;
+  }
+
   std::vector<std::unique_ptr<Expr>> PARSE_PROGRAM(const std::string &input,
                                                    size_t expectedCount) {
     auto tokens = getTokens(input);
@@ -945,4 +953,24 @@ TEST_F(ParserTests, Array_Init_Float) {
   auto values = ASSERT_EXPR_ARRAY(node->Value.get(), 2);
   ASSERT_EXPR_FLOAT(values->Elements[0].get(), 1.5);
   ASSERT_EXPR_FLOAT(values->Elements[1].get(), 2.5);
+}
+
+TEST_F(ParserTests, Array_Access_Simple) {
+  std::string input = "arr[0]";
+  auto stmts = PARSE_PROGRAM(input, 1);
+  auto access = ASSERT_EXPR_ARRAY_ACCESS(stmts[0].get());
+  ASSERT_EXPR_ID(access->Array.get(), "arr");
+  ASSERT_EXPR_NUMBER(access->Index.get(), 0);
+}
+
+TEST_F(ParserTests, Array_Access_Chained) {
+  std::string input = "matrix[1][2]";
+  auto stmts = PARSE_PROGRAM(input, 1);
+
+  auto access1 = ASSERT_EXPR_ARRAY_ACCESS(stmts[0].get());
+  ASSERT_EXPR_NUMBER(access1->Index.get(), 2);
+
+  auto access2 = ASSERT_EXPR_ARRAY_ACCESS(access1->Array.get());
+  ASSERT_EXPR_NUMBER(access2->Index.get(), 1);
+  ASSERT_EXPR_ID(access2->Array.get(), "matrix");
 }
