@@ -64,6 +64,14 @@ public:
     EXPECT_EQ(casted->Value, expected);
   }
 
+  CallExpr *ASSERT_EXPR_CALL(Expr *node) {
+    EXPECT_NE(node, nullptr);
+    auto *casted = dynamic_cast<CallExpr *>(node);
+    EXPECT_NE(casted, nullptr) << "Node is not a CallExpr";
+
+    return casted;
+  }
+
   AddExpr *ASSERT_EXPR_ADD(Expr *node) {
     EXPECT_NE(node, nullptr);
     auto *casted = dynamic_cast<AddExpr *>(node);
@@ -1024,6 +1032,28 @@ TEST_F(ParserTests, Array_Init_Mixed_Types) {
   ASSERT_EXPR_FLOAT(arr->Elements[2].get(), 3.14);
 }
 
+TEST_F(ParserTests, Array_Access_Expr_With_Function_Call) {
+  std::string input = "my_func()[0]";
+  auto stmts = PARSE_PROGRAM(input, 1);
+  auto access = ASSERT_EXPR_ARRAY_ACCESS(stmts[0].get());
+
+  ASSERT_EXPR_NUMBER(access->Index.get(), 0);
+  auto call = ASSERT_EXPR_CALL(access->Array.get());
+  ASSERT_EXPR_ID(call->Callee.get(), "my_func");
+  ASSERT_EQ(call->Args.size(), 0);
+}
+
+TEST_F(ParserTests, Array_Access_Expr_As_Left_Of_Add_Expr) {
+  std::string input = "arr[0] + 2";
+  auto stmts = PARSE_PROGRAM(input, 1);
+  auto add = ASSERT_EXPR_ADD(stmts[0].get());
+  auto arr = ASSERT_EXPR_ARRAY_ACCESS(add->Left.get());
+
+  ASSERT_EXPR_ID(arr->Array.get(), "arr");
+  ASSERT_EXPR_NUMBER(arr->Index.get(), 0);
+  ASSERT_EXPR_NUMBER(add->Right.get(), 2);
+}
+
 TEST_F(ParserTests, Array_Init_Deeply_Nested_Error) {
   // Parser should handle this structure regardless of whether
   // the semantic analyzer eventually rejects it.
@@ -1073,8 +1103,10 @@ TEST_F(ParserTests, Array_Init_Unary_Negative) {
 }
 
 TEST_F(ParserTests, Array_Access_Negative) {
-  AssertParserError("let x [3]int := arr[1;", "Unexpected token: ```;```", "",
-                    21, 22);
+  AssertParserError("let x [3]int := arr[1;",
+                    "Missing closing bracket in array subscript access site",
+                    "Expected a matching ']' to finish indexing calculations",
+                    20, 21);
 }
 
 TEST_F(ParserTests, Array_Access_Negative_2) {
