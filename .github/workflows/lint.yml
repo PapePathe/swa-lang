@@ -208,8 +208,8 @@ jobs:
 
       - name: Display structure of downloaded files
         run: |
-        pwd
-        ls -R
+          pwd
+          ls -R
 
       - name: Run Smoke Test
         uses: addnab/docker-run-action@v3
