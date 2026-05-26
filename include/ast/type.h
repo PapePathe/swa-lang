@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ast/visitor.h>
+#include <cstddef>
 #include <lexer/lexer.h>
 
 #include <llvm/IR/IRBuilder.h>
@@ -182,8 +183,10 @@ public:
 
 class TypeArray : public Type {
 public:
+  size_t Size;
   std::unique_ptr<Type> T;
-  TypeArray(std::unique_ptr<Type> t, Span s) : Type(s), T(std::move(t)) {}
+  TypeArray(size_t size, std::unique_ptr<Type> t, Span s)
+      : Size(size), Type(s), T(std::move(t)) {}
   void Accept(ASTVisitor &v) override { v.Visit(this); };
   TypeKind GetKind() const override { return TypeKind::Array; }
   std::string GetName() const override { return "Array"; };
