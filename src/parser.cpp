@@ -2,6 +2,7 @@
 #include "ast/type.h"
 #include "lexer/lexer.h"
 #include "lexer/tokentype.h"
+#include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <parser/parser.h>
@@ -532,8 +533,9 @@ std::unique_ptr<Type> Parser::parseType() {
   if (tok.type == TokenType::OPEN_BRACKET) {
     auto slice = true;
     auto span = expect(TokenType::OPEN_BRACKET).span;
+    std::string size;
     if (current().type == TokenType::NUMBER) {
-      auto size = expect(TokenType::NUMBER);
+      size = expect(TokenType::NUMBER).value;
       slice = false;
     }
     expect(TokenType::CLOSE_BRACKET, [span](Span s) {
@@ -548,8 +550,7 @@ std::unique_ptr<Type> Parser::parseType() {
       return std::make_unique<TypeSlice>(std::move(typ), span);
     }
 
-    // TODO(pathe) add size
-    return std::make_unique<TypeArray>(std::move(typ), span);
+    return std::make_unique<TypeArray>(std::stoi(size), std::move(typ), span);
   }
 
   if (tok.type == TokenType::IDENTIFIER) {

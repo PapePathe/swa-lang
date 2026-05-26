@@ -64,6 +64,14 @@ public:
     EXPECT_EQ(casted->Value, expected);
   }
 
+  AddExpr *ASSERT_EXPR_ADD(Expr *node) {
+    EXPECT_NE(node, nullptr);
+    auto *casted = dynamic_cast<AddExpr *>(node);
+    EXPECT_NE(casted, nullptr) << "Node is not a AddExpr";
+
+    return casted;
+  }
+
   DeclarationExpr *ASSERT_EXPR_DECL(Expr *node, std::string expected) {
     EXPECT_NE(node, nullptr);
     auto *casted = dynamic_cast<DeclarationExpr *>(node);
@@ -980,14 +988,16 @@ TEST_F(ParserTests, Array_Init_Empty) {
   auto stmts = PARSE_PROGRAM(input, 1);
   auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
   auto values = ASSERT_EXPR_ARRAY(node->Value.get(), 0);
-  EXPECT_EQ(values->Elements.size(), 0);
 }
 
 TEST_F(ParserTests, Array_Init_TrailingComma) {
   std::string input = "let arr [2]int := [1, 2,];";
   auto stmts = PARSE_PROGRAM(input, 1);
   auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
-  ASSERT_EXPR_ARRAY(node->Value.get(), 2);
+  auto values = ASSERT_EXPR_ARRAY(node->Value.get(), 2);
+
+  ASSERT_EXPR_NUMBER(values->Elements[0].get(), 1);
+  ASSERT_EXPR_NUMBER(values->Elements[1].get(), 2);
 }
 
 TEST_F(ParserTests, Array_Init_Expressions) {
@@ -996,8 +1006,11 @@ TEST_F(ParserTests, Array_Init_Expressions) {
   auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
   auto values = ASSERT_EXPR_ARRAY(node->Value.get(), 2);
 
-  // Check if the first element is a binary addition
-  // ASSERT_EXPR_BINARY(values->Elements[0].get(), ...);
+  auto add = ASSERT_EXPR_ADD(values->Elements[0].get());
+
+  ASSERT_EXPR_NUMBER(add->Left.get(), 1);
+  ASSERT_EXPR_NUMBER(add->Right.get(), 2);
+  ASSERT_EXPR_ID(values->Elements[1].get(), "x");
 }
 
 TEST_F(ParserTests, Array_Init_Mixed_Types) {
@@ -1017,6 +1030,11 @@ TEST_F(ParserTests, Array_Init_Deeply_Nested_Error) {
   std::string input = "let arr [2]int := [[[1]]];";
   auto stmts = PARSE_PROGRAM(input, 1);
   auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
+  auto values = ASSERT_EXPR_ARRAY(node->Value.get(), 1);
+  auto inner = ASSERT_EXPR_ARRAY(values->Elements[0].get(), 1);
+  auto inner1 = ASSERT_EXPR_ARRAY(inner->Elements[0].get(), 1);
+
+  ASSERT_EXPR_NUMBER(inner1->Elements[0].get(), 1);
 }
 
 TEST_F(ParserTests, Array_Init_Multiline) {
@@ -1032,45 +1050,34 @@ TEST_F(ParserTests, Array_Init_With_Expressions) {
   auto stmts = PARSE_PROGRAM(input, 1);
   auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
   auto arr = ASSERT_EXPR_ARRAY(node->Value.get(), 3);
-
-  // Verify that the parser recognized the complex expression nodes
-  // ASSERT_EXPR_BINARY(arr->Elements[0].get(), ...);
 }
 
 TEST_F(ParserTests, Array_Init_Negative_Tests) {
-  // 1. Missing closing bracket:
-  // The error should ideally point to the end of the input or the last token
   AssertParserError("let arr [3]int := [1, 2",
                     "Expected comma or ']' in array initializer", "", 23, 23);
 }
 
 TEST_F(ParserTests, Array_Init_Negative_Tests_3) {
-  // 3. Empty element: Pointing to the second comma
   AssertParserError("let arr [3]int := [1, , 2];",
                     "Expected expression but got ,", "", 22, 23);
 }
 
 TEST_F(ParserTests, Array_Declaration_Negative_Tests) {
-  // 5. Unclosed dimension declaration: Pointing to the [
   AssertParserError("let arr [1 := [1];",
                     "expected close bracket in array or slice", "", 9, 10);
 }
 
 TEST_F(ParserTests, Array_Init_Unary_Negative) {
-  // This is syntactically invalid because there is no operand after the +
-  // Your parser should throw because it expects an expression, but hits a comma
   AssertParserError("let arr [3]int := [+, 2];",
                     "Expected expression but got +", "", 19, 20);
 }
 
 TEST_F(ParserTests, Array_Access_Negative) {
-  // 1. Missing closing bracket in access: arr[1
   AssertParserError("let x [3]int := arr[1;", "Unexpected token: ```;```", "",
                     21, 22);
 }
 
 TEST_F(ParserTests, Array_Access_Negative_2) {
-  // 5. Unbalanced brackets: arr[1][2
   AssertParserError("let x arr[1][2 := ;", "Unexpected token: ```[```", "", 9,
                     10);
 }
