@@ -140,6 +140,7 @@ int Parser::getPrecedence(TokenType type) {
   case TokenType::MULTIPLY:
   case TokenType::DIVIDE:
     return 30;
+  case TokenType::OPEN_BRACKET:
   case TokenType::OPEN_PAREN:
     return 40;
   default:
@@ -325,17 +326,26 @@ std::unique_ptr<Expr> Parser::parsePrimary() {
                           current().span, "", "");
   }
 
-  while (current().type == TokenType::OPEN_BRACKET) {
-    auto open = expect(TokenType::OPEN_BRACKET);
-    auto index = parseExpression(0);
-    auto close = expect(TokenType::CLOSE_BRACKET);
-
-    auto span = Span{expr->span.start, close.span.end};
-    expr = std::make_unique<Array_Access_Expr>(std::move(expr),
-                                               std::move(index), span);
-  }
-
   return expr;
+}
+
+std::unique_ptr<Expr> Parser::parseArrayAccess(std::unique_ptr<Expr> sequence) {
+  auto openTok = expect(TokenType::OPEN_BRACKET);
+  Span s = openTok.span;
+
+  auto indexExpr = parseExpression(0);
+
+  auto lasttok = expect(TokenType::CLOSE_BRACKET, [openTok](Span s) {
+    return ParserException(
+        "Missing closing bracket in array subscript access site", s,
+        "Expected a matching ']' to finish indexing calculations",
+        "Add a closing bracket ']'");
+  });
+
+  s.end = lasttok.span.end;
+
+  return std::make_unique<Array_Access_Expr>(std::move(sequence),
+                                             std::move(indexExpr), s);
 }
 
 std::unique_ptr<Expr> Parser::parseArrayInitExpr() {
@@ -729,6 +739,11 @@ std::unique_ptr<Expr> Parser::parseExpression(int minPrecedence) {
 
     if (opType == TokenType::OPEN_PAREN) {
       left = parseFunctionCall(std::move(left));
+      continue;
+    }
+
+    if (opType == TokenType::OPEN_BRACKET) {
+      left = parseArrayAccess(std::move(left));
       continue;
     }
 

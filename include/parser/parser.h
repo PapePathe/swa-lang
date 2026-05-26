@@ -32,6 +32,7 @@ private:
   void trace(std::string msg);
   void debug(std::string msg);
   void parseDialect();
+  std::unique_ptr<Expr> parseArrayAccess(std::unique_ptr<Expr> sequence);
   std::unique_ptr<Expr> parseArrayInitExpr();
   std::unique_ptr<Expr> parseStatement();
   std::unique_ptr<Expr> parsePrimary();
