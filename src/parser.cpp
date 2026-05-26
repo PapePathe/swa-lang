@@ -536,7 +536,10 @@ std::unique_ptr<Type> Parser::parseType() {
       auto size = expect(TokenType::NUMBER);
       slice = false;
     }
-    expect(TokenType::CLOSE_BRACKET);
+    expect(TokenType::CLOSE_BRACKET, [span](Span s) {
+      auto msg = "expected close bracket in array or slice";
+      return ParserException(msg, s, "", "");
+    });
     auto typ = parseType();
 
     span.end = typ->span.end;

@@ -974,3 +974,103 @@ TEST_F(ParserTests, Array_Access_Chained) {
   ASSERT_EXPR_NUMBER(access2->Index.get(), 1);
   ASSERT_EXPR_ID(access2->Array.get(), "matrix");
 }
+
+TEST_F(ParserTests, Array_Init_Empty) {
+  std::string input = "let arr [0]int := [];";
+  auto stmts = PARSE_PROGRAM(input, 1);
+  auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
+  auto values = ASSERT_EXPR_ARRAY(node->Value.get(), 0);
+  EXPECT_EQ(values->Elements.size(), 0);
+}
+
+TEST_F(ParserTests, Array_Init_TrailingComma) {
+  std::string input = "let arr [2]int := [1, 2,];";
+  auto stmts = PARSE_PROGRAM(input, 1);
+  auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
+  ASSERT_EXPR_ARRAY(node->Value.get(), 2);
+}
+
+TEST_F(ParserTests, Array_Init_Expressions) {
+  std::string input = "let arr [2]int := [1 + 2, x];";
+  auto stmts = PARSE_PROGRAM(input, 1);
+  auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
+  auto values = ASSERT_EXPR_ARRAY(node->Value.get(), 2);
+
+  // Check if the first element is a binary addition
+  // ASSERT_EXPR_BINARY(values->Elements[0].get(), ...);
+}
+
+TEST_F(ParserTests, Array_Init_Mixed_Types) {
+  std::string input = "let arr [3]any := [1, \"text\", 3.14];";
+  auto stmts = PARSE_PROGRAM(input, 1);
+  auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
+  auto arr = ASSERT_EXPR_ARRAY(node->Value.get(), 3);
+
+  ASSERT_EXPR_NUMBER(arr->Elements[0].get(), 1);
+  ASSERT_EXPR_STRING(arr->Elements[1].get(), "text");
+  ASSERT_EXPR_FLOAT(arr->Elements[2].get(), 3.14);
+}
+
+TEST_F(ParserTests, Array_Init_Deeply_Nested_Error) {
+  // Parser should handle this structure regardless of whether
+  // the semantic analyzer eventually rejects it.
+  std::string input = "let arr [2]int := [[[1]]];";
+  auto stmts = PARSE_PROGRAM(input, 1);
+  auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
+}
+
+TEST_F(ParserTests, Array_Init_Multiline) {
+  std::string input = "let arr  [2]int := [\n 1,\n 2\n];";
+  auto stmts = PARSE_PROGRAM(input, 1);
+  auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
+  ASSERT_EXPR_ARRAY(node->Value.get(), 2);
+}
+
+TEST_F(ParserTests, Array_Init_With_Expressions) {
+  // Test that the parser handles binary operations inside the array
+  std::string input = "let arr  [2]int := [1 + 2, 3 * 4, f(x)];";
+  auto stmts = PARSE_PROGRAM(input, 1);
+  auto node = ASSERT_EXPR_DECL(stmts[0].get(), "arr");
+  auto arr = ASSERT_EXPR_ARRAY(node->Value.get(), 3);
+
+  // Verify that the parser recognized the complex expression nodes
+  // ASSERT_EXPR_BINARY(arr->Elements[0].get(), ...);
+}
+
+TEST_F(ParserTests, Array_Init_Negative_Tests) {
+  // 1. Missing closing bracket:
+  // The error should ideally point to the end of the input or the last token
+  AssertParserError("let arr [3]int := [1, 2",
+                    "Expected comma or ']' in array initializer", "", 23, 23);
+}
+
+TEST_F(ParserTests, Array_Init_Negative_Tests_3) {
+  // 3. Empty element: Pointing to the second comma
+  AssertParserError("let arr [3]int := [1, , 2];",
+                    "Expected expression but got ,", "", 22, 23);
+}
+
+TEST_F(ParserTests, Array_Declaration_Negative_Tests) {
+  // 5. Unclosed dimension declaration: Pointing to the [
+  AssertParserError("let arr [1 := [1];",
+                    "expected close bracket in array or slice", "", 9, 10);
+}
+
+TEST_F(ParserTests, Array_Init_Unary_Negative) {
+  // This is syntactically invalid because there is no operand after the +
+  // Your parser should throw because it expects an expression, but hits a comma
+  AssertParserError("let arr [3]int := [+, 2];",
+                    "Expected expression but got +", "", 19, 20);
+}
+
+TEST_F(ParserTests, Array_Access_Negative) {
+  // 1. Missing closing bracket in access: arr[1
+  AssertParserError("let x [3]int := arr[1;", "Unexpected token: ```;```", "",
+                    21, 22);
+}
+
+TEST_F(ParserTests, Array_Access_Negative_2) {
+  // 5. Unbalanced brackets: arr[1][2
+  AssertParserError("let x arr[1][2 := ;", "Unexpected token: ```[```", "", 9,
+                    10);
+}
