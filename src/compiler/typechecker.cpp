@@ -118,9 +118,11 @@ void TypeCheckVisitor::Visit(DivExpr *expr) {
 }
 void TypeCheckVisitor::Visit(EqExpr *expr) {}
 void TypeCheckVisitor::Visit(IdExpr *expr) {
+  log("Visit IdExpr");
   try {
     auto sym = driver->currentSymbols->lookupSwaSymbol(expr->Name);
     setLastSymbol(sym);
+    log("Visit IdExpr type " + sym->type->GetName());
     expr->datatype = sym->type.get()->Clone();
   } catch (std::runtime_error e) {
     auto err = ParserException(e.what(), expr->span, "", "");
@@ -205,6 +207,7 @@ void TypeCheckVisitor::Visit(MulExpr *expr) {
   expr->datatype = expr->Left->datatype->Clone();
 }
 void TypeCheckVisitor::Visit(PrintExpr *expr) {
+  log("Visit PrintExpr");
   for (auto &e : expr->Values) {
     e->Accept(*this);
   }
@@ -405,6 +408,20 @@ void TypeCheckVisitor::Visit(Array_Access_Expr *expr) {
   if (expr->Index->datatype->GetKind() == TypeKind::DirtyType ||
       expr->Array->datatype->GetKind() == TypeKind::DirtyType) {
     log("Array_Access_Expr Array or Index is dirty");
+    expr->datatype = std::make_unique<TypeDirty>(expr->span);
+    return;
+  }
+
+  log("Visit Array_Access_Expr datatype " + expr->Array->datatype->GetName());
+
+  if (expr->Array->datatype->GetKind() != TypeKind::Array) {
+    log("Array_Access_Expr Valuee is not an array");
+    errors.push_back(CodeGenException(
+        "Cannot index a non-array value", expr->Array->span,
+        "the expression  has type '" + expr->Array->datatype->GetName() +
+            "', but an 'Array' is required",
+        "Ensure the expression is declared as an "
+        "array before attempting to index it"));
     expr->datatype = std::make_unique<TypeDirty>(expr->span);
     return;
   }
