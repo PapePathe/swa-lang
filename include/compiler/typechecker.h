@@ -4,6 +4,7 @@
 #include <ast/symboltable.h>
 #include <ast/visitor.h>
 #include <compiler/driver.h>
+#include <iostream>
 #include <parser/exception.h>
 
 #include <llvm/IR/DIBuilder.h>
@@ -44,6 +45,9 @@ public:
   TypeCheckVisitor(std::unique_ptr<SwaCompilerDriver> d)
       : driver(std::move(d)) {
     debugLog.open("typecheck_debug.log", std::ios::out | std::ios::trunc);
+    if (!debugLog.is_open()) {
+      std::cerr << "Failed to open debug log: " << strerror(errno) << std::endl;
+    }
   }
 
   void checkErrors();
