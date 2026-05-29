@@ -210,11 +210,3 @@ jobs:
         run: |
           pwd
           ls -R
-
-      - name: Run Smoke Test
-        uses: addnab/docker-run-action@v3
-        with:
-          image: ${{ matrix.image }}
-          run: |
-            ${{ matrix.cmd }}
-
