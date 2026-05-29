@@ -20,7 +20,7 @@ enum SwaSymbolKind { Variable, Function, Enum };
 struct SwaSymbol {
   std::unique_ptr<Type> type;
   SwaSymbolKind kind;
-  ProtoExpr *proto;
+  ProtoExpr *proto = nullptr;
   SwaSymbol(std::unique_ptr<Type> type, SwaSymbolKind kind)
       : type(std::move(type)), kind(kind) {}
   SwaSymbol(std::unique_ptr<Type> type, SwaSymbolKind kind, ProtoExpr *proto)
