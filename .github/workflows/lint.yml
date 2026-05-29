@@ -152,7 +152,7 @@ jobs:
       - name: Download macOS Artifact
         uses: actions/download-artifact@v4
         with:
-          name: Swa-Packages-macos-latest
+          name: SwaCompiler-macOS-latest
 
       - name: Mount DMG and Verify Binary
         run: |
