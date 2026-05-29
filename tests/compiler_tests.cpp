@@ -1832,15 +1832,7 @@ TEST_F(JITOutputTest, Error_Array_NestedDimensionMismatch_2) {
       "[2][2]int := [[1], [3, 4]];\n   |                                      "
       "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
       "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n   | "
-      "\x1B[1;36mhelp\x1B[0m: Use only one datatype\n\n\x1B[1;31mtype check "
-      "error\x1B[0m: Incompatible type\n  --> swa_source:4:32\n   |\n 4 |      "
-      "     let arr [2][2]int := [[1], [3, 4]];\n   |                          "
-      "      "
-      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
-      "0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Expected Array[2 * Array[2 * "
-      "Int]] but got Array[2 * Array[1 * Int]]\n\n";
+      "\x1B[1;36mhelp\x1B[0m: Use only one datatype\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
 
