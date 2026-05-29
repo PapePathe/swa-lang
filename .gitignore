@@ -40,3 +40,4 @@ googletest-build/
 llvm-install/
 *.profraw
 *.profdata
+typecheck_debug.log
