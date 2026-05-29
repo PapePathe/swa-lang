@@ -35,29 +35,27 @@ void DeclarationVisitor::Visit(ProtoExpr *expr) {
   }
 
   setLastFunc(F);
+
+  driver->currentSymbols->defineSwaSymbol(
+      expr->Name, std::make_unique<SwaSymbol>(std::move(expr->Ret->Clone()),
+                                              SwaSymbolKind::Function));
 }
-void DeclarationVisitor::Visit(MainExpr *expr) {
-  //  std::string funcName = "main";
-  //  if (driver->TestMode) {
-  //    funcName = "user_main";
-  //  }
-  //  auto proto = std::make_unique<ProtoExpr>(funcName,
-  //  std::vector<std::string>(),
-  //                                           std::vector<std::unique_ptr<Type>>(),
-  //                                           std::unique_ptr<Type>());
-  //  proto->Accept(*this);
-}
+// FIXME main expr should be removed at it's not used
+void DeclarationVisitor::Visit(MainExpr *expr) {}
 void DeclarationVisitor::Visit(FuncExpr *expr) { expr->Proto->Accept(*this); }
 void DeclarationVisitor::Visit(StructDefExpr *expr) {
   llvm::StructType *structDef =
       llvm::StructType::getTypeByName(driver->Context, expr->Name);
   if (!structDef) {
     // Only create a fresh entry if the context doesn't track this name yet
-    // FIXME struct should be defined by DeclarationVisitor
     structDef = llvm::StructType::create(driver->Context, expr->Name);
   }
 }
 void DeclarationVisitor::Visit(BlockExpr *expr) {
+  auto oldTable = driver->currentSymbols;
+  auto localTable = oldTable->CreateChild();
+  driver->currentSymbols = localTable;
+
   for (auto &e : expr->Exprs) {
     if (!e) {
       continue;
@@ -65,6 +63,8 @@ void DeclarationVisitor::Visit(BlockExpr *expr) {
 
     e->Accept(*this);
   }
+
+  driver->currentSymbols = oldTable;
 }
 
 void DeclarationVisitor::setLastType(llvm::Type *t) { lastType = t; }

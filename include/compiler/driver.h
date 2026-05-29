@@ -10,6 +10,7 @@
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 
+#include <memory>
 #include <string>
 
 struct SourceLocation {
@@ -37,20 +38,24 @@ public:
   llvm::LLVMContext Context;
   llvm::IRBuilder<> Builder;
   std::unique_ptr<llvm::Module> Module;
-  SymbolTable Symbols;
+  std::unique_ptr<SymbolTable> Symbols;
+  SymbolTable *currentSymbols;
   DebugInfoContext DebugInfo;
   bool TestMode;
+  bool InsideFunction;
 
   explicit SwaCompilerDriver(std::string moduleName)
       : Builder(Context),
         Module(std::make_unique<llvm::Module>(moduleName, Context)),
         TestMode(false) {
-    Symbols = SymbolTable();
+    Symbols = std::make_unique<SymbolTable>();
+    currentSymbols = Symbols.get();
   }
   SwaCompilerDriver(std::string moduleName, bool testMode)
       : Builder(Context),
         Module(std::make_unique<llvm::Module>(moduleName, Context)),
         TestMode(testMode) {
-    Symbols = SymbolTable();
+    Symbols = std::make_unique<SymbolTable>();
+    currentSymbols = Symbols.get();
   }
 };

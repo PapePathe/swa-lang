@@ -13,27 +13,12 @@ int main(int argc, char *argv[]) {
   std::string program = R"(
     dialect:english;
 
-    func add(a int, b int) int {
-      return a + b;
-    }
-
-    test "math addition operations" {
-      let result int := add(5, 5);
-      assert_equal result, 10;
-      assert_equal add(15, 5), 20;
-    }
-
-    test "intentional assertion failure" {
-      let broken int := add(2, 2);
-      assert_equal broken, 5;
-    }
-
-    start()int {
-      print("Salam");
+    start() int {
+      let arr [2]int := [10, 20];
+      print(arr[1]);
       return 0;
     }
-
-    )";
+  )";
   SwaCompiler swa = SwaCompiler();
 
   if (subcommand == "build") {
