@@ -479,8 +479,7 @@ std::unique_ptr<Expr> Parser::parsePrint() {
   span.end = lasttok.span.end;
 
   if (values.size() == 0) {
-    throw ParserException("formatted print expr should have at least one value",
-                          span);
+    throw ParserException("print expr should have at least one value", span);
   }
 
   return std::make_unique<PrintExpr>(std::move(values), span);

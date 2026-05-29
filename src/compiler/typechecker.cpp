@@ -486,6 +486,7 @@ void TypeCheckVisitor::Visit(Array_Init_Expr *expr) {
       errors.push_back(err);
 
       expr->datatype = std::make_unique<TypeDirty>(expr->span);
+      return;
     }
   }
 
