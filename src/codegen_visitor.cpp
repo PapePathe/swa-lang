@@ -1,8 +1,11 @@
+#include "ast/type.h"
 #include <ast/symboltable.h>
 #include <ast/visitor.h>
 #include <compiler/codegen.h>
 #include <compiler/compiler.h>
 #include <cstddef>
+#include <filesystem>
+#include <iostream>
 #include <llvm/IR/Constant.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
@@ -12,9 +15,11 @@
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 #include <llvm/Support/Casting.h>
+#include <llvm/Support/raw_ostream.h>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 // Uncomment to enable tracing
@@ -31,38 +36,40 @@ struct PrintTypeConfig {
   bool isBoolean = false;
 };
 
-PrintTypeConfig getTypeConfig(llvm::Value *val) {
-  llvm::Type *type = val->getType();
+// PrintTypeConfig getBaseTypeConfig(llvm::Type *type) {
+//   if (type->isIntegerTy(1)) {
+//
+//     return {"%s", true};
+//   } else if (type->isIntegerTy(32)) {
+//     return {"%d", false};
+//   } else if (type->isIntegerTy(64)) {
+//     return {"%ld", false};
+//   } else if (type->isFloatTy() || type->isDoubleTy()) {
+//     return {"%f", false};
+//   } else {
+//     std::string type_str;
+//     llvm::raw_string_ostream rso(type_str);
+//     type->print(rso);
+//
+//     throw std::runtime_error("Unsupported base type " + type_str);
+//   }
+// }
 
-  if (type->isIntegerTy(1))
+PrintTypeConfig getBaseSwaTypeConfig(Type *type) {
+  switch (type->GetKind()) {
+  case TypeKind::Bool:
     return {"%s", true};
-  if (type->isIntegerTy(32))
+  case TypeKind::Int:
     return {"%d", false};
-  if (type->isIntegerTy(64))
-    return {"%ld", false};
-  if (type->isFloatTy() || type->isDoubleTy())
+  case TypeKind::Float:
     return {"%f", false};
-
-  if (type->isPointerTy()) {
-    // Safe string extraction via GlobalVariable inspection
-    if (auto *globalVar = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
-      if (globalVar->hasInitializer() &&
-          llvm::isa<llvm::ConstantDataArray>(globalVar->getInitializer())) {
-        return {"%s", false};
-      }
-    }
-    // Safe string extraction via GEP element arrays
-    if (auto *gep = llvm::dyn_cast<llvm::GEPOperator>(val)) {
-      if (gep->getResultElementType()->isIntegerTy(8)) {
-        return {"%s", false};
-      }
-    }
-    // Fallback safety fallback: Treat raw pointers as addresses to prevent
-    // runtime segfaults
+  case TypeKind::String:
+    return {"%s", false};
+  case TypeKind::Array:
     return {"%p", false};
+  default:
+    throw std::runtime_error("Unsupported base type " + type->GetName());
   }
-
-  throw std::runtime_error("Unsupported type passed to print engine.");
 }
 
 std::pair<std::string, std::vector<llvm::Value *>>
@@ -74,17 +81,25 @@ CodeGenVisitor::buildFormatStringAndArgs(
   printfArgs.reserve(size);
 
   for (size_t i = 0; i < size; ++i) {
-    auto *val = evaluate(expressions[i].get());
-    if (!val)
+    auto expr = expressions[i].get();
+    auto *val = evaluate(expr);
+    auto *typ = evaluate(expr->datatype.get());
+
+    if (!val) {
+
       throw std::runtime_error(
           "CodeGen failed inside print string evaluation pass.");
-
-    if (auto *alloca = llvm::dyn_cast<llvm::AllocaInst>(val)) {
-      val = driver->Builder.CreateLoad(alloca->getAllocatedType(), alloca,
-                                       "load_val");
     }
 
-    auto [specifier, isBoolean] = getTypeConfig(val);
+    if (auto *alloca = llvm::dyn_cast<llvm::AllocaInst>(val)) {
+      val = driver->Builder.CreateLoad(typ, alloca, "load_val");
+    }
+
+    if (auto *gep = llvm::dyn_cast<llvm::GetElementPtrInst>(val)) {
+      val = driver->Builder.CreateLoad(typ, gep, "load_val");
+    }
+
+    auto [specifier, isBoolean] = getBaseSwaTypeConfig(expr->datatype.get());
     formatStr += specifier;
 
     if (isBoolean) {
@@ -101,6 +116,93 @@ CodeGenVisitor::buildFormatStringAndArgs(
 
   return {formatStr, printfArgs};
 }
+
+// PrintTypeConfig getTypeConfig(llvm::Value *val) {
+//   llvm::Type *type = val->getType();
+//
+//   if (type->isIntegerTy(1))
+//     return {"%s", true};
+//   if (type->isIntegerTy(32))
+//     return {"%d", false};
+//   if (type->isIntegerTy(64))
+//     return {"%ld", false};
+//   if (type->isFloatTy() || type->isDoubleTy())
+//     return {"%f", false};
+//
+//   if (type->isPointerTy()) {
+//     if (auto *globalVar = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
+//       // Safe string extraction via GlobalVariable inspection
+//       if (globalVar->hasInitializer() &&
+//           llvm::isa<llvm::ConstantDataArray>(globalVar->getInitializer())) {
+//         return {"%s", false};
+//       }
+//     }
+//
+//     if (auto *gep = llvm::dyn_cast<llvm::GEPOperator>(val)) {
+//       // Safe string extraction via GEP element arrays
+//       if (gep->getSourceElementType()->isIntegerTy(8)) {
+//         return {"%s", false};
+//       }
+//
+//       if (gep->getSourceElementType()->isArrayTy()) {
+//         return getBaseTypeConfig(
+//             gep->getSourceElementType()->getArrayElementType());
+//       }
+//     }
+//     // Fallback safety fallback: Treat raw pointers as addresses to prevent
+//     // runtime segfaults
+//     return {"%p", false};
+//   }
+//
+//   throw std::runtime_error("Unsupported type passed to print engine.");
+// }
+
+// std::pair<std::string, std::vector<llvm::Value *>>
+// CodeGenVisitor::buildFormatStringAndArgs(
+//     const std::vector<std::unique_ptr<Expr>> &expressions) {
+//   std::string formatStr = "";
+//   std::vector<llvm::Value *> printfArgs;
+//   auto size = expressions.size();
+//   printfArgs.reserve(size);
+//
+//   for (size_t i = 0; i < size; ++i) {
+//     auto *val = evaluate(expressions[i].get());
+//     if (!val)
+//       throw std::runtime_error(
+//           "CodeGen failed inside print string evaluation pass.");
+//
+//     if (auto *alloca = llvm::dyn_cast<llvm::AllocaInst>(val)) {
+//       val = driver->Builder.CreateLoad(alloca->getAllocatedType(), alloca,
+//                                        "load_val");
+//     }
+//
+//     if (auto *gep = llvm::dyn_cast<llvm::GetElementPtrInst>(val)) {
+//       llvm::Type *sourceType = gep->getSourceElementType();
+//       if (sourceType->isArrayTy()) {
+//         val = driver->Builder.CreateLoad(sourceType->getArrayElementType(),
+//         gep,
+//                                          "load_val");
+//       }
+//     }
+//
+//     auto [specifier, isBoolean] = getTypeConfig(val);
+//     formatStr += specifier;
+//
+//     if (isBoolean) {
+//       auto *trueStr = driver->Builder.CreateGlobalString("true", "str_true");
+//       auto *falseStr = driver->Builder.CreateGlobalString("false",
+//       "str_false"); val = driver->Builder.CreateSelect(val, trueStr,
+//       falseStr, "bool_to_str");
+//     }
+//
+//     if (i < size - 1) {
+//       formatStr += " ";
+//     }
+//     printfArgs.push_back(val);
+//   }
+//
+//   return {formatStr, printfArgs};
+// }
 
 void CodeGenVisitor::setLastFunc(llvm::Function *v) { lastFunc = v; }
 void CodeGenVisitor::setLastValue(llvm::Value *v) { lastValue = v; }
@@ -170,9 +272,9 @@ void CodeGenVisitor::Visit(BoolExpr *expr) {
 }
 
 void CodeGenVisitor::Visit(BlockExpr *expr) {
-  auto oldTable = driver->Symbols;
-  auto localTable = SymbolTable(oldTable);
-  driver->Symbols = localTable;
+  auto oldTable = driver->currentSymbols;
+  auto localTable = oldTable->CreateChild();
+  driver->currentSymbols = localTable;
 
   codegenvisittrace("start block expr");
   for (auto &e : expr->Exprs) {
@@ -184,7 +286,7 @@ void CodeGenVisitor::Visit(BlockExpr *expr) {
   }
   codegenvisittrace("finish block expr");
 
-  driver->Symbols = oldTable;
+  driver->currentSymbols = oldTable;
 }
 
 void CodeGenVisitor::Visit(DeclarationExpr *expr) {
@@ -201,7 +303,7 @@ void CodeGenVisitor::Visit(DeclarationExpr *expr) {
     }
   }
 
-  if (driver->Symbols.getParent() != nullptr) {
+  if (driver->InsideFunction) {
     auto alloctype = val->getType();
     if (typ && typ->isStructTy()) {
       alloctype = typ;
@@ -209,7 +311,7 @@ void CodeGenVisitor::Visit(DeclarationExpr *expr) {
 
     auto alloc =
         driver->Builder.CreateAlloca(alloctype, nullptr, "alloc-" + expr->Name);
-    driver->Symbols.define(expr->Name, alloc);
+    driver->currentSymbols->define(expr->Name, alloc, val->getType());
     driver->Builder.CreateStore(val, alloc);
 
     setLastValue(alloc);
@@ -230,7 +332,7 @@ void CodeGenVisitor::Visit(DeclarationExpr *expr) {
     driver->Builder.CreateStore(val, glob);
   }
 
-  driver->Symbols.define(expr->Name, val);
+  driver->currentSymbols->define(expr->Name, val, val->getType());
 
   setLastValue(glob);
 }
@@ -250,11 +352,12 @@ void CodeGenVisitor::Visit(EqExpr *expr) {
   setLastValue(res);
 }
 void CodeGenVisitor::Visit(IdExpr *expr) {
-  auto v = driver->Symbols.lookup(expr->Name);
+  auto v = driver->currentSymbols->lookup(expr->Name);
   if (!v) {
     throw std::runtime_error("Undefined variable: " + expr->Name + "\n");
   }
 
+  // FIXME why not use setLastValue ?
   lastValue = v;
 }
 void CodeGenVisitor::Visit(IfExpr *expr) {}
@@ -264,6 +367,7 @@ void CodeGenVisitor::Visit(GTEExpr *expr) {}
 void CodeGenVisitor::Visit(LTExpr *expr) {}
 void CodeGenVisitor::Visit(LTEExpr *expr) {}
 void CodeGenVisitor::Visit(FuncExpr *expr) {
+  driver->InsideFunction = true;
   llvm::Function *TheFunction =
       driver->Module->getFunction(expr->Proto->getName());
 
@@ -280,9 +384,9 @@ void CodeGenVisitor::Visit(FuncExpr *expr) {
       llvm::BasicBlock::Create(driver->Context, "entry", TheFunction);
   driver->Builder.SetInsertPoint(BB);
 
-  auto old = driver->Symbols;
-  auto localTable = SymbolTable{old};
-  driver->Symbols = localTable;
+  auto old = driver->currentSymbols;
+  auto localTable = old->CreateChild();
+  driver->currentSymbols = localTable;
 
   unsigned Idx = 0;
   for (auto &Arg : TheFunction->args()) {
@@ -291,14 +395,15 @@ void CodeGenVisitor::Visit(FuncExpr *expr) {
         driver->Builder.CreateAlloca(Arg.getType(), nullptr, ArgName);
 
     driver->Builder.CreateStore(&Arg, Alloca);
-    driver->Symbols.define(ArgName, Alloca);
+    driver->currentSymbols->define(ArgName, Alloca, Arg.getType());
   }
 
   if (expr->Body) {
     expr->Body->Accept(*this);
   }
 
-  driver->Symbols = old;
+  driver->currentSymbols = old;
+  driver->InsideFunction = false;
 }
 
 std::vector<std::string> CodeGenVisitor::visitTestExpressions(
@@ -481,7 +586,8 @@ void CodeGenVisitor::Visit(CallExpr *expr) {
     auto ft = driver->Module->getFunction(s->Name);
 
     if (ft == nullptr) {
-      throw CodeGenException("Function named " + s->Name + " does not exist",
+      throw CodeGenException("CodeGenException Function named " + s->Name +
+                                 " does not exist",
                              expr->span);
     }
 
@@ -596,7 +702,6 @@ void CodeGenVisitor::generateTestEntrypoint(
       llvm::BasicBlock::Create(driver->Context, "test-entry", mainFunc);
   driver->Builder.SetInsertPoint(entry);
 
-  // Direct string logging for diagnostics
   auto printfTy = llvm::FunctionType::get(driver->Builder.getInt32Ty(),
                                           driver->Builder.getPtrTy(), true);
   auto printfunc = driver->Module->getOrInsertFunction("printf", printfTy);
@@ -604,7 +709,6 @@ void CodeGenVisitor::generateTestEntrypoint(
   for (const auto &testMangledName : testNames) {
     llvm::Function *targetTest = driver->Module->getFunction(testMangledName);
     if (targetTest) {
-      // UI Update: Informs terminal which unit block is active
       std::string runMsg = "[RUN] " + testMangledName + "\n";
       driver->Builder.CreateCall(printfunc,
                                  {driver->Builder.CreateGlobalString(runMsg)});
@@ -624,6 +728,51 @@ void CodeGenVisitor::generateTestEntrypoint(
   driver->Builder.CreateRet(driver->Builder.getInt32(0));
 }
 
+void CodeGenVisitor::Visit(Array_Access_Expr *expr) {
+  llvm::Value *seqPtr = evaluate(expr->Array.get());
+  llvm::Value *idxVal = evaluate(expr->Index.get());
+
+  expr->Array->datatype->Accept(*this);
+  auto t = setLastType();
+
+  if (seqPtr->getType()->isPointerTy()) {
+    seqPtr = driver->Builder.CreateLoad(driver->Builder.getPtrTy(), seqPtr,
+                                        "load_array_addr");
+  }
+
+  llvm::Value *zero = llvm::ConstantInt::get(driver->Builder.getInt32Ty(), 0);
+  llvm::Value *elemPtr =
+      driver->Builder.CreateGEP(t, seqPtr, {zero, idxVal}, "access_ptr");
+
+  setLastValue(elemPtr);
+}
+
+void CodeGenVisitor::Visit(Array_Init_Expr *expr) {
+  auto typ = evaluate(expr->datatype.get());
+  llvm::AllocaInst *alloca =
+      driver->Builder.CreateAlloca(typ, nullptr, "array_literal");
+
+  llvm::Value *zero = llvm::ConstantInt::get(driver->Builder.getInt32Ty(), 0);
+
+  for (size_t i = 0; i < expr->Elements.size(); ++i) {
+    llvm::Value *val = evaluate(expr->Elements[i].get());
+    llvm::Value *index =
+        llvm::ConstantInt::get(driver->Builder.getInt32Ty(), i);
+
+    llvm::Value *elementPtr =
+        driver->Builder.CreateGEP(typ, alloca, {zero, index}, "array_elem_ptr");
+    driver->Builder.CreateStore(val, elementPtr);
+  }
+
+  setLastValue(alloca);
+  setLastType(typ);
+}
+
+void CodeGenVisitor::Visit(FloatExpr *expr) {
+  auto val = llvm::ConstantFP::get(driver->Builder.getFloatTy(), expr->Value);
+  setLastValue(val);
+}
+
 // Types
 
 void CodeGenVisitor::Visit(TypeSlice *expr) {
@@ -635,7 +784,7 @@ void CodeGenVisitor::Visit(TypeSlice *expr) {
 void CodeGenVisitor::Visit(TypeArray *expr) {
   auto inner = evaluate(expr->T.get());
 
-  auto t = llvm::ArrayType::get(inner, 10);
+  auto t = llvm::ArrayType::get(inner, expr->Size);
   setLastType(t);
 }
 void CodeGenVisitor::Visit(TypeInt *expr) {

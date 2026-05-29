@@ -84,6 +84,9 @@ public:
   void Visit(Assert_Less_Than_Equal_Expr *expr);
   void Visit(Assert_Greater_Than_Expr *expr);
   void Visit(Assert_Greater_Than_Equals_Expr *expr);
+  void Visit(Array_Access_Expr *expr);
+  void Visit(Array_Init_Expr *expr);
+  void Visit(FloatExpr *expr);
 
   virtual void Visit(TypeSlice *expr);
   virtual void Visit(TypeArray *expr);

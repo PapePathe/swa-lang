@@ -1,5 +1,4 @@
-#ifndef INCLUDE_AST_VISITOR_H_
-#define INCLUDE_AST_VISITOR_H_
+#pragma once
 
 #include <llvm/IR/Value.h>
 
@@ -42,6 +41,9 @@ class Assert_Less_Than_Expr;
 class Assert_Less_Than_Equal_Expr;
 class Assert_Greater_Than_Expr;
 class Assert_Greater_Than_Equals_Expr;
+class Array_Access_Expr;
+class Array_Init_Expr;
+class FloatExpr;
 
 class TypeInt;
 class TypeFloat;
@@ -94,6 +96,9 @@ public:
   virtual void Visit(Assert_Less_Than_Equal_Expr *expr) = 0;
   virtual void Visit(Assert_Greater_Than_Expr *expr) = 0;
   virtual void Visit(Assert_Greater_Than_Equals_Expr *expr) = 0;
+  virtual void Visit(Array_Access_Expr *expr) = 0;
+  virtual void Visit(Array_Init_Expr *expr) = 0;
+  virtual void Visit(FloatExpr *expr) = 0;
 
   virtual void Visit(TypeSlice *expr) = 0;
   virtual void Visit(TypeArray *expr) = 0;
@@ -106,5 +111,3 @@ public:
   virtual void Visit(TypeStruct *expr) = 0;
   virtual void Visit(TypePointer *expr) = 0;
 };
-
-#endif // INCLUDE_SWA_VISITOR_H_

@@ -21,7 +21,8 @@ enum class TypeKind {
   Struct,
   Pointer,
   Array,
-  Slice
+  Slice,
+  DirtyType
 };
 
 class Type {
@@ -61,11 +62,11 @@ public:
   TypeKind GetKind() const override { return TypeKind::Float; }
   std::string GetName() const override { return "Float"; };
   bool IsEqual(const Type *other) const override {
-    if (other->GetKind() != TypeKind::Int) {
-      return false;
+    if (other->GetKind() == GetKind()) {
+      return true;
     }
 
-    return true;
+    return false;
   }
   std::unique_ptr<Type> Clone() const override {
     return std::move(std::make_unique<TypeFloat>(span));
@@ -143,6 +144,26 @@ public:
   };
 };
 
+class TypeDirty : public Type {
+public:
+  explicit TypeDirty(Span s) : Type(s) {}
+  void Accept(ASTVisitor &v) override {
+    throw std::runtime_error("why would you visit type dirty");
+  };
+  TypeKind GetKind() const override { return TypeKind::DirtyType; }
+  std::string GetName() const override { return "Dirty(TypeChecking failed)"; };
+  bool IsEqual(const Type *other) const override {
+    if (GetKind() == other->GetKind()) {
+      return true;
+    }
+    return false;
+  }
+
+  std::unique_ptr<Type> Clone() const override {
+    return std::move(std::make_unique<TypeDirty>(span));
+  };
+};
+
 class TypeStruct : public Type {
 public:
   std::string Name;
@@ -189,16 +210,25 @@ public:
       : Size(size), Type(s), T(std::move(t)) {}
   void Accept(ASTVisitor &v) override { v.Visit(this); };
   TypeKind GetKind() const override { return TypeKind::Array; }
-  std::string GetName() const override { return "Array"; };
+  std::string GetName() const override {
+    return "Array[" + std::to_string(Size) + " * " + T->GetName() + "]";
+  };
   bool IsEqual(const Type *other) const override {
-    if (GetKind() == other->GetKind()) {
-      return true;
+    if (GetKind() != other->GetKind()) {
+      return false;
     }
-    return false;
+
+    const auto *otherArray = static_cast<const TypeArray *>(other);
+
+    if (Size != otherArray->Size) {
+      return false;
+    }
+
+    return T->IsEqual(otherArray->T.get());
   }
 
   std::unique_ptr<Type> Clone() const override {
-    return std::move(std::make_unique<TypePointer>(T->Clone(), span));
+    return std::move(std::make_unique<TypeArray>(Size, T->Clone(), span));
   };
 };
 

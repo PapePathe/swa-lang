@@ -12,6 +12,8 @@
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 
+#include <fstream>
+#include <stdexcept>
 #include <utility>
 
 class TypeCheckVisitorException : public std::exception {
@@ -28,6 +30,9 @@ class TypeCheckVisitor : public ASTVisitor {
 private:
   std::unique_ptr<SwaCompilerDriver> driver;
   std::vector<ParserException> errors;
+  SwaSymbol *lastSymbol;
+  std::ofstream debugLog;
+
   void ValidateArithmetic(std::unique_ptr<Expr> &left,
                           std::unique_ptr<Expr> &right, const Span &span,
                           const std::string &opName);
@@ -37,9 +42,24 @@ private:
 
 public:
   TypeCheckVisitor(std::unique_ptr<SwaCompilerDriver> d)
-      : driver(std::move(d)) {}
+      : driver(std::move(d)) {
+    debugLog.open("typecheck_debug.log", std::ios::out | std::ios::trunc);
+  }
 
   void checkErrors();
+  void setLastSymbol(SwaSymbol *s) { lastSymbol = s; }
+  SwaSymbol *getLastSymbol() {
+    auto old = lastSymbol;
+    lastSymbol = nullptr;
+    return old;
+  }
+
+  void log(const std::string &msg) {
+    if (debugLog.is_open()) {
+      debugLog << msg << std::endl;
+      debugLog.flush();
+    }
+  }
 
   std::unique_ptr<SwaCompilerDriver> finalize() { return std::move(driver); }
   void Visit(AddExpr *expr);
@@ -79,6 +99,9 @@ public:
   void Visit(Assert_Less_Than_Equal_Expr *expr);
   void Visit(Assert_Greater_Than_Expr *expr);
   void Visit(Assert_Greater_Than_Equals_Expr *expr);
+  void Visit(Array_Access_Expr *expr);
+  void Visit(Array_Init_Expr *expr);
+  void Visit(FloatExpr *expr);
 
   virtual void Visit(TypeSlice *expr);
   virtual void Visit(TypeArray *expr);
