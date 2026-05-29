@@ -1861,3 +1861,23 @@ TEST_F(JITOutputTest, Array_Access) {
   std::string expected_diagnostic = "20";
   assertSwaOutput(input, expected_diagnostic);
 }
+
+TEST_F(JITOutputTest, Array_Access_With_Non_Array_Variable) {
+  std::string input = R"(
+      dialect:english;
+      start() int {
+        let arr int := 10;
+        print(arr[1]);
+        return 0;
+      }
+  )";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Cannot index a non-array value\n  "
+      "--> swa_source:5:15\n   |\n 5 |         print(arr[1]);\n   |            "
+      "   "
+      "\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B["
+      "0m the expression  has type 'Int', but an 'Array' is required\n   | "
+      "\x1B[1;36mhelp\x1B[0m: Ensure the expression is declared as an array "
+      "before attempting to index it\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
