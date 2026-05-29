@@ -42,7 +42,7 @@ public:
   SymbolTable *currentSymbols;
   DebugInfoContext DebugInfo;
   bool TestMode;
-  bool InsideFunction;
+  bool InsideFunction = false;
 
   explicit SwaCompilerDriver(std::string moduleName)
       : Builder(Context),
