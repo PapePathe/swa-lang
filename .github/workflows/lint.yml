@@ -113,10 +113,10 @@ jobs:
             "@executable_path/../Frameworks/libLLVM.dylib" \
             "build/swa"
 
-          cd build
           # 3. Verify the change
           otool -L build/swa | grep libLLVM
-                    cpack -G DragNDrop
+          cd build
+          cpack -G DragNDrop
 
       - name: Upload Linux AppImage
         if: runner.os == 'Linux'
