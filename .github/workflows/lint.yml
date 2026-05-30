@@ -101,12 +101,8 @@ jobs:
       - name: Package DMG (macOS)
         if: runner.os == 'macOS'
         run: |
+          cp $(brew --prefix llvm@21)/lib/libLLVM.dylib build/libLLVM.dylib
           cd build
-          mkdir -p staging/Contents/MacOS staging/Contents/Frameworks
-          cp swa staging/Contents/MacOS/
-          chmod +x ../scripts/bundle-macos.sh
-          .././scripts/bundle-macos.sh staging/Contents/MacOS/swa staging/
-          otool -L staging/Contents/MacOS/swa
           cpack -G DragNDrop
 
       - name: Upload Linux AppImage

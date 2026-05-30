@@ -77,8 +77,14 @@ set(CPACK_PACKAGE_DESCRIPTION "A multi dialect compiler")
 set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "llvm (>= 21.0.0)")
 
+install(TARGETS swa DESTINATION bin)
 if(APPLE)
     set(CPACK_GENERATOR "DragNDrop") # Creates a .dmg
+    # Install the libLLVM.dylib into the Frameworks folder of the bundle
+    install(FILES "${LLVM_LIBRARY_DIR}/libLLVM.dylib" DESTINATION Frameworks)
+
+    # Set the RPATH so the binary looks in the right place
+    set_target_properties(swa PROPERTIES INSTALL_RPATH "@executable_path/../Frameworks")
 elseif(UNIX)
   set(CPACK_GENERATOR "TGZ;DEB;RPM")  # Creates .tar.gz and .deb
 endif()
