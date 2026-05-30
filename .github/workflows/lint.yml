@@ -103,7 +103,7 @@ jobs:
         run: |
           cd build
           mkdir -p staging/Contents/MacOS staging/Contents/Frameworks
-          cp build/swa staging/Contents/MacOS/
+          cp swa staging/Contents/MacOS/
           chmod +x ../scripts/bundle-macos.sh
           .././scripts/bundle-macos.sh staging/Contents/MacOS/swa staging/
           otool -L staging/Contents/MacOS/swa
