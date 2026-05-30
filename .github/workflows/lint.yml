@@ -102,8 +102,21 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           cp $(brew --prefix llvm@21)/lib/libLLVM.dylib build/libLLVM.dylib
+          # 1. Identify the exact path the binary is looking for
+          # Save this output to check if the change command worked
+          otool -L build/swa | grep libLLVM
+
+          # 2. Update the reference
+          # Use the exact output from the command above as the 'OLD_PATH'
+          install_name_tool -change \
+            "/opt/homebrew/opt/llvm@21/lib/libLLVM.dylib" \
+            "@executable_path/../Frameworks/libLLVM.dylib" \
+            "build/swa"
+
           cd build
-          cpack -G DragNDrop
+          # 3. Verify the change
+          otool -L build/swa | grep libLLVM
+                    cpack -G DragNDrop
 
       - name: Upload Linux AppImage
         if: runner.os == 'Linux'
