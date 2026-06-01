@@ -3,14 +3,12 @@
 #include <ast/node.h>
 #include <ast/type.h>
 
-#include <exception>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 
 #include <map>
 #include <memory>
-#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -21,8 +19,11 @@ struct SwaSymbol {
   std::unique_ptr<Type> type;
   SwaSymbolKind kind;
   ProtoExpr *proto = nullptr;
+  Expr *initExpr = nullptr;
   SwaSymbol(std::unique_ptr<Type> type, SwaSymbolKind kind)
       : type(std::move(type)), kind(kind) {}
+  SwaSymbol(std::unique_ptr<Type> type, SwaSymbolKind kind, Expr *initExpr)
+      : type(std::move(type)), kind(kind), initExpr(initExpr) {}
   SwaSymbol(std::unique_ptr<Type> type, SwaSymbolKind kind, ProtoExpr *proto)
       : type(std::move(type)), kind(kind), proto(proto) {}
 };

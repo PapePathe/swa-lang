@@ -36,25 +36,6 @@ struct PrintTypeConfig {
   bool isBoolean = false;
 };
 
-// PrintTypeConfig getBaseTypeConfig(llvm::Type *type) {
-//   if (type->isIntegerTy(1)) {
-//
-//     return {"%s", true};
-//   } else if (type->isIntegerTy(32)) {
-//     return {"%d", false};
-//   } else if (type->isIntegerTy(64)) {
-//     return {"%ld", false};
-//   } else if (type->isFloatTy() || type->isDoubleTy()) {
-//     return {"%f", false};
-//   } else {
-//     std::string type_str;
-//     llvm::raw_string_ostream rso(type_str);
-//     type->print(rso);
-//
-//     throw std::runtime_error("Unsupported base type " + type_str);
-//   }
-// }
-
 PrintTypeConfig getBaseSwaTypeConfig(Type *type) {
   switch (type->GetKind()) {
   case TypeKind::Bool:
@@ -75,27 +56,30 @@ PrintTypeConfig getBaseSwaTypeConfig(Type *type) {
 std::pair<std::string, std::vector<llvm::Value *>>
 CodeGenVisitor::buildFormatStringAndArgs(
     const std::vector<std::unique_ptr<Expr>> &expressions) {
+  log("buildFormatStringAndArgs");
   std::string formatStr = "";
   std::vector<llvm::Value *> printfArgs;
   auto size = expressions.size();
   printfArgs.reserve(size);
 
   for (size_t i = 0; i < size; ++i) {
+    log("buildFormatStringAndArgs arg n: " + std::to_string(i));
     auto expr = expressions[i].get();
     auto *val = evaluate(expr);
     auto *typ = evaluate(expr->datatype.get());
 
     if (!val) {
-
       throw std::runtime_error(
           "CodeGen failed inside print string evaluation pass.");
     }
 
     if (auto *alloca = llvm::dyn_cast<llvm::AllocaInst>(val)) {
+      log("buildFormatStringAndArgs processing alloca");
       val = driver->Builder.CreateLoad(typ, alloca, "load_val");
     }
 
     if (auto *gep = llvm::dyn_cast<llvm::GetElementPtrInst>(val)) {
+      log("buildFormatStringAndArgs processing gep");
       val = driver->Builder.CreateLoad(typ, gep, "load_val");
     }
 
@@ -103,6 +87,7 @@ CodeGenVisitor::buildFormatStringAndArgs(
     formatStr += specifier;
 
     if (isBoolean) {
+      log("buildFormatStringAndArgs processing boolean");
       auto *trueStr = driver->Builder.CreateGlobalString("true", "str_true");
       auto *falseStr = driver->Builder.CreateGlobalString("false", "str_false");
       val = driver->Builder.CreateSelect(val, trueStr, falseStr, "bool_to_str");
@@ -113,96 +98,10 @@ CodeGenVisitor::buildFormatStringAndArgs(
     }
     printfArgs.push_back(val);
   }
+  log("buildFormatStringAndArgs (" + formatStr + ")");
 
   return {formatStr, printfArgs};
 }
-
-// PrintTypeConfig getTypeConfig(llvm::Value *val) {
-//   llvm::Type *type = val->getType();
-//
-//   if (type->isIntegerTy(1))
-//     return {"%s", true};
-//   if (type->isIntegerTy(32))
-//     return {"%d", false};
-//   if (type->isIntegerTy(64))
-//     return {"%ld", false};
-//   if (type->isFloatTy() || type->isDoubleTy())
-//     return {"%f", false};
-//
-//   if (type->isPointerTy()) {
-//     if (auto *globalVar = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
-//       // Safe string extraction via GlobalVariable inspection
-//       if (globalVar->hasInitializer() &&
-//           llvm::isa<llvm::ConstantDataArray>(globalVar->getInitializer())) {
-//         return {"%s", false};
-//       }
-//     }
-//
-//     if (auto *gep = llvm::dyn_cast<llvm::GEPOperator>(val)) {
-//       // Safe string extraction via GEP element arrays
-//       if (gep->getSourceElementType()->isIntegerTy(8)) {
-//         return {"%s", false};
-//       }
-//
-//       if (gep->getSourceElementType()->isArrayTy()) {
-//         return getBaseTypeConfig(
-//             gep->getSourceElementType()->getArrayElementType());
-//       }
-//     }
-//     // Fallback safety fallback: Treat raw pointers as addresses to prevent
-//     // runtime segfaults
-//     return {"%p", false};
-//   }
-//
-//   throw std::runtime_error("Unsupported type passed to print engine.");
-// }
-
-// std::pair<std::string, std::vector<llvm::Value *>>
-// CodeGenVisitor::buildFormatStringAndArgs(
-//     const std::vector<std::unique_ptr<Expr>> &expressions) {
-//   std::string formatStr = "";
-//   std::vector<llvm::Value *> printfArgs;
-//   auto size = expressions.size();
-//   printfArgs.reserve(size);
-//
-//   for (size_t i = 0; i < size; ++i) {
-//     auto *val = evaluate(expressions[i].get());
-//     if (!val)
-//       throw std::runtime_error(
-//           "CodeGen failed inside print string evaluation pass.");
-//
-//     if (auto *alloca = llvm::dyn_cast<llvm::AllocaInst>(val)) {
-//       val = driver->Builder.CreateLoad(alloca->getAllocatedType(), alloca,
-//                                        "load_val");
-//     }
-//
-//     if (auto *gep = llvm::dyn_cast<llvm::GetElementPtrInst>(val)) {
-//       llvm::Type *sourceType = gep->getSourceElementType();
-//       if (sourceType->isArrayTy()) {
-//         val = driver->Builder.CreateLoad(sourceType->getArrayElementType(),
-//         gep,
-//                                          "load_val");
-//       }
-//     }
-//
-//     auto [specifier, isBoolean] = getTypeConfig(val);
-//     formatStr += specifier;
-//
-//     if (isBoolean) {
-//       auto *trueStr = driver->Builder.CreateGlobalString("true", "str_true");
-//       auto *falseStr = driver->Builder.CreateGlobalString("false",
-//       "str_false"); val = driver->Builder.CreateSelect(val, trueStr,
-//       falseStr, "bool_to_str");
-//     }
-//
-//     if (i < size - 1) {
-//       formatStr += " ";
-//     }
-//     printfArgs.push_back(val);
-//   }
-//
-//   return {formatStr, printfArgs};
-// }
 
 void CodeGenVisitor::setLastFunc(llvm::Function *v) { lastFunc = v; }
 void CodeGenVisitor::setLastValue(llvm::Value *v) { lastValue = v; }
@@ -288,15 +187,27 @@ void CodeGenVisitor::Visit(BlockExpr *expr) {
 
   driver->currentSymbols = oldTable;
 }
+const size_t STACK_LIMIT_BYTES = 64 * 1024;
 
 void CodeGenVisitor::Visit(DeclarationExpr *expr) {
+  log("Visit DeclarationExpr");
   auto val = evaluate(expr->Value.get());
   auto typ = evaluate(expr->T.get());
 
   if (!val) {
+    log("Visit DeclarationExpr value is not set");
+
     if (typ && typ->isStructTy()) {
+      log("Visit DeclarationExpr type is a struct");
+
       val = llvm::ConstantAggregateZero::get(typ);
     } else if (typ->isPointerTy()) {
+      log("Visit DeclarationExpr type is a pointer");
+
+      val = llvm::Constant::getNullValue(typ);
+    } else if (typ->isArrayTy()) {
+      log("Visit DeclarationExpr type is an array");
+
       val = llvm::Constant::getNullValue(typ);
     } else {
       val = llvm::Constant::getNullValue(typ);
@@ -304,20 +215,36 @@ void CodeGenVisitor::Visit(DeclarationExpr *expr) {
   }
 
   if (driver->InsideFunction) {
-    auto alloctype = val->getType();
-    if (typ && typ->isStructTy()) {
-      alloctype = typ;
+    log("Visit DeclarationExpr local variable");
+    auto alloctype = typ;
+
+    size_t sizeInBytes = driver->GetTypeSize(alloctype);
+    if (sizeInBytes <= STACK_LIMIT_BYTES) {
+      log("Visit DeclarationExpr creating alloca");
+      auto alloc = driver->Builder.CreateAlloca(alloctype, nullptr,
+                                                "alloc-" + expr->Name);
+      log("Visit DeclarationExpr adding to symboltable");
+      driver->currentSymbols->define(expr->Name, alloc, alloctype);
+      log("Visit DeclarationExpr creating a store");
+      driver->Builder.CreateStore(val, alloc);
+      log("setting last value");
+      setLastValue(alloc);
+    } else {
+      log("Visit DeclarationExpr creating malloc");
+      llvm::Value *sizeVal =
+          llvm::ConstantInt::get(driver->Builder.getInt64Ty(), sizeInBytes);
+      auto alloc = driver->Builder.CreateMalloc(driver->Builder.getInt64Ty(),
+                                                typ, sizeVal, nullptr);
+      driver->currentSymbols->define(expr->Name, alloc, typ);
+      llvm::Value *zero =
+          llvm::ConstantInt::get(llvm::Type::getInt8Ty(driver->Context), 0);
+      setLastValue(alloc);
     }
-
-    auto alloc =
-        driver->Builder.CreateAlloca(alloctype, nullptr, "alloc-" + expr->Name);
-    driver->currentSymbols->define(expr->Name, alloc, val->getType());
-    driver->Builder.CreateStore(val, alloc);
-
-    setLastValue(alloc);
 
     return;
   }
+
+  log("Visit DeclarationExpr global variable");
 
   driver->Module->getOrInsertGlobal(expr->Name, val->getType());
   llvm::GlobalVariable *glob = driver->Module->getNamedGlobal(expr->Name);
@@ -367,6 +294,7 @@ void CodeGenVisitor::Visit(GTEExpr *expr) {}
 void CodeGenVisitor::Visit(LTExpr *expr) {}
 void CodeGenVisitor::Visit(LTEExpr *expr) {}
 void CodeGenVisitor::Visit(FuncExpr *expr) {
+  log("Visit FuncExpr " + expr->Proto->Name);
   driver->InsideFunction = true;
   llvm::Function *TheFunction =
       driver->Module->getFunction(expr->Proto->getName());
@@ -454,11 +382,14 @@ void CodeGenVisitor::Visit(NumberExpr *expr) {
 }
 
 void CodeGenVisitor::Visit(PrintExpr *expr) {
+  log("Visit PrintExpr");
   auto printfTy = llvm::FunctionType::get(driver->Builder.getInt32Ty(),
                                           driver->Builder.getPtrTy(), true);
   auto printfn = driver->Module->getOrInsertFunction("printf", printfTy);
 
+  log("Visit PrintExpr buildFormatStringAndArgs");
   auto [formatStr, printfArgs] = buildFormatStringAndArgs(expr->Values);
+  log("Visit PrintExpr finished");
 
   llvm::Value *formatStrValue =
       driver->Builder.CreateGlobalString(formatStr, "print_fmt");
@@ -735,11 +666,10 @@ void CodeGenVisitor::Visit(Array_Access_Expr *expr) {
   expr->Array->datatype->Accept(*this);
   auto t = setLastType();
 
-  if (seqPtr->getType()->isPointerTy()) {
-    seqPtr = driver->Builder.CreateLoad(driver->Builder.getPtrTy(), seqPtr,
-                                        "load_array_addr");
+  if (auto *alloca = llvm::dyn_cast<llvm::AllocaInst>(idxVal)) {
+    idxVal = driver->Builder.CreateLoad(alloca->getAllocatedType(), alloca,
+                                        "load_index");
   }
-
   llvm::Value *zero = llvm::ConstantInt::get(driver->Builder.getInt32Ty(), 0);
   llvm::Value *elemPtr =
       driver->Builder.CreateGEP(t, seqPtr, {zero, idxVal}, "access_ptr");
@@ -754,6 +684,7 @@ void CodeGenVisitor::Visit(Array_Init_Expr *expr) {
 
   llvm::Value *zero = llvm::ConstantInt::get(driver->Builder.getInt32Ty(), 0);
 
+  std::vector<llvm::Constant *> constElements;
   for (size_t i = 0; i < expr->Elements.size(); ++i) {
     llvm::Value *val = evaluate(expr->Elements[i].get());
     llvm::Value *index =
@@ -764,7 +695,7 @@ void CodeGenVisitor::Visit(Array_Init_Expr *expr) {
     driver->Builder.CreateStore(val, elementPtr);
   }
 
-  setLastValue(alloca);
+  setLastValue(driver->Builder.CreateLoad(typ, alloca));
   setLastType(typ);
 }
 

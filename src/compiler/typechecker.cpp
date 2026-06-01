@@ -74,8 +74,9 @@ void TypeCheckVisitor::Visit(BlockExpr *expr) {
 
 void TypeCheckVisitor::Visit(DeclarationExpr *expr) {
   log("Visit DeclarationExpr");
-  auto sym = std::make_unique<SwaSymbol>(std::move(expr->T.get()->Clone()),
-                                         SwaSymbolKind::Variable);
+  auto sym =
+      std::make_unique<SwaSymbol>(std::move(expr->T.get()->Clone()),
+                                  SwaSymbolKind::Variable, expr->Value.get());
   log("Visit DeclarationExpr lookupSwaSymbol " + expr->Name);
   driver->currentSymbols->defineSwaSymbol(expr->Name, std::move(sym));
 
@@ -452,14 +453,8 @@ void TypeCheckVisitor::Visit(Array_Access_Expr *expr) {
       return;
     }
 
-    if (expr->Array->datatype->GetKind() != TypeKind::Array) {
-      return;
-    }
-
     auto arr = dynamic_cast<TypeArray *>(expr->Array->datatype.get());
 
-    // FIXME, we should check bounds
-    // when index is an identifier
     if (num->Value >= arr->Size) {
       errors.push_back(CodeGenException(
           "Out of bounds array access", expr->Index->span,
@@ -469,6 +464,36 @@ void TypeCheckVisitor::Visit(Array_Access_Expr *expr) {
               std::to_string(arr->Size - 1)));
       expr->datatype = std::make_unique<TypeDirty>(expr->span);
       return;
+    }
+  }
+
+  if (auto id = dynamic_cast<IdExpr *>(expr->Index.get())) {
+    try {
+      auto sym = driver->currentSymbols->lookupSwaSymbol(id->Name);
+
+      if (sym->initExpr == nullptr) {
+        return;
+      }
+
+      // FIXME
+      // This can lead to confusion since we do not verify that the value
+      // of the initExpr was not overriden by an assignnment expression
+      // after variable was created.
+      if (auto num = dynamic_cast<NumberExpr *>(sym->initExpr)) {
+        auto arr = dynamic_cast<TypeArray *>(expr->Array->datatype.get());
+
+        if (num->Value >= arr->Size) {
+          errors.push_back(CodeGenException(
+              "Out of bounds array access", expr->Index->span,
+              "Index " + std::to_string(num->Value) + " is out of bounds",
+              "Array contains " + std::to_string(arr->Size) +
+                  " values and valid indexes go from 0 to " +
+                  std::to_string(arr->Size - 1)));
+          expr->datatype = std::make_unique<TypeDirty>(expr->span);
+          return;
+        }
+      }
+    } catch (std::exception err) {
     }
   }
 

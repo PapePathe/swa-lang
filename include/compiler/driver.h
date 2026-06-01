@@ -58,4 +58,9 @@ public:
     Symbols = std::make_unique<SymbolTable>();
     currentSymbols = Symbols.get();
   }
+
+  size_t GetTypeSize(llvm::Type *llvmType) {
+    static llvm::DataLayout layout = Module->getDataLayout();
+    return layout.getTypeAllocSize(llvmType);
+  }
 };
