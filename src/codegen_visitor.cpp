@@ -354,6 +354,10 @@ void CodeGenVisitor::Visit(FuncExpr *expr) {
       driver->Builder.CreateLoad(currentReturnType, currentReturnStorage);
   driver->Builder.CreateRet(finalRetVal);
 
+  currentExitBlock = nullptr;
+  currentReturnStorage = nullptr;
+  currentReturnType = nullptr;
+
   driver->currentSymbols = old;
   driver->InsideFunction = false;
 }
@@ -475,8 +479,11 @@ void CodeGenVisitor::Visit(ProtoExpr *expr) {
   codegenvisittrace("finish proto expr");
 }
 void CodeGenVisitor::Visit(ReturnExpr *expr) {
-  auto res = evaluate(expr->Value.get());
-  driver->Builder.CreateStore(res, currentReturnStorage);
+  // FIXME double check this when function returns void
+  if (currentReturnStorage) {
+    auto res = evaluate(expr->Value.get());
+    driver->Builder.CreateStore(res, currentReturnStorage);
+  }
   driver->Builder.CreateBr(currentExitBlock);
 }
 void CodeGenVisitor::Visit(StrExpr *expr) {
