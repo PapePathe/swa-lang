@@ -2007,3 +2007,25 @@ TEST_F(JITOutputTest, Large_Array_Stack_Allocation) {
   std::string expected_diagnostic = "0 0 0.000000 0.000000";
   assertSwaOutput(input, expected_diagnostic);
 }
+
+TEST_F(JITOutputTest, Large_Array_Stack_Allocation_Nested_Blocks) {
+  std::string input = R"(
+      dialect:english;
+      start() int {
+        {
+          let arr [1000000000]int;
+          let arr2 [1000000000]float;
+          print(arr[0], arr[999999999], arr2[0], arr2[999999999]);
+        }
+
+        let arr [1000000000]int;
+        let arr2 [1000000000]float;
+        print(arr[0], arr[999999999], arr2[0], arr2[999999999]);
+        return 0;
+      }
+  )";
+
+  std::string expected_diagnostic =
+      "0 0 0.000000 0.0000000 0 0.000000 0.000000";
+  assertSwaOutput(input, expected_diagnostic);
+}
