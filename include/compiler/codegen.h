@@ -1,17 +1,23 @@
-#ifndef INCLUDE_COMPILER_CODEGEN_H_
-#define INCLUDE_COMPILER_CODEGEN_H_
+#pragma once
 
 #include <ast/expr.h>
 #include <ast/symboltable.h>
 #include <ast/visitor.h>
 #include <compiler/driver.h>
+
 #include <llvm/IR/DIBuilder.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 #include <parser/exception.h>
+
+#include <fstream>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 class CodeGenException : public ParserException {
@@ -21,10 +27,10 @@ class CodeGenException : public ParserException {
 class CodeGenVisitor : public ASTVisitor {
 private:
   std::unique_ptr<SwaCompilerDriver> driver;
-
   llvm::Value *lastValue = nullptr;
   llvm::Function *lastFunc = nullptr;
   llvm::Type *lastType = nullptr;
+  std::ofstream debugLog;
 
   void setLastFunc(llvm::Function *v);
   void setLastValue(llvm::Value *v);
@@ -40,13 +46,28 @@ private:
       const std::vector<std::unique_ptr<Expr>> &expressions);
 
 public:
-  CodeGenVisitor(std::unique_ptr<SwaCompilerDriver> d) : driver(std::move(d)) {}
+  explicit CodeGenVisitor(std::unique_ptr<SwaCompilerDriver> d)
+      : driver(std::move(d)) {
+    debugLog.open("codegen_debug.log", std::ios::out | std::ios::trunc);
+    if (!debugLog.is_open()) {
+      throw std::runtime_error("cannot open log file");
+    }
+  }
 
   std::vector<std::string>
   visitTestExpressions(std::vector<std::unique_ptr<Test_Expr>> tests);
 
   std::unique_ptr<SwaCompilerDriver> finalize() { return std::move(driver); }
+
   void generateTestEntrypoint(const std::vector<std::string> &testNames);
+
+  void log(const std::string &msg) {
+    if (debugLog.is_open()) {
+      debugLog << msg << std::endl;
+      debugLog.flush();
+    }
+  }
+
   void Visit(AddExpr *expr);
   void Visit(BoolExpr *expr);
   void Visit(BlockExpr *expr);
@@ -99,4 +120,3 @@ public:
   virtual void Visit(TypeStruct *expr);
   virtual void Visit(TypePointer *expr);
 };
-#endif // INCLUDE_COMPILER_CODEGEN_H_

@@ -34,11 +34,9 @@
 #include <utility>
 #include <vector>
 
-void SwaCompiler::Run(const std::string &_source) {
-  llvm::InitializeNativeTarget();
-  llvm::InitializeNativeTargetAsmPrinter();
-  llvm::InitializeNativeTargetAsmParser();
+void initTargetTripleAndDataLayout(llvm::Module *TheModule);
 
+void SwaCompiler::Run(const std::string &_source) {
   SourceManager sm(_source);
 
   Lexer l(_source, KEYWORDS_ENGLISH);
@@ -47,6 +45,8 @@ void SwaCompiler::Run(const std::string &_source) {
   try {
     auto program = parser.parseProgram();
     auto driver = std::make_unique<SwaCompilerDriver>("swa_module");
+
+    initTargetTripleAndDataLayout(driver->Module.get());
 
     DeclarationVisitor decl = DeclarationVisitor(std::move(driver));
     program->Accept(decl);
@@ -83,8 +83,8 @@ void SwaCompiler::Run(const std::string &_source) {
 
 void SwaCompiler::Build(const std::string &_source) {
   llvm::InitializeAllTargetInfos();
-  llvm::InitializeNativeTarget();
   llvm::InitializeAllTargetMCs();
+  llvm::InitializeNativeTarget();
   llvm::InitializeNativeTargetAsmPrinter();
   llvm::InitializeNativeTargetAsmParser();
   auto TargetTriple = llvm::sys::getDefaultTargetTriple();
@@ -116,6 +116,7 @@ void SwaCompiler::Test(const std::string &_source) {
   llvm::InitializeNativeTarget();
   llvm::InitializeNativeTargetAsmPrinter();
   llvm::InitializeNativeTargetAsmParser();
+  auto TargetTriple = llvm::sys::getDefaultTargetTriple();
 
   Lexer l(_source, KEYWORDS_ENGLISH);
   Parser parser(l.tokenize());
@@ -218,4 +219,26 @@ void verifyModule(llvm::Module *module) {
         << "> Fatal Error: Generated LLVM IR is structurally malformed!\n";
     std::exit(1);
   }
+}
+
+void initTargetTripleAndDataLayout(llvm::Module *TheModule) {
+  llvm::InitializeAllTargetInfos();
+  llvm::InitializeAllTargetMCs();
+  llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmPrinter();
+  llvm::InitializeNativeTargetAsmParser();
+  auto TargetTriple = llvm::sys::getDefaultTargetTriple();
+
+  std::string Error;
+  auto Target = llvm::TargetRegistry::lookupTarget(TargetTriple, Error);
+
+  auto CPU = "generic";
+  auto Features = "";
+  llvm::TargetOptions opt;
+  auto RM = llvm::Reloc::Model::PIC_;
+  auto TargetMachine =
+      Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
+
+  TheModule->setTargetTriple(llvm::Triple(TargetTriple));
+  TheModule->setDataLayout(TargetMachine->createDataLayout());
 }

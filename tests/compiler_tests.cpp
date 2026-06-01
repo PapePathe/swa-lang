@@ -1881,3 +1881,126 @@ TEST_F(JITOutputTest, Array_Access_With_Non_Array_Variable) {
       "before attempting to index it\n\n";
   assertSwaOutput(input, expected_diagnostic);
 }
+
+TEST_F(JITOutputTest, Array_With_Index_Identifier) {
+  std::string input = R"(
+      dialect:english;
+      start() int {
+        let arr [2]int := [10, 20];
+        let x int := 1;
+        print(arr[x-1], arr[x]);
+        return 0;
+      }
+  )";
+  std::string expected_diagnostic = "10 20";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Array_With_Index_Identifier_Out_Of_Bounds) {
+  std::string input = R"(
+      dialect:english;
+      start() int {
+        let arr [2]int := [10, 20];
+        let x int := 5;
+        print(arr[x]);
+        return 0;
+      }
+  )";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Out of bounds array access\n  --> "
+      "swa_source:6:19\n   |\n 6 |         print(arr[x]);\n   |                "
+      "   \x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m Index 5 is out of bounds\n   | "
+      "\x1B[1;36mhelp\x1B[0m: Array contains 2 values and valid indexes go "
+      "from 0 to 1\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Array_With_Index_Identifier_Negative) {
+  std::string input = R"(
+      dialect:english;
+      start() int {
+        let arr [2]int := [10, 20];
+        let x int := 5;
+        print(arr[-x]);
+        return 0;
+      }
+  )";
+  std::string expected_diagnostic =
+      "\x1B[1;31mtype check error\x1B[0m: Array index must be positive\n  --> "
+      "swa_source:6:19\n   |\n 6 |         print(arr[-x]);\n   |               "
+      "    \x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\x1B[1;31m^\x1B[0m\n\n";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+TEST_F(JITOutputTest, Large_Array_Stack_Allocation) {
+  // 1,000,000 * 4 bytes = 4MB.
+  // This validates the compiler's ability to generate allocation
+  // instructions for large memory blocks on the stack.
+
+  std::string input = R"(
+      dialect:english;
+      start() int {
+        let arr [1000000000]int;
+        let arr2 [1000000000]float;
+        print(arr[0], arr[999999999], arr2[0], arr2[999999999]);
+        return 0;
+      }
+  )";
+
+  std::string expected_diagnostic = "0 0 0.000000 0.000000";
+  assertSwaOutput(input, expected_diagnostic);
+}
+
+// TEST_F(JITOutputTest, Error_Array_DeepIndex_OutOfBounds) {
+//   // Indexing second dimension out of bounds
+//   std::string input = R"(
+//       dialect:english;
+//       start() int {
+//         let arr [2][2]int := [[1, 2], [3, 4]];
+//         print(arr[0][5]);
+//         return 0;
+//       }
+//   )";
+//
+//   std::string expected_diagnostic = "";
+//   assertSwaOutput(input, expected_diagnostic);
+// }
+//
+// TEST_F(JITOutputTest, Array_Index_Expression_Evaluation) {
+//   std::string input = R"(
+//       dialect:english;
+//       start() int {
+//         let arr [2]int := [10, 20];
+//         let x int := 1;
+//         print(arr[x * 1 + 0]); // Test complex index expression
+//         return 0;
+//       }
+//   )";
+//   std::string expected_diagnostic = "20";
+//   assertSwaOutput(input, expected_diagnostic);
+// }
+// TEST_F(JITOutputTest, Array_Dynamic_Initialization) {
+//   std::string input = R"(
+//       dialect:english;
+//       start() int {
+//         let x int := 5;
+//         let arr [2]int := [x, x * 2];
+//         print(arr[0], arr[1]);
+//         return 0;
+//       }
+//   )";
+//   assertSwaOutput(input, "5 10");
+// }
+// TEST_F(JITOutputTest, Array_MultiDim_NonPowerOfTwo) {
+//   // A [3][3] array ensures rows are not aligned to powers of 2
+//   std::string input = R"(
+//       dialect:english;
+//       start() int {
+//         let mat [3][3]int := [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+//         // Access 2nd row (index 1), 3rd column (index 2) -> 6
+//         print(mat[1][2]);
+//         return 0;
+//       }
+//   )";
+//   assertSwaOutput(input, "6");
+// }
