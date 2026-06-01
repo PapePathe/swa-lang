@@ -795,4 +795,8 @@ void CodeGenVisitor::EmitCleanup(SymbolTable *scope) {
         driver->Builder.CreateBitCast(ptr, driver->Builder.getPtrTy());
     driver->Builder.CreateFree(casted);
   }
+
+  for (auto &child : scope->Children) {
+    EmitCleanup(child.get());
+  }
 }
