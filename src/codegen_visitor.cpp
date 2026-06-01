@@ -12,6 +12,7 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Instructions.h>
+#include <llvm/IR/Operator.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 #include <llvm/Support/Casting.h>
@@ -687,6 +688,15 @@ void CodeGenVisitor::Visit(Array_Init_Expr *expr) {
   std::vector<llvm::Constant *> constElements;
   for (size_t i = 0; i < expr->Elements.size(); ++i) {
     llvm::Value *val = evaluate(expr->Elements[i].get());
+
+    if (auto alloc = llvm::dyn_cast<llvm::AllocaInst>(val)) {
+      val = driver->Builder.CreateLoad(alloc->getAllocatedType(), val);
+    }
+
+    if (auto gep = llvm::dyn_cast<llvm::GEPOperator>(val)) {
+      val = driver->Builder.CreateLoad(gep->getResultElementType(), val);
+    }
+
     llvm::Value *index =
         llvm::ConstantInt::get(driver->Builder.getInt32Ty(), i);
 
