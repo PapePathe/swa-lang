@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 void SymbolTable::define(const std::string &name, llvm::Value *val) {
   Symbols[name] = val;
@@ -88,3 +89,14 @@ llvm::Type *SymbolTable::lookupType(const std::string &name) {
 }
 
 SymbolTable *SymbolTable::getParent() const { return Parent; }
+
+void SymbolTable::registerForCleanup(std::string &name, llvm::Value *ptr) {
+  // trach which variable holds this resource
+  // we need this in order to not free values
+  // that are used in return statements
+  resourcesToFree.push_back(ptr);
+}
+
+const std::vector<llvm::Value *> &SymbolTable::getResourcesToFree() const {
+  return resourcesToFree;
+}

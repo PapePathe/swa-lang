@@ -237,6 +237,7 @@ void CodeGenVisitor::Visit(DeclarationExpr *expr) {
       auto alloc = driver->Builder.CreateMalloc(driver->Builder.getInt64Ty(),
                                                 typ, sizeVal, nullptr);
       driver->currentSymbols->define(expr->Name, alloc, typ);
+      driver->currentSymbols->registerForCleanup(expr->Name, alloc);
       llvm::Value *zero =
           llvm::ConstantInt::get(llvm::Type::getInt8Ty(driver->Context), 0);
       setLastValue(alloc);
@@ -296,6 +297,10 @@ void CodeGenVisitor::Visit(LTExpr *expr) {}
 void CodeGenVisitor::Visit(LTEExpr *expr) {}
 void CodeGenVisitor::Visit(FuncExpr *expr) {
   log("Visit FuncExpr " + expr->Proto->Name);
+
+  auto old = driver->currentSymbols;
+  auto localTable = old->CreateChild();
+  driver->currentSymbols = localTable;
   driver->InsideFunction = true;
   llvm::Function *TheFunction =
       driver->Module->getFunction(expr->Proto->getName());
@@ -309,13 +314,14 @@ void CodeGenVisitor::Visit(FuncExpr *expr) {
     throw std::runtime_error("Func not defined");
   }
 
+  currentReturnType = TheFunction->getReturnType();
   llvm::BasicBlock *BB =
       llvm::BasicBlock::Create(driver->Context, "entry", TheFunction);
   driver->Builder.SetInsertPoint(BB);
+  currentExitBlock =
+      llvm::BasicBlock::Create(driver->Context, "exit", TheFunction);
 
-  auto old = driver->currentSymbols;
-  auto localTable = old->CreateChild();
-  driver->currentSymbols = localTable;
+  currentReturnStorage = driver->Builder.CreateAlloca(currentReturnType);
 
   unsigned Idx = 0;
   for (auto &Arg : TheFunction->args()) {
@@ -330,6 +336,23 @@ void CodeGenVisitor::Visit(FuncExpr *expr) {
   if (expr->Body) {
     expr->Body->Accept(*this);
   }
+
+  // jump to exit (if not already jumped)
+  if (!driver->Builder.GetInsertBlock()->getTerminator()) {
+    driver->Builder.CreateBr(currentExitBlock);
+  }
+
+  driver->Builder.SetInsertPoint(currentExitBlock);
+
+  // cleanup heap data
+  for (auto it = driver->currentSymbols->Children.rbegin();
+       it != driver->currentSymbols->Children.rend(); ++it) {
+    EmitCleanup(it->get());
+  }
+
+  llvm::Value *finalRetVal =
+      driver->Builder.CreateLoad(currentReturnType, currentReturnStorage);
+  driver->Builder.CreateRet(finalRetVal);
 
   driver->currentSymbols = old;
   driver->InsideFunction = false;
@@ -453,8 +476,8 @@ void CodeGenVisitor::Visit(ProtoExpr *expr) {
 }
 void CodeGenVisitor::Visit(ReturnExpr *expr) {
   auto res = evaluate(expr->Value.get());
-
-  driver->Builder.CreateRet(res);
+  driver->Builder.CreateStore(res, currentReturnStorage);
+  driver->Builder.CreateBr(currentExitBlock);
 }
 void CodeGenVisitor::Visit(StrExpr *expr) {
   setLastValue(driver->Builder.CreateGlobalString(expr->Name));
@@ -764,4 +787,12 @@ void CodeGenVisitor::Visit(TypeStruct *expr) {
 
 void CodeGenVisitor::Visit(TypePointer *expr) {
   setLastType(llvm::PointerType::getUnqual(driver->Context));
+}
+
+void CodeGenVisitor::EmitCleanup(SymbolTable *scope) {
+  for (auto *ptr : scope->getResourcesToFree()) {
+    llvm::Value *casted =
+        driver->Builder.CreateBitCast(ptr, driver->Builder.getPtrTy());
+    driver->Builder.CreateFree(casted);
+  }
 }

@@ -33,10 +33,14 @@ class SymbolTable {
   std::map<std::string, llvm::Value *> Symbols;
   std::map<std::string, llvm::Type *> SymbolsTypes;
   std::map<std::string, std::unique_ptr<SwaSymbol>> SwaSymbols;
-  std::vector<std::unique_ptr<SymbolTable>> Children;
+  std::vector<llvm::Value *> resourcesToFree;
 
 public:
+  std::vector<std::unique_ptr<SymbolTable>> Children;
   explicit SymbolTable(SymbolTable *parent = nullptr) : Parent(parent) {}
+
+  void registerForCleanup(std::string &name, llvm::Value *ptr);
+  const std::vector<llvm::Value *> &getResourcesToFree() const;
 
   void define(const std::string &name, llvm::Value *val);
   void define(const std::string &name, llvm::Value *val, llvm::Type *typ);

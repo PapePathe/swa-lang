@@ -1932,25 +1932,6 @@ TEST_F(JITOutputTest, Array_With_Index_Identifier_Negative) {
   assertSwaOutput(input, expected_diagnostic);
 }
 
-TEST_F(JITOutputTest, Large_Array_Stack_Allocation) {
-  // 1,000,000 * 4 bytes = 4MB.
-  // This validates the compiler's ability to generate allocation
-  // instructions for large memory blocks on the stack.
-
-  std::string input = R"(
-      dialect:english;
-      start() int {
-        let arr [1000000000]int;
-        let arr2 [1000000000]float;
-        print(arr[0], arr[999999999], arr2[0], arr2[999999999]);
-        return 0;
-      }
-  )";
-
-  std::string expected_diagnostic = "0 0 0.000000 0.000000";
-  assertSwaOutput(input, expected_diagnostic);
-}
-
 TEST_F(JITOutputTest, Error_Array_DeepIndex_OutOfBounds) {
   // Indexing second dimension out of bounds
   std::string input = R"(
@@ -2010,4 +1991,19 @@ TEST_F(JITOutputTest, Array_Dynamic_Initialization_With_Array_Access_Expr) {
        }
    )";
   assertSwaOutput(input, "1 10");
+}
+
+TEST_F(JITOutputTest, Large_Array_Stack_Allocation) {
+  std::string input = R"(
+      dialect:english;
+      start() int {
+        let arr [1000000000]int;
+        let arr2 [1000000000]float;
+        print(arr[0], arr[999999999], arr2[0], arr2[999999999]);
+        return 0;
+      }
+  )";
+
+  std::string expected_diagnostic = "0 0 0.000000 0.000000";
+  assertSwaOutput(input, expected_diagnostic);
 }
