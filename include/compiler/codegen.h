@@ -31,7 +31,11 @@ private:
   llvm::Function *lastFunc = nullptr;
   llvm::Type *lastType = nullptr;
   std::ofstream debugLog;
+  llvm::BasicBlock *currentExitBlock = nullptr;
+  llvm::AllocaInst *currentReturnStorage = nullptr;
+  llvm::Type *currentReturnType = nullptr;
 
+  void EmitCleanup(SymbolTable *scope);
   void setLastFunc(llvm::Function *v);
   void setLastValue(llvm::Value *v);
   void setLastType(llvm::Type *t);
